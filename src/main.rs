@@ -7,7 +7,7 @@ extern crate otp;
 use otp::make_totp;
 use directories::{BaseDirs, UserDirs, ProjectDirs};
 fn main() {
-    println!("cotp - written by @replydev");
+    println!("cotp - written by @replydev\n");
 
     let args: Vec<String> = env::args().collect();
 
@@ -15,19 +15,18 @@ fn main() {
         if args[1] == "--import"{
             import_database(&args[2]);
         }
-        else{
+        else if args[1] == "--help"{
             println!("Help")
+        }
+        else{
+            println!("Invalid argument: {}, type cotp --help to get command options", args[1])
         }
     }
     else{
         let elements: Vec<database_loader::OTPElement> = database_loader::read_from_file(get_db_path());
         for i in 0..elements.len() {
-
-            let secret : &str = &elements[i].secret();
-
-            println!("{}: {}",elements[i].label(),make_totp(secret,30, 0).unwrap());
-
-
+            let secret : &str = &elements[i].secret(); //we have replaced '=' in this method
+            println!("{}) - {}: {}",i+1,elements[i].label(),make_totp(secret,30, 0).unwrap());
             //println!("{} - {} - {}", elements[i].secret(), elements[i].label(), elements[i].algorithm());
         }
     }
