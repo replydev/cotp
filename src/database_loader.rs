@@ -17,7 +17,7 @@ impl OTPElement {
         }
     }
     pub fn secret(&self) -> String {
-        self.secret.to_string()
+        self.secret.to_string().replace("=", "")
     }
     pub fn label(&self) -> String{
         self.label.to_string()
