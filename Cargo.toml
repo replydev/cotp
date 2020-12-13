@@ -1,5 +1,5 @@
 [package]
-name = "COTP"
+name = "cotp"
 version = "0.1.0"
 authors = ["replydev <replydev@protonmail.com>"]
 edition = "2018"
@@ -8,3 +8,8 @@ edition = "2018"
 
 [dependencies]
 json = "0.12.4"
+sodiumoxide = "0.2.6"
+directories = "3.0.1"
+
+[dependencies.otp]
+git = "https://github.com/TimDumol/rust-otp"
