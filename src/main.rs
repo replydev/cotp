@@ -7,7 +7,9 @@ extern crate otp;
 use otp::make_totp;
 use directories::{BaseDirs, UserDirs, ProjectDirs};
 fn main() {
-    println!("cotp - written by @replydev\n");
+    let version = "0.0.1";
+    println!("cotp v{}",version);
+    println!("written by @replydev\n");
 
     let args: Vec<String> = env::args().collect();
 
@@ -34,13 +36,9 @@ fn main() {
 
 
 fn get_db_path() -> String{
-    let mut home_dir :String = "".to_string();
-
-    if let Some(base_dirs) = BaseDirs::new(){
-        if let Some(home) = base_dirs.home_dir().to_str() {
-            home_dir = home.to_string();
-        }
-    }
+    let base_dirs = BaseDirs::new().unwrap();
+    let home = base_dirs.home_dir().to_str().unwrap();
+    let mut home_dir = home.to_string();
 
     home_dir.push_str("/.cotp");
 
