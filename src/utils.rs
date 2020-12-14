@@ -2,7 +2,6 @@ use directories::{BaseDirs, UserDirs, ProjectDirs};
 use std::fs;
 use std::io::prelude::*;
 
-
 #[cfg(debug_assertions)]
 pub fn get_db_path() -> String{
     String::from("db.cotp")
@@ -18,7 +17,6 @@ pub fn get_db_path() -> String{
     home_dir.push_str("/db.cotp");
     home_dir
 }
-
 
 pub fn write_to_file(content: &str, filename: &str){
     let mut file = fs::File::create(filename).unwrap();

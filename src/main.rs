@@ -2,6 +2,7 @@ use std::env;
 use std::fs;
 //mod encryption;
 mod database_loader;
+use database_loader::OTPElement;
 extern crate directories;
 extern crate otp;
 use otp::make_totp;
@@ -20,11 +21,23 @@ fn main() {
 }
 
 fn show_codes(){
-    let elements: Vec<database_loader::OTPElement> = database_loader::get_elements();
+    let elements: Vec<database_loader::OTPElement> = database_loader::read_from_file();
     for i in 0..elements.len() {
-        let secret : &str = &elements[i].secret(); //we have replaced '=' in this method
-        println!("{}) - {}: {}",i+1,elements[i].label(),make_totp(secret,30, 0).unwrap());
+        print_totp(i,&elements[i]);
     }
+}
+
+fn print_totp(i: usize,element: &OTPElement){
+    println!("{}) {} - {}: {}",
+    i+1,
+    element.issuer(),
+    element.label(),
+    make_totp(
+        &element.secret(), //we have replaced '=' in this method
+        element.period(), 
+        0)
+    .unwrap()
+);
 }
 
 fn args_parser(args: Vec<String>) -> bool {
@@ -38,7 +51,7 @@ fn args_parser(args: Vec<String>) -> bool {
             return true;
         }
         else if args[1] == "--add"{
-            println!("To be implemented");
+            //if database
             return true;
         }
         else if args[1] == "--remove"{

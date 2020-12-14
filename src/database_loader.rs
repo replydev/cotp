@@ -6,19 +6,23 @@ use super::utils;
 use utils::get_db_path;
 
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct OTPElement {
     secret: String,
     label: String,
-    algorithm: String
+    algorithm: String,
+    issuer: String,
+    period: u64
 }
 
 impl OTPElement {
-    pub fn new(secret: String, label: String, algorithm: String) -> OTPElement {
+    pub fn new(secret: String, label: String, algorithm: String,issuer: String, period: u64) -> OTPElement {
         OTPElement {
             secret: secret,
             algorithm: algorithm,
-            label: label
+            label: label,
+            issuer: issuer,
+            period: period,
         }
     }
     pub fn secret(&self) -> String {
@@ -30,43 +34,21 @@ impl OTPElement {
     pub fn algorithm(&self) -> String{
         self.algorithm.to_string()
     }
+    pub fn issuer(&self) -> String{
+        self.issuer.to_string()
+    }
+    pub fn period(&self) -> u64{
+        self.period
+    }
 }
 
-fn read_from_file() -> Vec<OTPElement>{
+pub fn read_from_file() -> Vec<OTPElement>{
     let mut file = File::open(&get_db_path()).expect("File not found!");
     //rust close files at the end of the function
     let mut contents = String::new();
     file.read_to_string(&mut contents).unwrap();
-
-    let vector: serde_json::Value = serde_json::from_str(&contents).unwrap();
-    from_value_to_vec(vector)
-}
-
-fn from_value_to_vec(json_object: serde_json::Value) -> Vec<OTPElement>{
-    let mut vector: Vec<OTPElement> = vec![];
-
-    for i in 0..json_object.as_array().unwrap().len() {
-        vector.push(
-            OTPElement::new(
-                json_object[i]["secret"].as_str().unwrap().to_string(),
-                json_object[i]["label"].as_str().unwrap().to_string(),
-                json_object[i]["algorithm"].as_str().unwrap().to_string(),
-            )
-        )
-    }
+    let vector: Vec<OTPElement> = serde_json::from_str(&contents).unwrap();
     vector
-}
-
-pub fn get_elements() -> Vec<OTPElement> {
-    let elements: Vec<OTPElement> = read_from_file();
-    /*for i in 0..json_object.len() {
-        elements.push(OTPElement{
-            secret: json_object[i]["secret"].to_string(),
-            label: json_object[i]["label"].to_string(),
-            algorithm: json_object[i]["algorithm"].to_string()
-        });
-    }*/
-    elements
 }
 
 pub fn remove_element_from_db(mut id: usize) -> bool{
