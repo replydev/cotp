@@ -78,7 +78,7 @@ pub fn remove_element_from_db(mut id: usize) -> bool{
 
     let mut elements: Vec<OTPElement> = read_from_file();
 
-    if id > elements.len(){
+    if id >= elements.len(){
         return false;
     }
 
