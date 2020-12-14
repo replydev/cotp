@@ -10,10 +10,9 @@ pub fn get_db_path() -> String{
 
 #[cfg(not(debug_assertions))]
 pub fn get_db_path() -> String{
-    let home_dir = get_home_folder();
+    let mut home_dir = get_home_folder();
     home_dir.push_str("/.cotp");
     home_dir.push_str("/db.cotp");
-    create_db_if_needed(home_dir);
     home_dir
 }
 

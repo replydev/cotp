@@ -48,7 +48,7 @@ pub fn read_from_file() -> Vec<OTPElement>{
     let mut file = File::open(&get_db_path()).expect("File not found!");
     //rust close files at the end of the function
     let mut contents = String::new();
-    file.read_to_string(&mut contents);
+    file.read_to_string(&mut contents).expect("Cannot read db");
     let vector: Vec<OTPElement> = serde_json::from_str(&contents).unwrap();
     vector
 }

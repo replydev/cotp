@@ -10,14 +10,25 @@ mod utils;
 use utils::get_db_path;
 fn main() {
     let version = "0.0.3.1";
-    println!("cotp v{}",version);
-    println!("written by @replydev\n");
-
+    print_title(version);
     utils::create_db_if_needed();
     let args: Vec<String> = env::args().collect();
     if !args_parser(args){
         show_codes();
     }
+}
+
+#[cfg(debug_assertions)]
+fn print_title(version: &str){
+    println!("cotp v{}",version);
+    println!("written by @replydev\n");
+    println!("****DEBUG VERSION****\n");
+}
+
+#[cfg(not(debug_assertions))]
+fn print_title(version: &str){
+    println!("cotp v{}",version);
+    println!("written by @replydev\n");
 }
 
 fn show_codes(){
