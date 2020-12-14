@@ -33,9 +33,9 @@ impl OTPElement {
     pub fn label(&self) -> String{
         self.label.to_string()
     }
-    pub fn algorithm(&self) -> String{
+    /*pub fn algorithm(&self) -> String{
         self.algorithm.to_string()
-    }
+    }*/
     pub fn issuer(&self) -> String{
         self.issuer.to_string()
     }

@@ -1,4 +1,4 @@
-use directories::{BaseDirs, UserDirs, ProjectDirs};
+use directories::BaseDirs;
 use std::fs;
 use std::io::prelude::*;
 
