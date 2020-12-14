@@ -9,12 +9,12 @@ use otp::make_totp;
 mod utils;
 use utils::get_db_path;
 fn main() {
-    let version = "0.0.3";
+    let version = "0.0.3.1";
     println!("cotp v{}",version);
     println!("written by @replydev\n");
 
+    utils::create_db_if_needed();
     let args: Vec<String> = env::args().collect();
-
     if !args_parser(args){
         show_codes();
     }
