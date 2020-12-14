@@ -10,6 +10,7 @@ edition = "2018"
 serde_json = "1.0.60"
 serde = { version = "1", features = ["derive"] }
 directories = "3.0.1"
+regex = "1.4.2"
 
 [dependencies.otp]
 git = "https://github.com/TimDumol/rust-otp"
