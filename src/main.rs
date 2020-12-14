@@ -9,7 +9,7 @@ use otp::make_totp;
 mod utils;
 use utils::get_db_path;
 fn main() {
-    let version = "0.0.2";
+    let version = "0.0.3";
     println!("cotp v{}",version);
     println!("written by @replydev\n");
 
@@ -28,16 +28,15 @@ fn show_codes(){
 }
 
 fn print_totp(i: usize,element: &OTPElement){
-    println!("{}) {} - {}: {}",
-    i+1,
-    element.issuer(),
-    element.label(),
-    make_totp(
-        &element.secret(), //we have replaced '=' in this method
-        element.period(), 
-        0)
-    .unwrap()
-);
+    if element.issuer() != ""{
+        println!("{}) {} - {}: {}",i+1,element.issuer(),element.label(),make_totp(
+            &element.secret(), //we have replaced '=' in this method
+                   element.period(), 0).unwrap());
+    }else{
+        println!("{}) {}: {}",i+1,element.label(),make_totp(
+            &element.secret(), //we have replaced '=' in this method
+                   element.period(), 0).unwrap());
+    }
 }
 
 fn args_parser(args: Vec<String>) -> bool {
@@ -51,7 +50,17 @@ fn args_parser(args: Vec<String>) -> bool {
             return true;
         }
         else if args[1] == "--add"{
-            //if database
+            if args.len() == 5{
+                if database_loader::add_element(&args[2],&args[3],&args[4]){
+                    println!("Success");
+                }
+                else{
+                    println!("Invalid values");
+                }
+            }
+            else{
+                println!("Invalid arguments, type cotp --add <secret> <issuer> <label>");
+            }
             return true;
         }
         else if args[1] == "--remove"{

@@ -4,6 +4,8 @@ use serde_json;
 use serde::{Deserialize, Serialize};
 use super::utils;
 use utils::get_db_path;
+extern crate regex;
+use regex::Regex;
 
 
 #[derive(Serialize, Deserialize)]
@@ -51,6 +53,22 @@ pub fn read_from_file() -> Vec<OTPElement>{
     vector
 }
 
+pub fn check_secret(secret: &str) -> bool{
+    let regex = Regex::new(r"^[A-Z0-9.]+$").unwrap(); //only uppercase characters and numbers
+    regex.is_match(secret)
+}
+
+pub fn add_element(secret: &String,issuer: &String,label: &String) -> bool{
+    if !check_secret(&secret){
+        return false;
+    }
+    let otp_element = OTPElement::new(secret.to_string(), label.to_string(), String::from("SHA1"), issuer.to_string(), 30);
+    let mut elements = read_from_file();
+    elements.push(otp_element);
+    overwrite_database(elements);
+    true
+}
+
 pub fn remove_element_from_db(mut id: usize) -> bool{
     if id == 0{
         return false;
@@ -72,7 +90,6 @@ pub fn remove_element_from_db(mut id: usize) -> bool{
     overwrite_database(elements);
     true
 }
-
 
 pub fn overwrite_database(elements: Vec<OTPElement>){
     let json_string: &str = &serde_json::to_string(&elements).unwrap();
