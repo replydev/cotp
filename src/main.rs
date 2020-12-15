@@ -9,7 +9,7 @@ use otp::make_totp;
 mod utils;
 use utils::get_db_path;
 fn main() {
-    let version = "0.0.3.1";
+    let version = "0.0.4";
     print_title(version);
     utils::create_db_if_needed();
     let args: Vec<String> = env::args().collect();
