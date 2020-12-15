@@ -7,24 +7,37 @@ use utils::get_db_path;
 extern crate regex;
 use regex::Regex;
 
-
 #[derive(Serialize, Deserialize)]
 pub struct OTPElement {
     secret: String,
-    label: String,
-    algorithm: String,
     issuer: String,
-    period: u64
+    label: String,
+    digits: u64,
+    #[serde(rename = "type")]
+    _type: String,
+    algorithm: String,
+    thumbnail: String,
+    last_used: u64,
+    used_frequency: u64,
+    period: u64,
+    tags: Vec<String>,
 }
 
 impl OTPElement {
-    pub fn new(secret: String, label: String, algorithm: String,issuer: String, period: u64) -> OTPElement {
+    pub fn new(secret: String,issuer: String,label: String,digits: u64,_type: String,algorithm: String,thumbnail: String,last_used: u64,used_frequency: u64,period: u64,tags: Vec<String>,
+    ) -> OTPElement {
         OTPElement {
-            secret: secret,
-            algorithm: algorithm,
-            label: label,
-            issuer: issuer,
-            period: period,
+            secret,
+            issuer,
+            label,
+            digits,
+            _type,
+            algorithm,
+            thumbnail,
+            last_used,
+            used_frequency,
+            period,
+            tags,
         }
     }
     pub fn secret(&self) -> String {
@@ -33,9 +46,6 @@ impl OTPElement {
     pub fn label(&self) -> String{
         self.label.to_string()
     }
-    /*pub fn algorithm(&self) -> String{
-        self.algorithm.to_string()
-    }*/
     pub fn issuer(&self) -> String{
         self.issuer.to_string()
     }
@@ -62,7 +72,7 @@ pub fn add_element(secret: &String,issuer: &String,label: &String) -> bool{
     if !check_secret(&secret){
         return false;
     }
-    let otp_element = OTPElement::new(secret.to_string(), label.to_string(), String::from("SHA1"), issuer.to_string(), 30);
+    let otp_element = OTPElement::new(secret.to_string(), issuer.to_string(), label.to_string(),6, String::from("TOTP"), String::from("SHA1"),String::from("Default"),0,0,30,vec![]);
     let mut elements = read_from_file();
     elements.push(otp_element);
     overwrite_database(elements);
