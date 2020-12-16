@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, path::Path};
 use std::fs;
 //mod encryption;
 mod database_loader;
@@ -7,13 +7,14 @@ extern crate directories;
 extern crate otp;
 use otp::make_totp;
 mod utils;
-use utils::get_db_path;
+use utils::{get_db_path,get_unencrypted_db_path};
+mod cryptograpy;
 fn main() {
     let version = "0.0.4";
     print_title(version);
-    utils::create_db_if_needed();
     let args: Vec<String> = env::args().collect();
     if !args_parser(args){
+        utils::create_db_if_needed();
         show_codes();
     }
 }
@@ -100,6 +101,8 @@ fn args_parser(args: Vec<String>) -> bool {
 }
 
 fn import_database(filename: &String){
-    fs::copy(filename,&get_db_path()).expect("Failed to import database");
+    fs::copy(filename,&get_unencrypted_db_path()).expect("Failed to import database");
+    cryptograpy::encrypt(&mut fs::File::open(&get_unencrypted_db_path()).expect("Failed to encrypt file"), &mut fs::File::create(&get_db_path()).expect("Cannot create encrypted file"), &cryptograpy::prompt_for_passwords("Insert password for database encryption: ")).expect("Cannot decrypt encrypted database");
+    fs::remove_file(Path::new(&get_unencrypted_db_path())).expect("Cannot delete unencrypted database");
     println!("Successfully imported database");
 }
