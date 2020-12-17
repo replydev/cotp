@@ -10,7 +10,7 @@ mod utils;
 use utils::{get_db_path,get_unencrypted_db_path};
 mod cryptograpy;
 fn main() {
-    let version = "0.0.4";
+    let version = "0.0.5";
     print_title(version);
     let args: Vec<String> = env::args().collect();
     if !args_parser(args){
