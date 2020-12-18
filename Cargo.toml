@@ -13,6 +13,7 @@ directories = "3.0.1"
 regex = "1.4.2"
 rpassword = "5.0.0"
 sodiumoxide = "0.2.6"
+base64 = "0.13.0"
 
 [dependencies.otp]
 git = "https://github.com/TimDumol/rust-otp"
