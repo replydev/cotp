@@ -133,9 +133,15 @@ pub fn modify_element(mut id: usize, secret: &str,issuer: &str,label: &str) -> R
 
     for i in 0..elements.len() {
         if i == id{
-            elements[i].set_secret(secret.to_string());
-            elements[i].set_issuer(issuer.to_string());
-            elements[i].set_label(label.to_string());
+            if secret != "*"{
+                elements[i].set_secret(secret.to_string());
+            }
+            if issuer != "*"{
+                elements[i].set_issuer(issuer.to_string());
+            }
+            if label != "*"{
+                elements[i].set_label(label.to_string());
+            }
             break;
         }
     }
