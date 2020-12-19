@@ -104,7 +104,7 @@ fn args_parser(args: Vec<String>) -> bool {
                 database_loader::modify_element(id, &secret, &issuer, &label).expect("An error occured");
             }
             else{
-                println!("Invalid arguments, type cotp --modify <id> <secret> <issuer> <label>");
+                println!("Invalid arguments, type cotp --modify <id> <secret> <issuer> <label>\nReplace the attribute value with \".\" to skip the attribute modification");
             }
             return true;
         },
