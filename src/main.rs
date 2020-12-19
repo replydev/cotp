@@ -1,5 +1,6 @@
-use std::{env, path::Path};
-use std::fs;
+use std::{env};
+use std::fs::{read_to_string,File};
+use std::io::prelude::*;
 //mod encryption;
 mod database_loader;
 use database_loader::OTPElement;
@@ -7,7 +8,7 @@ extern crate directories;
 extern crate otp;
 use otp::make_totp;
 mod utils;
-use utils::{get_db_path,get_unencrypted_db_path};
+use utils::get_db_path;
 mod cryptograpy;
 fn main() {
     let version = "0.0.5";
@@ -52,16 +53,20 @@ fn print_totp(i: usize,element: &OTPElement){
 }
 
 fn args_parser(args: Vec<String>) -> bool {
-    if args.len() >= 2{
-        if args[1] == "--import"{
+    if args.len() == 1 {
+        return false;
+    }
+
+    match &args[1][..]{
+        "--import" =>{
             import_database(&args[2]);
             return true;
-        }
-        else if args[1] == "--help"{
+        },
+        "--help" =>{
             println!("Help");
             return true;
-        }
-        else if args[1] == "--add"{
+        },
+        "--add" =>{
             if args.len() == 5{
                 if database_loader::add_element(&args[2],&args[3],&args[4]){
                     println!("Success");
@@ -74,8 +79,8 @@ fn args_parser(args: Vec<String>) -> bool {
                 println!("Invalid arguments, type cotp --add <secret> <issuer> <label>");
             }
             return true;
-        }
-        else if args[1] == "--remove"{
+        },
+        "--remove" =>{
             if args.len() == 3{
                 let id = args[2].parse::<usize>().unwrap();
                 if database_loader::remove_element_from_db(id) {
@@ -89,20 +94,17 @@ fn args_parser(args: Vec<String>) -> bool {
                 println!("Invalid argument, type cotp --remove <index>");
             }
             return true;
-        }
-        else{
+        },_=>{
             println!("Invalid argument: {}, type cotp --help to get command options", args[1]);
             return true;
         }
     }
-    else{
-        false
-    }
 }
 
 fn import_database(filename: &String){
-    fs::copy(filename,&get_unencrypted_db_path()).expect("Failed to import database");
-    cryptograpy::encrypt(&mut fs::File::open(&get_unencrypted_db_path()).expect("Failed to encrypt file"), &mut fs::File::create(&get_db_path()).expect("Cannot create encrypted file"), &cryptograpy::prompt_for_passwords("Insert password for database encryption: ")).expect("Cannot decrypt encrypted database");
-    fs::remove_file(Path::new(&get_unencrypted_db_path())).expect("Cannot delete unencrypted database");
+    let mut unencrypted_content = read_to_string(filename).unwrap();
+    let encrypted_content = cryptograpy::encrypt_string(&mut unencrypted_content,&cryptograpy::prompt_for_passwords("Insert password for database encryption: "));
+    let mut encrypted_file = File::create(&get_db_path()).expect("Cannot create encrypted database file");
+    encrypted_file.write_all(encrypted_content.as_bytes());
     println!("Successfully imported database");
 }

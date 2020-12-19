@@ -1,4 +1,4 @@
-use std::fs::File;
+use std::fs::{File,read_to_string};
 use serde_json;
 use serde::{Deserialize, Serialize};
 use super::utils;
@@ -55,9 +55,9 @@ impl OTPElement {
 }
 
 pub fn read_from_file() -> Vec<OTPElement>{
-    let mut file = File::open(&get_db_path()).expect("File not found!");
+    let mut encrypted_contents = read_to_string(&get_db_path()).unwrap();
     //rust close files at the end of the function
-    let mut contents = cryptograpy::decrypt(&mut file, &cryptograpy::prompt_for_passwords("Insert password for decryption: ")).expect("Failed to decrypt");
+    let contents = cryptograpy::decrypt_string(&mut encrypted_contents, &cryptograpy::prompt_for_passwords("Password: ")).expect("Cannot decrypt");
     //file.read_to_string(&mut contents).expect("Cannot read db");
     let vector: Vec<OTPElement> = serde_json::from_str(&contents).unwrap();
     vector
@@ -103,6 +103,7 @@ pub fn remove_element_from_db(mut id: usize) -> bool{
 
 pub fn overwrite_database(elements: Vec<OTPElement>){
     let json_string: &str = &serde_json::to_string(&elements).unwrap();
-    utils::write_to_file(json_string, &mut File::open(utils::get_db_path()).expect("Failed to open file"));
+    let encrypted = cryptograpy::encrypt_string(&mut json_string.to_string(), &cryptograpy::prompt_for_passwords("Insert password for database encryption: "));
+    utils::write_to_file(&encrypted, &mut File::create(utils::get_db_path()).expect("Failed to open file"));
 }
 
