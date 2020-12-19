@@ -11,7 +11,7 @@ mod utils;
 use utils::get_db_path;
 mod cryptograpy;
 fn main() {
-    let version = "0.0.5.1";
+    let version = "0.0.6";
     print_title(version);
     let args: Vec<String> = env::args().collect();
     if !args_parser(args){
