@@ -1,4 +1,5 @@
 use std::{error, fmt};
+use std::convert::TryInto;
 use sodiumoxide::crypto::pwhash;
 use sodiumoxide::crypto::secretstream::{Stream, Tag, KEYBYTES};
 use sodiumoxide::crypto::secretstream::xchacha20poly1305::{Header, Key};
@@ -74,19 +75,13 @@ pub fn decrypt_string(encrypted_text: &mut str,password: &str) -> Result<String,
 }
 
 fn byte_vec_to_byte_array(byte_vec: Vec<u8>) -> [u8;32]{
-    let mut array = [0u8;32];
-    for (place, element) in array.iter_mut().zip(byte_vec.iter()) {
-        *place = *element;
-    }
-    array
+    byte_vec.try_into()
+        .unwrap_or_else(|v: Vec<u8>| panic!("Expected a Vec of length {} but it was {}", 32, v.len()))
 }
 
 fn header_vec_to_header_array(byte_vec: Vec<u8>) -> [u8;24]{
-    let mut array = [0u8;24];
-    for (place, element) in array.iter_mut().zip(byte_vec.iter()) {
-        *place = *element;
-    }
-    array
+    byte_vec.try_into()
+        .unwrap_or_else(|v: Vec<u8>| panic!("Expected a Vec of length {} but it was {}", 24, v.len()))
 }
 
 pub fn prompt_for_passwords(message: &str) -> String{
