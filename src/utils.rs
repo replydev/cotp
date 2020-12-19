@@ -17,7 +17,7 @@ pub fn get_db_path() -> String{
     home_dir
 }
 
-fn get_home_folder() -> String {
+pub fn get_home_folder() -> String {
     let base_dirs = BaseDirs::new().unwrap();
     let home = base_dirs.home_dir().to_str().unwrap();
     home.to_string()

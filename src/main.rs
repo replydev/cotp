@@ -94,7 +94,38 @@ fn args_parser(args: Vec<String>) -> bool {
                 println!("Invalid argument, type cotp --remove <index>");
             }
             return true;
-        },_=>{
+        },
+        "--modify" =>{
+            if args.len() == 6{
+                let id = args[2].parse::<usize>().unwrap();
+                let secret = &args[3];
+                let issuer = &args[4];
+                let label = &args[5];
+                database_loader::modify_element(id, &secret, &issuer, &label);
+            }
+            else{
+                println!("Invalid arguments, type cotp --modify <id> <secret> <issuer> <label>");
+            }
+            return true;
+        },
+        "--export" =>{
+            if args.len() == 2{
+                let export_result = database_loader::export_database();
+                match export_result{
+                    Ok(export_result) => {
+                        println!("Database was successfully exported at {}", export_result);
+                    },
+                    Err(e) =>{
+                        println!("An error as occured while exporting database: {}", e);
+                    }
+                }
+            }
+            else{
+                println!("Invalid argument, type cotp --export");
+            }
+            return true;
+        },
+        _=>{
             println!("Invalid argument: {}, type cotp --help to get command options", args[1]);
             return true;
         }
