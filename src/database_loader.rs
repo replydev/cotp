@@ -64,7 +64,7 @@ pub fn read_from_file() -> Vec<OTPElement>{
             return vector;
         },
         Err(e) => {
-            println!("{}", "Wrong password");
+            println!("{}", e);
             return Vec::new();
         }
     }

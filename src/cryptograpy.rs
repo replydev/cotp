@@ -3,7 +3,6 @@ use sodiumoxide::crypto::pwhash;
 use sodiumoxide::crypto::secretstream::{Stream, Tag, KEYBYTES};
 use sodiumoxide::crypto::secretstream::xchacha20poly1305::{Header, Key};
 
-const CHUNKSIZE: usize = 4096;
 const SIGNATURE: [u8;4] = [0xC1, 0x0A, 0x4B, 0xED];
 
 #[derive(Debug)]
@@ -48,10 +47,8 @@ pub fn encrypt_string(plaintext: &mut String,password: &str) -> String {
 }
 
 pub fn decrypt_string(encrypted_text: &mut str,password: &str) -> Result<String, String> {
-    let string_len = encrypted_text.len();
     let split = encrypted_text.split('|');
     let vec: Vec<&str> = split.collect();
-    let signature = base64::decode(vec[0]).unwrap();
     let byte_salt = base64::decode(vec[1]).unwrap();
     let salt = pwhash::Salt(byte_vec_to_byte_array(byte_salt));
     let byte_header = base64::decode(vec[2]).unwrap();
@@ -68,7 +65,7 @@ pub fn decrypt_string(encrypted_text: &mut str,password: &str) -> Result<String,
     let mut stream = Stream::init_pull(&header, &key)
         .map_err(|_| CoreError::new("init_pull failed")).unwrap();
 
-    let (decrypted, tag1) = stream.pull(&cipher, None).unwrap_or((vec![0],Tag::Message));
+    let (decrypted, _tag) = stream.pull(&cipher, None).unwrap_or((vec![0],Tag::Message));
 
     if decrypted == vec![0]{
         return Err(String::from("Wrong password"));

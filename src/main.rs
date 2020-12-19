@@ -105,6 +105,6 @@ fn import_database(filename: &String){
     let mut unencrypted_content = read_to_string(filename).unwrap();
     let encrypted_content = cryptograpy::encrypt_string(&mut unencrypted_content,&cryptograpy::prompt_for_passwords("Insert password for database encryption: "));
     let mut encrypted_file = File::create(&get_db_path()).expect("Cannot create encrypted database file");
-    encrypted_file.write_all(encrypted_content.as_bytes());
+    encrypted_file.write_all(encrypted_content.as_bytes()).expect("Cannot write to encrypted file");
     println!("Successfully imported database");
 }
