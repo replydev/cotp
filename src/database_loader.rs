@@ -57,10 +57,17 @@ impl OTPElement {
 pub fn read_from_file() -> Vec<OTPElement>{
     let mut encrypted_contents = read_to_string(&get_db_path()).unwrap();
     //rust close files at the end of the function
-    let contents = cryptograpy::decrypt_string(&mut encrypted_contents, &cryptograpy::prompt_for_passwords("Password: ")).expect("Cannot decrypt");
-    //file.read_to_string(&mut contents).expect("Cannot read db");
-    let vector: Vec<OTPElement> = serde_json::from_str(&contents).unwrap();
-    vector
+    let contents = cryptograpy::decrypt_string(&mut encrypted_contents, &cryptograpy::prompt_for_passwords("Password: "));
+    match contents {
+        Ok(contents) => {
+            let vector: Vec<OTPElement> = serde_json::from_str(&contents).unwrap();
+            return vector;
+        },
+        Err(e) => {
+            println!("{}", "Wrong password");
+            return Vec::new();
+        }
+    }
 }
 
 pub fn check_secret(secret: &str) -> bool{

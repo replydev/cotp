@@ -47,7 +47,7 @@ pub fn encrypt_string(plaintext: &mut String,password: &str) -> String {
     encrypted
 }
 
-pub fn decrypt_string(encrypted_text: &mut str,password: &str) -> Result<String, Box<dyn error::Error>> {
+pub fn decrypt_string(encrypted_text: &mut str,password: &str) -> Result<String, String> {
     let string_len = encrypted_text.len();
     let split = encrypted_text.split('|');
     let vec: Vec<&str> = split.collect();
@@ -62,14 +62,17 @@ pub fn decrypt_string(encrypted_text: &mut str,password: &str) -> Result<String,
     pwhash::derive_key(&mut key, password.as_bytes(), &salt,
         pwhash::OPSLIMIT_INTERACTIVE,
         pwhash::MEMLIMIT_INTERACTIVE)
-        .map_err(|_| CoreError::new("Deriving key failed"))?;
+        .map_err(|_| CoreError::new("Deriving key failed")).unwrap();
     let key = Key(key);
 
     let mut stream = Stream::init_pull(&header, &key)
-        .map_err(|_| CoreError::new("init_pull failed"))?;
+        .map_err(|_| CoreError::new("init_pull failed")).unwrap();
 
-    let (decrypted, tag1) = stream.pull(&cipher, None).unwrap();
+    let (decrypted, tag1) = stream.pull(&cipher, None).unwrap_or((vec![0],Tag::Message));
 
+    if decrypted == vec![0]{
+        return Err(String::from("Wrong password"));
+    }
     Ok(String::from_utf8(decrypted).unwrap())
 }
 
