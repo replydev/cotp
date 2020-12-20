@@ -41,13 +41,13 @@ pub fn remove(args: Vec<String>){
     }
 }
 
-pub fn modify(args: Vec<String>){
+pub fn edit(args: Vec<String>){
     if args.len() == 6{
         let id = args[2].parse::<usize>().unwrap();
         let secret = &args[3];
         let issuer = &args[4];
         let label = &args[5];
-        database_loader::modify_element(id, &secret, &issuer, &label).expect("An error occured");
+        database_loader::edit_element(id, &secret, &issuer, &label).expect("An error occured");
     }
     else{
         println!("Invalid arguments, type cotp --modify <id> <secret> <issuer> <label>\n\nReplace the attribute value with \".\" to skip the attribute modification");

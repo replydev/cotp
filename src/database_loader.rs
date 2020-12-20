@@ -123,7 +123,7 @@ pub fn remove_element_from_db(mut id: usize) -> bool{
     true
 }
 
-pub fn modify_element(mut id: usize, secret: &str,issuer: &str,label: &str) -> Result<(), String> {
+pub fn edit_element(mut id: usize, secret: &str,issuer: &str,label: &str) -> Result<(), String> {
     if id == 0{
         return Err(String::from("Invalid element"));
     }

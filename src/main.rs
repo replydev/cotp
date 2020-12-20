@@ -63,14 +63,14 @@ fn args_parser(args: Vec<String>) -> bool {
     }
 
     match &args[1][..]{
-        "--import" =>{argument_functions::import(args);},
-        "--help" =>{argument_functions::help();},
-        "--add" =>{argument_functions::add(args);},
-        "--remove" =>{argument_functions::remove(args);},
-        "--modify" =>{argument_functions::modify(args);},
-        "--export" =>{argument_functions::export(args);},
+        "-i"  | "--import" =>{argument_functions::import(args);},
+        "-h"  | "--help" =>{argument_functions::help();},
+        "-a"  | "--add" =>{argument_functions::add(args);},
+        "-r"  | "--remove" =>{argument_functions::remove(args);},
+        "-e"  | "--edit" =>{argument_functions::edit(args);},
+        "-ex" | "--export" =>{argument_functions::export(args);},
         _=>{
-            println!("Invalid argument: {}, type cotp --help to get command options", args[1]);
+            println!("Invalid argument: {}, type cotp -h to get command options", args[1]);
             return true;
         }
     }
