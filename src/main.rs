@@ -37,15 +37,23 @@ fn show_codes(){
     }
 }
 
+fn get_good_otp_code(element: &OTPElement) -> String {
+    let otp = make_totp(
+        &element.secret(), //we have replaced '=' in this method
+               element.period(), 0).unwrap();
+    let mut s_otp = otp.to_string();
+
+    while s_otp.len() < element.digits() as usize {
+        s_otp = String::from("0") + &s_otp;
+    }
+    s_otp
+}
+
 fn print_totp(i: usize,element: &OTPElement){
     if element.issuer() != ""{
-        println!("{}) {} - {}: {}",i+1,element.issuer(),element.label(),make_totp(
-            &element.secret(), //we have replaced '=' in this method
-                   element.period(), 0).unwrap());
+        println!("{}) {} - {}: {}",i+1,element.issuer(),element.label(),get_good_otp_code(&element));
     }else{
-        println!("{}) {}: {}",i+1,element.label(),make_totp(
-            &element.secret(), //we have replaced '=' in this method
-                   element.period(), 0).unwrap());
+        println!("{}) {}: {}",i+1,element.label(),get_good_otp_code(&element));
     }
 }
 

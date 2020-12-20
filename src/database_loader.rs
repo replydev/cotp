@@ -53,6 +53,9 @@ impl OTPElement {
     pub fn period(&self) -> u64{
         self.period
     }
+    pub fn digits(&self) -> u64{
+        self.digits
+    }
 
     pub fn set_secret(&mut self,secret: String){
         self.secret = secret;
