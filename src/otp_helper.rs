@@ -59,7 +59,7 @@ pub fn get_json_results() -> String{
         results.push(JsonResult::new(i+1,elements[i].issuer(),elements[i].label(),otp_code))
     }
 
-    let json_string: &str = &serde_json::to_string_pretty(&elements).unwrap();
+    let json_string: &str = &serde_json::to_string_pretty(&results).unwrap();
 
     json_string.to_string()
 }
