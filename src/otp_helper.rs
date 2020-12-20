@@ -20,19 +20,6 @@ impl JsonResult {
             otp_code: otp_code
         }
     }
-
-    pub fn set_index(&mut self, index: usize) {
-        self.index = index;
-    }
-    pub fn set_issuer(&mut self,issuer: String){
-        self.issuer = issuer;
-    }
-    pub fn set_label(&mut self,label: String){
-        self.label = label;
-    }
-    pub fn set_otp_code(&mut self,otp_code: String){
-        self.otp_code = otp_code;
-    }
 }
 
 pub fn show_codes(){
