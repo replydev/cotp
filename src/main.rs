@@ -29,7 +29,7 @@ fn main() {
     print_title(version);
     let init_result = init();
     match init_result {
-        Ok(()) => println!("sodiumoxide init succeeded"),
+        Ok(()) => {},
         Err(()) => { 
             println!("Failed to init sodiumoxide");
             return;
@@ -54,6 +54,7 @@ fn args_parser(args: Vec<String>) -> bool {
         "-r"  | "--remove" => argument_functions::remove(args),
         "-e"  | "--edit" => argument_functions::edit(args),
         "-ex" | "--export" => argument_functions::export(args),
+        "-j"  | "--json" => argument_functions::json(args),
         _=>{
             println!("Invalid argument: {}, type cotp -h to get command options", args[1]);
             return true;

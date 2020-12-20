@@ -3,6 +3,7 @@ use std::io::prelude::*;
 use super::utils::get_db_path;
 use super::database_loader;
 use super::cryptograpy;
+use super::otp_helper;
 
 pub fn import(args: Vec<String>){
     import_database(&args[2]);
@@ -68,6 +69,15 @@ pub fn export(args: Vec<String>){
     }
     else{
         println!("Invalid argument, type cotp --export");
+    }
+}
+
+pub fn json(args: Vec<String>){
+    if args.len() == 2{
+        println!("{}",otp_helper::get_json_results())
+    }
+    else{
+        println!("Invalid argument, type cotp --json");
     }
 }
 
