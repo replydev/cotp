@@ -1,6 +1,6 @@
 [package]
 name = "cotp"
-version = "0.0.6"
+version = "0.0.7"
 authors = ["replydev <replydev@protonmail.com>"]
 edition = "2018"
 
