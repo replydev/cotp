@@ -6,7 +6,7 @@ mod argument_functions;
 mod otp_helper;
 mod cryptograpy;
 use sodiumoxide;
-mod import_otp;
+mod importers;
 
 #[cfg(debug_assertions)]
 fn print_title(version: &str){
