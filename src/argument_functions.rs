@@ -5,12 +5,19 @@ use super::database_loader;
 use super::cryptograpy;
 use super::otp_helper;
 
-pub fn import(args: Vec<String>){
-    import_database(&args[2]);
+pub fn help(){
+    println!("ARGUMENTS:");
+    println!("-a,--add <secret> <issuer> <label>       | Add a new OTP code");
+    println!("-r,--remove <secret> <issuer> <label>    | Remove an OTP code");
+    println!("-e,--edit <id> <secret> <issuer> <label> | Edit an OTP code");
+    println!("-i,--import <filename>                   | Import an andOTP backup");
+    println!("-ex,--export                             | Export the entire database in a plaintext json format");
+    println!("-j,--json                                | Print results in json format");
+    println!("-h,--help                                | Print this help");
 }
 
-pub fn help(){
-    println!("Help");
+pub fn import(args: Vec<String>){
+    import_database(&args[2]);
 }
 
 pub fn add(args: Vec<String>){
@@ -51,7 +58,7 @@ pub fn edit(args: Vec<String>){
         database_loader::edit_element(id, &secret, &issuer, &label).expect("An error occured");
     }
     else{
-        println!("Invalid arguments, type cotp --modify <id> <secret> <issuer> <label>\n\nReplace the attribute value with \".\" to skip the attribute modification");
+        println!("Invalid arguments, type cotp --edit <id> <secret> <issuer> <label>\n\nReplace the attribute value with \".\" to skip the attribute modification");
     }
 }
 
