@@ -1,23 +1,45 @@
-use std::fs::{read_to_string,File};
-use std::io::prelude::*;
-use super::utils::get_db_path;
 use super::database_loader;
-use super::cryptograpy;
 use super::otp_helper;
+use crate::importers;
 
 pub fn help(){
     println!("ARGUMENTS:");
     println!("-a,--add <secret> <issuer> <label>       | Add a new OTP code");
     println!("-r,--remove <secret> <issuer> <label>    | Remove an OTP code");
     println!("-e,--edit <id> <secret> <issuer> <label> | Edit an OTP code");
-    println!("-i,--import <filename>                   | Import an andOTP backup");
+    println!("-i,--import aegis,andotp <filename>      | Import a backup from a given application");
     println!("-ex,--export                             | Export the entire database in a plaintext json format");
     println!("-j,--json                                | Print results in json format");
     println!("-h,--help                                | Print this help");
 }
 
 pub fn import(args: Vec<String>){
-    import_database(&args[2]);
+    if args.len() == 4{
+        let result: Result<Vec<database_loader::OTPElement>,String>;
+        let elements: Vec<database_loader::OTPElement>;
+
+        match &args[2][..]{
+            "andotp" => result = importers::and_otp::import(&args[3]),
+            "aegis" => result = importers::aegis::import(&args[3]),
+            _=> {
+                println!("Invalid argument: {}", &args[2]);
+                return;
+            }
+        }
+
+        match result {
+            Ok(result) => elements = result,
+            Err(e) => {
+                println!("An error occurred: {}", e);
+                return;
+            }
+        }
+        database_loader::overwrite_database(elements);
+        println!("Successfully imported database");
+    }
+    else{
+        println!("Invalid arguments, type cotp --import <backup_format> <path>");
+    }
 }
 
 pub fn add(args: Vec<String>){
@@ -86,12 +108,4 @@ pub fn json(args: Vec<String>){
     else{
         println!("Invalid argument, type cotp --json");
     }
-}
-
-fn import_database(filename: &String){
-    let mut unencrypted_content = read_to_string(filename).unwrap();
-    let encrypted_content = cryptograpy::encrypt_string(&mut unencrypted_content,&cryptograpy::prompt_for_passwords("Insert password for database encryption: "));
-    let mut encrypted_file = File::create(&get_db_path()).expect("Cannot create encrypted database file");
-    encrypted_file.write_all(encrypted_content.as_bytes()).expect("Cannot write to encrypted file");
-    println!("Successfully imported database");
 }

@@ -170,7 +170,11 @@ pub fn export_database() -> Result<String, String> {
 
 pub fn overwrite_database(elements: Vec<OTPElement>){
     let json_string: &str = &serde_json::to_string(&elements).unwrap();
-    let encrypted = cryptograpy::encrypt_string(&mut json_string.to_string(), &cryptograpy::prompt_for_passwords("Insert password for database encryption: "));
+    overwrite_database_json(json_string);
+}
+
+pub fn overwrite_database_json(json: &str){
+    let encrypted = cryptograpy::encrypt_string(&mut json.to_string(), &cryptograpy::prompt_for_passwords("Insert password for database encryption: "));
     utils::write_to_file(&encrypted, &mut File::create(utils::get_db_path()).expect("Failed to open file"));
 }
 
