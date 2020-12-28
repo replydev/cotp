@@ -142,7 +142,7 @@ pub fn edit_element(mut id: usize, secret: &str,issuer: &str,label: &str) -> Res
     let mut elements: Vec<OTPElement>;
     match read_from_file(){
         Ok(result) => elements = result,
-        Err(e) => return Err(String::from("Cannot decrypt existing database"))
+        Err(_e) => return Err(String::from("Cannot decrypt existing database"))
     }
     
 
@@ -169,7 +169,8 @@ pub fn edit_element(mut id: usize, secret: &str,issuer: &str,label: &str) -> Res
 }
 
 pub fn export_database() -> Result<String, String> {
-    let exported_path = utils::get_home_folder() + "/exported.cotp";
+    let mut exported_path = utils::get_home_folder().to_str().unwrap().to_string();
+    exported_path.push_str("/exported.cotp");
     let mut file = File::create(&exported_path).expect("Cannot create file");
     let mut encrypted_contents = read_to_string(&get_db_path()).unwrap();
     let contents = cryptograpy::decrypt_string(&mut encrypted_contents, &cryptograpy::prompt_for_passwords("Password: "));

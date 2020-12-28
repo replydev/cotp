@@ -1,6 +1,5 @@
 use std::env;
 mod database_loader;
-extern crate directories;
 mod utils;
 mod argument_functions;
 mod otp_helper;
@@ -36,6 +35,7 @@ fn main() {
             return;
         }
     }
+    println!("{}",utils::get_db_path().to_str().unwrap());
     let args: Vec<String> = env::args().collect();
     if !args_parser(args){
         utils::create_db_if_needed();

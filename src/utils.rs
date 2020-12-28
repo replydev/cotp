@@ -1,26 +1,23 @@
-use directories::BaseDirs;
 use std::fs::{File};
 use std::io::prelude::*;
-use std::path::Path;
+use std::path::{Path,PathBuf};
+use dirs::home_dir;
 use super::database_loader;
 
 #[cfg(debug_assertions)]
-pub fn get_db_path() -> String{
-    String::from("db.cotp")
+pub fn get_db_path() -> PathBuf{
+    PathBuf::from("db.cotp")
 }
 
 #[cfg(not(debug_assertions))]
-pub fn get_db_path() -> String{
-    let mut home_dir = get_home_folder();
-    home_dir.push_str("/.cotp");
-    home_dir.push_str("/db.cotp");
-    home_dir
+pub fn get_db_path() -> PathBuf{
+    let mut home_dir = get_home_folder().to_str().unwrap().to_string();
+    home_dir.push_str("/.cotp/db.cotp");
+    PathBuf::from(home_dir)
 }
 
-pub fn get_home_folder() -> String {
-    let base_dirs = BaseDirs::new().unwrap();
-    let home = base_dirs.home_dir().to_str().unwrap();
-    home.to_string()
+pub fn get_home_folder() -> PathBuf {
+    home_dir().unwrap()
 }
 
 pub fn create_db_if_needed(){
