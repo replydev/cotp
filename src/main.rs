@@ -35,7 +35,6 @@ fn main() {
             return;
         }
     }
-    println!("{}",utils::get_db_path().to_str().unwrap());
     let args: Vec<String> = env::args().collect();
     if !args_parser(args){
         utils::create_db_if_needed();
