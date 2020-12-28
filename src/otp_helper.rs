@@ -23,7 +23,14 @@ impl JsonResult {
 }
 
 pub fn show_codes(){
-    let elements: Vec<database_loader::OTPElement> = database_loader::read_from_file();
+    let elements: Vec<database_loader::OTPElement>;
+    match database_loader::read_from_file(){
+        Ok(result) => elements = result,
+        Err(e) => {
+            println!("An error as occurred: {}",e);
+            return;
+        }
+    }
     for i in 0..elements.len() {
         print_totp(i,&elements[i]);
     }
@@ -49,9 +56,13 @@ fn get_good_otp_code(element: &database_loader::OTPElement) -> String {
     s_otp
 }
 
-pub fn get_json_results() -> String{
-    let elements: Vec<database_loader::OTPElement> = database_loader::read_from_file();
+pub fn get_json_results() -> Result<String,String>{
+    let elements: Vec<database_loader::OTPElement>;
 
+    match database_loader::read_from_file(){
+        Ok(result) => elements = result,
+        Err(e) => return Err(e)
+    }
     let mut results: Vec<JsonResult> = Vec::new();
 
     for i in 0..elements.len() {
@@ -61,5 +72,5 @@ pub fn get_json_results() -> String{
 
     let json_string: &str = &serde_json::to_string_pretty(&results).unwrap();
 
-    json_string.to_string()
+    Ok(json_string.to_string())
 }

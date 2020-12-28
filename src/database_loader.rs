@@ -66,18 +66,18 @@ impl OTPElement {
     }
 }
 
-pub fn read_from_file() -> Vec<OTPElement>{
+pub fn read_from_file() -> Result<Vec<OTPElement>,String>{
     let mut encrypted_contents = read_to_string(&get_db_path()).unwrap();
     //rust close files at the end of the function
     let contents = cryptograpy::decrypt_string(&mut encrypted_contents, &cryptograpy::prompt_for_passwords("Password: "));
     match contents {
         Ok(contents) => {
             let vector: Vec<OTPElement> = serde_json::from_str(&contents).unwrap();
-            return vector;
+            return Ok(vector);
         },
         Err(e) => {
             println!("{}", e);
-            return Vec::new();
+            return Err(String::from("Cannot decrypt existing database"));
         }
     }
 }
@@ -88,28 +88,39 @@ pub fn check_secret(secret: &str) -> bool{
     return upper_secret.chars().all(char::is_alphanumeric);
 }
 
-pub fn add_element(secret: &String,issuer: &String,label: &String) -> bool{
+pub fn add_element(secret: &String,issuer: &String,label: &String) -> Result<(),String>{
     if !check_secret(&secret){
-        return false;
+        return Err(String::from("Bad secret"))
     }
     let otp_element = OTPElement::new(secret.to_string(), issuer.to_string(), label.to_string(),6, String::from("TOTP"), String::from("SHA1"),String::from("Default"),0,0,30,vec![]);
-    let mut elements = read_from_file();
+    let mut elements;
+    match read_from_file(){
+        Ok(result) => elements = result,
+        Err(e) => return Err(e)
+    }
     elements.push(otp_element);
     overwrite_database(elements);
-    true
+    Ok(())
 }
 
-pub fn remove_element_from_db(mut id: usize) -> bool{
+pub fn remove_element_from_db(mut id: usize) -> Result<(),String>{
     if id == 0{
-        return false;
+        return Err(String::from("0 is a bad index"));
     }
     //user inserts numbers starting from 1, so we will decrement the value becouse we use array indexes instead
     id -= 1;
 
-    let mut elements: Vec<OTPElement> = read_from_file();
+    let mut elements: Vec<OTPElement>;
+
+    match read_from_file(){
+        Ok(result) => elements = result,
+        Err(e) => {
+            return Err(e);
+        }
+    }
 
     if id >= elements.len(){
-        return false;
+        return Err(format!("{} is a bad index",id+1));
     }
 
     for i in 0..elements.len(){
@@ -119,7 +130,7 @@ pub fn remove_element_from_db(mut id: usize) -> bool{
         }
     }
     overwrite_database(elements);
-    true
+    Ok(())
 }
 
 pub fn edit_element(mut id: usize, secret: &str,issuer: &str,label: &str) -> Result<(), String> {
@@ -127,7 +138,13 @@ pub fn edit_element(mut id: usize, secret: &str,issuer: &str,label: &str) -> Res
         return Err(String::from("Invalid element"));
     }
     id -= 1;
-    let mut elements: Vec<OTPElement> = read_from_file();
+
+    let mut elements: Vec<OTPElement>;
+    match read_from_file(){
+        Ok(result) => elements = result,
+        Err(e) => return Err(String::from("Cannot decrypt existing database"))
+    }
+    
 
     if id >= elements.len() {
         return Err(String::from("Invalid element"));

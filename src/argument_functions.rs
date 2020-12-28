@@ -44,11 +44,9 @@ pub fn import(args: Vec<String>){
 
 pub fn add(args: Vec<String>){
     if args.len() == 5{
-        if database_loader::add_element(&args[2],&args[3],&args[4]){
-            println!("Success");
-        }
-        else{
-            println!("Invalid values");
+        match database_loader::add_element(&args[2],&args[3],&args[4]){
+            Ok(()) => println!("Success"),
+            Err(e) => println!("An error occurred: {}",e)
         }
     }
     else{
@@ -59,11 +57,10 @@ pub fn add(args: Vec<String>){
 pub fn remove(args: Vec<String>){
     if args.len() == 3{
         let id = args[2].parse::<usize>().unwrap();
-        if database_loader::remove_element_from_db(id) {
-            println!("ok");
-        }
-        else{
-            println!("{} is a wrong index", id);
+
+        match database_loader::remove_element_from_db(id){
+            Ok(()) => println!("Success"),
+            Err(e) => println!("An error has occurred: {}",e)
         }
     }
     else{
@@ -103,7 +100,7 @@ pub fn export(args: Vec<String>){
 
 pub fn json(args: Vec<String>){
     if args.len() == 2{
-        println!("{}",otp_helper::get_json_results())
+        println!("{}",otp_helper::get_json_results().expect("Failed to get json results"));
     }
     else{
         println!("Invalid argument, type cotp --json");
