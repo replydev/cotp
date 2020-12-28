@@ -4,8 +4,6 @@ use serde_json;
 use serde::{Deserialize, Serialize};
 use super::utils;
 use utils::get_db_path;
-extern crate regex;
-use regex::Regex;
 use super::cryptograpy;
 
 #[derive(Serialize, Deserialize)]
@@ -85,8 +83,9 @@ pub fn read_from_file() -> Vec<OTPElement>{
 }
 
 pub fn check_secret(secret: &str) -> bool{
-    let regex = Regex::new(r"^[A-Z0-9.]+$").unwrap(); //only uppercase characters and numbers
-    regex.is_match(secret)
+    //only uppercase characters and numbers
+    let upper_secret = secret.to_uppercase();
+    return upper_secret.chars().all(char::is_alphanumeric);
 }
 
 pub fn add_element(secret: &String,issuer: &String,label: &String) -> bool{
