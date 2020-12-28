@@ -74,7 +74,10 @@ pub fn edit(args: Vec<String>){
         let secret = &args[3];
         let issuer = &args[4];
         let label = &args[5];
-        database_loader::edit_element(id, &secret, &issuer, &label).expect("An error occured");
+        match database_loader::edit_element(id, &secret, &issuer, &label){
+            Ok(()) => println!("Success"),
+            Err(e) => println!("An error occurred: {}",e)
+        }
     }
     else{
         println!("Invalid arguments, type cotp --edit <id> <secret> <issuer> <label>\n\nReplace the attribute value with \".\" to skip the attribute modification");
