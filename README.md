@@ -1,5 +1,6 @@
 
 # cotp - command line totp authenticator
+[[![Actions Status](https://github.com/replydev/cotp/workflows/Rust/badge.svg)]("https://github.com/replydev/cotp/actions")
 
 I believe that security is of paramount importance, especially in this digital world. I created cotp because I needed a minimalist, secure, desktop accessible software to manage my two-factor authentication codes.
 
