@@ -67,9 +67,9 @@ impl OTPElement {
 }
 
 pub fn read_from_file() -> Result<Vec<OTPElement>,String>{
-    let mut encrypted_contents = read_to_string(&get_db_path()).unwrap();
+    let encrypted_contents = read_to_string(&get_db_path()).unwrap();
     //rust close files at the end of the function
-    let contents = cryptograpy::decrypt_string(&mut encrypted_contents, &cryptograpy::prompt_for_passwords("Password: "));
+    let contents = cryptograpy::decrypt_string(&encrypted_contents, &cryptograpy::prompt_for_passwords("Password: "));
     match contents {
         Ok(contents) => {
             let vector: Vec<OTPElement> = serde_json::from_str(&contents).unwrap();
@@ -172,8 +172,8 @@ pub fn export_database() -> Result<String, String> {
     let mut exported_path = utils::get_home_folder().to_str().unwrap().to_string();
     exported_path.push_str("/exported.cotp");
     let mut file = File::create(&exported_path).expect("Cannot create file");
-    let mut encrypted_contents = read_to_string(&get_db_path()).unwrap();
-    let contents = cryptograpy::decrypt_string(&mut encrypted_contents, &cryptograpy::prompt_for_passwords("Password: "));
+    let encrypted_contents = read_to_string(&get_db_path()).unwrap();
+    let contents = cryptograpy::decrypt_string(&encrypted_contents, &cryptograpy::prompt_for_passwords("Password: "));
     match contents {
         Ok(contents) => {
             file.write_all(contents.as_bytes()).expect("Failed to write contents");
@@ -191,7 +191,7 @@ pub fn overwrite_database(elements: Vec<OTPElement>){
 }
 
 pub fn overwrite_database_json(json: &str){
-    let encrypted = cryptograpy::encrypt_string(&mut json.to_string(), &cryptograpy::prompt_for_passwords("Insert password for database encryption: "));
+    let encrypted = cryptograpy::encrypt_string(json.to_string(), &cryptograpy::prompt_for_passwords("Insert password for database encryption: "));
     utils::write_to_file(&encrypted, &mut File::create(utils::get_db_path()).expect("Failed to open file"));
 }
 
