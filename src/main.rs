@@ -25,7 +25,7 @@ fn init() -> Result<(), ()>{
 }
 
 fn main() {
-    let version = "0.0.9";
+    let version = "0.1.0";
     print_title(version);
     let init_result = init();
     match init_result {
