@@ -80,7 +80,7 @@ You will find the compiled binary in **target/release** folder
 ## Planned features
 
  - [x] Reduce binary size and improve compilation speed by removing useless dependencies.
- - [ ] Use argon2id13 for key derivation
+ - [x] Use argon2id13 for key derivation
  - [ ] Backup compatibility with:
 	 - [x] Aegis
 	 - [x] andOTP
