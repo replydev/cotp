@@ -1,5 +1,6 @@
 
 # cotp - command line totp authenticator
+[![Actions Status](https://github.com/replydev/cotp/workflows/Rust/badge.svg)]("https://github.com/replydev/cotp/actions")
 
 I believe that security is of paramount importance, especially in this digital world. I created cotp because I needed a minimalist, secure, desktop accessible software to manage my two-factor authentication codes.
 
@@ -79,7 +80,7 @@ You will find the compiled binary in **target/release** folder
 ## Planned features
 
  - [x] Reduce binary size and improve compilation speed by removing useless dependencies.
- - [ ] Use argon2id13 for key derivation
+ - [x] Use argon2id13 for key derivation
  - [ ] Backup compatibility with:
 	 - [x] Aegis
 	 - [x] andOTP

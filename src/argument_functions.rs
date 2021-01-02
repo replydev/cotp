@@ -7,7 +7,7 @@ pub fn help(){
     println!("-a,--add <secret> <issuer> <label>       | Add a new OTP code");
     println!("-r,--remove <secret> <issuer> <label>    | Remove an OTP code");
     println!("-e,--edit <id> <secret> <issuer> <label> | Edit an OTP code");
-    println!("-i,--import aegis,andotp <filename>      | Import a backup from a given application");
+    println!("-i,--import <appname> <path>             | Import a backup from a given application");
     println!("-ex,--export                             | Export the entire database in a plaintext json format");
     println!("-j,--json                                | Print results in json format");
     println!("-h,--help                                | Print this help");
@@ -19,7 +19,7 @@ pub fn import(args: Vec<String>){
         let elements: Vec<database_loader::OTPElement>;
 
         match &args[2][..]{
-            "andotp" => result = importers::and_otp::import(&args[3]),
+            "cotp" | "andotp" => result = importers::and_otp::import(&args[3]),
             "aegis" => result = importers::aegis::import(&args[3]),
             _=> {
                 println!("Invalid argument: {}", &args[2]);
@@ -38,7 +38,11 @@ pub fn import(args: Vec<String>){
         println!("Successfully imported database");
     }
     else{
-        println!("Invalid arguments, type cotp --import <backup_format> <path>");
+        println!("Invalid arguments, type cotp --import <appname> <path>");
+        println!("cotp can import backup from:");
+        println!("\"cotp\"");
+        println!("\"aegis\"");
+        println!("\"andotp\"");
     }
 }
 
