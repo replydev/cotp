@@ -23,19 +23,26 @@ impl fmt::Display for CoreError {
 
 impl error::Error for CoreError {}
 
-pub fn encrypt_string(plaintext: &mut String,password: &str) -> String {
+fn argon_derive_key(key: &mut[u8;32],password_bytes: &[u8],salt: &pwhash::argon2id13::Salt) -> Result<Key,String>{
+    let result = pwhash::argon2id13::derive_key(key, password_bytes, salt,
+        pwhash::argon2id13::OPSLIMIT_INTERACTIVE,
+        pwhash::argon2id13::MEMLIMIT_INTERACTIVE);
+    match result{
+        Ok(&[u8]) => Ok(Key(*key)),
+        Ok(&[]) => Ok(Key(*key)),
+        Ok(&[_,_,..]) =>Ok(Key(*key)),
+        Err(()) => Err(String::from("Failed to derive encryption key"))
+    }
+}
+
+pub fn encrypt_string(plaintext: String,password: &str) -> String {
     let mut encrypted = String::new();
     encrypted.push_str(&base64::encode(SIGNATURE));
     encrypted.push('|');
-    let salt = pwhash::gen_salt();
+    let salt = pwhash::argon2id13::gen_salt();
     encrypted.push_str(&base64::encode(salt.0));
     encrypted.push('|');
-    let mut key = [0u8; KEYBYTES];
-    pwhash::derive_key(&mut key, password.as_bytes(), &salt,
-        pwhash::OPSLIMIT_INTERACTIVE,
-        pwhash::MEMLIMIT_INTERACTIVE).unwrap();
-    let key = Key(key);
-
+    let key = argon_derive_key(&mut [0u8; KEYBYTES],password.as_bytes(),&salt).unwrap();
     let (mut enc_stream, header) = Stream::init_push(&key).unwrap();
 
     encrypted.push_str(&base64::encode(header.0));
@@ -47,19 +54,19 @@ pub fn encrypt_string(plaintext: &mut String,password: &str) -> String {
     encrypted
 }
 
-pub fn decrypt_string(encrypted_text: &mut str,password: &str) -> Result<String, String> {
+pub fn decrypt_string(encrypted_text: &str,password: &str) -> Result<String, String> {
     let split = encrypted_text.split('|');
     let vec: Vec<&str> = split.collect();
     let byte_salt = base64::decode(vec[1]).unwrap();
-    let salt = pwhash::Salt(byte_vec_to_byte_array(byte_salt));
+    let salt = pwhash::argon2id13::Salt(byte_vec_to_byte_array(byte_salt));
     let byte_header = base64::decode(vec[2]).unwrap();
     let header = Header(header_vec_to_header_array(byte_header));
     let cipher = base64::decode(vec[3]).unwrap();
 
     let mut key = [0u8; KEYBYTES];
-    pwhash::derive_key(&mut key, password.as_bytes(), &salt,
-        pwhash::OPSLIMIT_INTERACTIVE,
-        pwhash::MEMLIMIT_INTERACTIVE)
+    pwhash::argon2id13::derive_key(&mut key, password.as_bytes(), &salt,
+        pwhash::argon2id13::OPSLIMIT_INTERACTIVE,
+        pwhash::argon2id13::MEMLIMIT_INTERACTIVE)
         .map_err(|_| CoreError::new("Deriving key failed")).unwrap();
     let key = Key(key);
 
@@ -74,9 +81,9 @@ pub fn decrypt_string(encrypted_text: &mut str,password: &str) -> Result<String,
     Ok(String::from_utf8(decrypted).unwrap())
 }
 
-fn byte_vec_to_byte_array(byte_vec: Vec<u8>) -> [u8;32]{
+fn byte_vec_to_byte_array(byte_vec: Vec<u8>) -> [u8;16]{
     byte_vec.try_into()
-        .unwrap_or_else(|v: Vec<u8>| panic!("Expected a Vec of length {} but it was {}", 32, v.len()))
+        .unwrap_or_else(|v: Vec<u8>| panic!("Expected a Vec of length {} but it was {}", 16, v.len()))
 }
 
 fn header_vec_to_header_array(byte_vec: Vec<u8>) -> [u8;24]{
@@ -93,4 +100,20 @@ pub fn prompt_for_passwords(message: &str) -> String{
         }
     }
     password
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::{encrypt_string,decrypt_string};
+    #[test]
+    fn test_encryption() {
+        assert_eq!(
+            String::from("Secret data@#[]ò"), 
+            decrypt_string(
+                &mut encrypt_string(String::from("Secret data@#[]ò"),"pa$$w0rd"),
+                "pa$$w0rd"
+            ).unwrap()
+        );
+    }
 }
