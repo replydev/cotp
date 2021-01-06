@@ -23,14 +23,20 @@ fn print_title(version: &str){
     println!("written by @replydev\n");
 }
 
-fn init() -> Result<(), ()>{
+fn init() -> Result<(), String>{
     match sodiumoxide::init(){
-        Err(()) => Err(()),
-        _=> {
-            utils::create_db_if_needed();
-            Ok(())
+        Err(()) => {
+            return Err(String::from("Error during sodiumoxide initialization"))
         },
+        _=> {},
     }
+    match utils::create_db_if_needed() {
+        Ok(()) => {},
+        Err(()) => {
+            return Err(String::from("An error occurred during database creation"));
+        }
+    }
+    Ok(())
 }
 
 fn main() {
@@ -39,14 +45,13 @@ fn main() {
     let init_result = init();
     match init_result {
         Ok(()) => {},
-        Err(()) => { 
-            println!("Failed to init cotp");
+        Err(e) => { 
+            println!("{}",e);
             return;
         }
     }
     let args: Vec<String> = env::args().collect();
     if !args_parser(args){
-        utils::create_db_if_needed();
         dashboard();
     }
 }
