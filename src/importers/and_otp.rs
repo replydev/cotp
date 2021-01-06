@@ -1,7 +1,7 @@
 use crate::database_loader::OTPElement;
 use std::fs::read_to_string;
 
-//no need to declarate andOTP json struct cause it's the same as OTP element
+//no need to declare andOTP json struct cause it's the same as OTP element
 
 pub fn import(filepath: &str) -> Result<Vec<OTPElement>,String>{
     let file_to_import_contents = read_to_string(filepath).unwrap();
