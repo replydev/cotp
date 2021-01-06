@@ -8,7 +8,7 @@ repository = "https://github.com/replydev/cotp"
 homepage = "https://github.com/replydev/cotp"
 documentation = "https://github.com/replydev/cotp/blob/master/README.md"
 readme = "https://github.com/replydev/cotp/blob/master/README.md"
-license-file = "LICENSE.txt"
+license-file = "LICENSE"
 categories = ["command-line-utilities","authentication"]
 keywords = ["cotp","totp","authenticator","google authenticator","argon2"]
 
