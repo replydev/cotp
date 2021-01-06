@@ -3,6 +3,14 @@ name = "cotp"
 version = "0.1.1"
 authors = ["replydev <replydev@protonmail.com>"]
 edition = "2018"
+description = "Trustworthy command line authenticator app compatible with backups from andOTP, Aegis and so on.. "
+repository = "https://github.com/replydev/cotp"
+homepage = "https://github.com/replydev/cotp"
+documentation = "https://github.com/replydev/cotp/blob/master/README.md"
+readme = "https://github.com/replydev/cotp/blob/master/README.md"
+license-file = "LICENSE.txt"
+categories = ["command-line-utilities","authentication"]
+keywords = ["cotp","totp","authenticator","google authenticator","argon2"]
 
 [dependencies]
 serde_json = "1.0.61"
@@ -11,6 +19,3 @@ dirs = "3.0.1"
 rpassword = "5.0.0"
 sodiumoxide = "0.2.6"
 base64 = "0.13.0"
-
-[dependencies.otp]
-git = "https://github.com/TimDumol/rust-otp"
