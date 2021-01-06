@@ -1,7 +1,7 @@
-use otp::make_totp;
-use super::database_loader;
+use crate::database_loader;
 use serde_json;
 use serde::{Deserialize, Serialize};
+use crate::otp::make_totp;
 
 #[derive(Serialize, Deserialize)]
 struct JsonResult{

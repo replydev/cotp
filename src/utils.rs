@@ -3,7 +3,7 @@ use std::io::prelude::*;
 use std::path::{Path,PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use dirs::home_dir;
-use super::database_loader;
+use crate::database_loader;
 
 #[cfg(debug_assertions)]
 pub fn get_db_path() -> PathBuf{

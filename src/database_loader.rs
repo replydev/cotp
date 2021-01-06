@@ -2,9 +2,9 @@ use std::fs::{File,read_to_string};
 use std::io::prelude::*;
 use serde_json;
 use serde::{Deserialize, Serialize};
-use super::utils;
+use crate::utils;
 use utils::get_db_path;
-use super::cryptograpy;
+use crate::cryptograpy;
 
 #[derive(Serialize, Deserialize)]
 pub struct OTPElement {
