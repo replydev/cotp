@@ -12,22 +12,31 @@ pub fn get_db_path() -> PathBuf{
 
 #[cfg(not(debug_assertions))]
 pub fn get_db_path() -> PathBuf{
-    let mut home_dir = get_home_folder().to_str().unwrap().to_string();
-    home_dir.push_str("/.cotp/db.cotp");
-    PathBuf::from(home_dir)
+    let cotp_folder = get_cotp_folder();
+    cotp_folder.join("db.cotp")
 }
 
 pub fn get_home_folder() -> PathBuf {
     home_dir().unwrap()
 }
+// Push an absolute path to a PathBuf replaces the entire PathBuf: https://doc.rust-lang.org/std/path/struct.PathBuf.html#method.push
+fn get_cotp_folder() -> PathBuf{
+    let mut cotp_dir = PathBuf::new();
+    cotp_dir.push(get_home_folder());
+    cotp_dir.join(".cotp")
+}
 
-pub fn create_db_if_needed(){
+pub fn create_db_if_needed() -> Result<(),()>{
+    if !get_cotp_folder().exists(){
+        match std::fs::create_dir(get_cotp_folder()){
+            Ok(()) => println!("Created .cotp folder"),
+            Err(_e) => (),
+        }
+    }
     if !Path::new(&get_db_path()).exists() {
-        /*let mut database_file = File::create(&get_db_path()).expect("Cannot create encrypted database file");
-        let encrypted_content = cryptograpy::encrypt_string(&mut String::from("[]"), &cryptograpy::prompt_for_passwords("Insert password for database encryption: "));
-        write_to_file(&encrypted_content,&mut database_file);*/
         database_loader::overwrite_database_json("[]");
     }
+    Ok(())
 }
 
 pub fn write_to_file(content: &str, file: &mut File){
