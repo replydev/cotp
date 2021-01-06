@@ -8,8 +8,8 @@ pub fn help(){
     println!();
     println!("ARGUMENTS:");
     println!("  -a,--add [SECRET] [ISSUER] [LABEL]       | Add a new OTP code");
-    println!("  -r,--remove [SECRET] [ISSUER] [LABEL]    | Remove an OTP code");
     println!("  -e,--edit [ID] [SECRET] [ISSUER] [LABEL] | Edit an OTP code");
+    println!("  -r,--remove [ID]                         | Remove an OTP code");
     println!("  -i,--import [APPNAME] [PATH]             | Import a backup from a given application");
     println!("  -ex,--export                             | Export the entire database in a plaintext json format");
     println!("  -j,--json                                | Print results in json format");
@@ -111,7 +111,10 @@ pub fn export(args: Vec<String>){
 
 pub fn json(args: Vec<String>){
     if args.len() == 2{
-        println!("{}",otp_helper::get_json_results().expect("Failed to get json results"));
+        match otp_helper::get_json_results(){
+            Ok(results) => println!("{}",results),
+            Err(e) => println!("An error occurred while getting json result: {}",e),
+        }
     }
     else{
         println!("Invalid argument, type cotp --json");
@@ -122,7 +125,12 @@ pub fn single(args: Vec<String>){
     if args.len() == 2{
         match otp_helper::read_codes(){
             Ok(result) => {
-                otp_helper::show_codes(&result);
+                if result.len() == 0{
+                    println!("No codes, type \"cotp -h\" to get help");
+                }
+                else{
+                    otp_helper::show_codes(&result);
+                }
             },
             Err(e) => println!("An error occurred: {}",e)
         }

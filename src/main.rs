@@ -54,11 +54,16 @@ fn dashboard(){
     let mut lines;
     match otp_helper::read_codes(){
         Ok(elements) => {
-            loop{
-                utils::print_progress_bar();
-                lines = otp_helper::show_codes(&elements);
-                sleep(Duration::from_millis(1000));
-                print!("\x1B[{}A", lines + 1);
+            if elements.len() == 0{
+                println!("No codes, type \"cotp -h\" to get help");
+            }
+            else{
+                loop{
+                    utils::print_progress_bar();
+                    lines = otp_helper::show_codes(&elements);
+                    sleep(Duration::from_millis(1000));
+                    print!("\x1B[{}A", lines + 1);
+                }
             }
         },
         Err(e) => println!("An error as occurred: {}",e),

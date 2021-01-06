@@ -119,18 +119,19 @@ pub fn remove_element_from_db(mut id: usize) -> Result<(),String>{
         }
     }
 
-    if id >= elements.len(){
-        return Err(format!("{} is a bad index",id+1));
-    }
-
-    for i in 0..elements.len(){
-        if i == id {
-            elements.remove(i);
-            break;
-        }
-    }
-    overwrite_database(elements);
-    Ok(())
+    match check_elements(id, &elements){
+        Ok(()) => {
+            for i in 0..elements.len(){
+                if i == id {
+                    elements.remove(i);
+                    break;
+                }
+            }
+            overwrite_database(elements);
+            Ok(())
+        },
+        Err(e) => Err(e)
+    } 
 }
 
 pub fn edit_element(mut id: usize, secret: &str,issuer: &str,label: &str) -> Result<(), String> {
@@ -144,28 +145,28 @@ pub fn edit_element(mut id: usize, secret: &str,issuer: &str,label: &str) -> Res
         Ok(result) => elements = result,
         Err(_e) => return Err(String::from("Cannot decrypt existing database"))
     }
-    
 
-    if id >= elements.len() {
-        return Err(String::from("Invalid element"));
+    match check_elements(id,&elements){
+        Ok(()) => {
+            for i in 0..elements.len() {
+                if i == id{
+                    if secret != "."{
+                        elements[i].set_secret(secret.to_string());
+                    }
+                    if issuer != "."{
+                        elements[i].set_issuer(issuer.to_string());
+                    }
+                    if label != "."{
+                        elements[i].set_label(label.to_string());
+                    }
+                    break;
+                }
+            }
+            overwrite_database(elements);
+            Ok(())
+        },
+        Err(e) => Err(e)
     }
-
-    for i in 0..elements.len() {
-        if i == id{
-            if secret != "."{
-                elements[i].set_secret(secret.to_string());
-            }
-            if issuer != "."{
-                elements[i].set_issuer(issuer.to_string());
-            }
-            if label != "."{
-                elements[i].set_label(label.to_string());
-            }
-            break;
-        }
-    }
-    overwrite_database(elements);
-    Ok(())
 }
 
 pub fn export_database() -> Result<String, String> {
@@ -176,6 +177,9 @@ pub fn export_database() -> Result<String, String> {
     let contents = cryptograpy::decrypt_string(&encrypted_contents, &cryptograpy::prompt_for_passwords("Password: "));
     match contents {
         Ok(contents) => {
+            if contents == "[]"{
+                return Err(String::from("there are no elements in your database, type \"cotp -h\" to get help"));
+            }
             file.write_all(contents.as_bytes()).expect("Failed to write contents");
             return Ok(exported_path);
         },
@@ -193,5 +197,17 @@ pub fn overwrite_database(elements: Vec<OTPElement>){
 pub fn overwrite_database_json(json: &str){
     let encrypted = cryptograpy::encrypt_string(json.to_string(), &cryptograpy::prompt_for_passwords("Insert password for database encryption: "));
     utils::write_to_file(&encrypted, &mut File::create(utils::get_db_path()).expect("Failed to open file"));
+}
+
+fn check_elements(id: usize,elements: &Vec<OTPElement>) -> Result<(),String>{
+    if elements.len() == 0{
+        return Err(String::from("there are no elements in your database. Type \"cotp -h\" to get help."));
+    }
+
+    if id >= elements.len(){
+        return Err(format!("{} is a bad index",id+1));
+    }
+
+    Ok(())
 }
 

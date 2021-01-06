@@ -66,6 +66,10 @@ pub fn get_json_results() -> Result<String,String>{
     }
     let mut results: Vec<JsonResult> = Vec::new();
 
+    if elements.len() == 0{
+        return Err(String::from("there are no elements in your database, type \"cotp -h\" to get help"));
+    }
+
     for i in 0..elements.len() {
         let otp_code = get_good_otp_code(&elements[i]);
         results.push(JsonResult::new(i+1,elements[i].issuer(),elements[i].label(),otp_code))
