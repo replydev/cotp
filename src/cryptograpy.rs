@@ -109,6 +109,7 @@ mod tests {
     use super::{encrypt_string,decrypt_string};
     #[test]
     fn test_encryption() {
+        assert_eq!(Ok(()),sodiumoxide::init());
         assert_eq!(
             String::from("Secret data@#[]ò"), 
             decrypt_string(
