@@ -6,6 +6,8 @@ mod otp_helper;
 mod cryptograpy;
 use sodiumoxide;
 mod importers;
+use std::thread::sleep;
+use std::time::Duration;
 
 #[cfg(debug_assertions)]
 fn print_title(version: &str){
@@ -38,7 +40,28 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     if !args_parser(args){
         utils::create_db_if_needed();
-        otp_helper::show_codes();
+        /*match otp_helper::read_codes(){
+            Ok(result) => {
+                otp_helper::show_codes(&result);
+            },
+            Err(e) => println!("An error as occurred: {}",e)
+        }*/
+        dashboard();
+    }
+}
+
+fn dashboard(){
+    let mut lines;
+    match otp_helper::read_codes(){
+        Ok(elements) => {
+            loop{
+                utils::print_progress_bar();
+                lines = otp_helper::show_codes(&elements);
+                sleep(Duration::from_millis(1000));
+                print!("\x1B[{}A", lines + 1);
+            }
+        },
+        Err(e) => println!("An error as occurred: {}",e),
     }
 }
 
@@ -48,13 +71,14 @@ fn args_parser(args: Vec<String>) -> bool {
     }
 
     match &args[1][..]{
-        "-i"  | "--import" => argument_functions::import(args),
-        "-h"  | "--help" => argument_functions::help(),
-        "-a"  | "--add" => argument_functions::add(args),
-        "-r"  | "--remove" => argument_functions::remove(args),
-        "-e"  | "--edit" => argument_functions::edit(args),
-        "-ex" | "--export" => argument_functions::export(args),
-        "-j"  | "--json" => argument_functions::json(args),
+        "-i" | "--import" => argument_functions::import(args),
+        "-h" | "--help" => argument_functions::help(),
+        "-a" | "--add" => argument_functions::add(args),
+        "-r" | "--remove" => argument_functions::remove(args),
+        "-e" | "--edit" => argument_functions::edit(args),
+        "-ex"| "--export" => argument_functions::export(args),
+        "-j" | "--json" => argument_functions::json(args),
+        "-s" | "--single" => argument_functions::single(args),
         _=>{
             println!("Invalid argument: {}, type cotp -h to get command options", args[1]);
             return true;

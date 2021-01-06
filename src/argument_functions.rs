@@ -3,14 +3,18 @@ use super::otp_helper;
 use crate::importers;
 
 pub fn help(){
+    println!("USAGE:");
+    println!("  cotp [SUBCOMMAND]");
+    println!();
     println!("ARGUMENTS:");
-    println!("-a,--add <secret> <issuer> <label>       | Add a new OTP code");
-    println!("-r,--remove <secret> <issuer> <label>    | Remove an OTP code");
-    println!("-e,--edit <id> <secret> <issuer> <label> | Edit an OTP code");
-    println!("-i,--import <appname> <path>             | Import a backup from a given application");
-    println!("-ex,--export                             | Export the entire database in a plaintext json format");
-    println!("-j,--json                                | Print results in json format");
-    println!("-h,--help                                | Print this help");
+    println!("  -a,--add [SECRET] [ISSUER] [LABEL]       | Add a new OTP code");
+    println!("  -r,--remove [SECRET] [ISSUER] [LABEL]    | Remove an OTP code");
+    println!("  -e,--edit [ID] [SECRET] [ISSUER] [LABEL] | Edit an OTP code");
+    println!("  -i,--import [APPNAME] [PATH]             | Import a backup from a given application");
+    println!("  -ex,--export                             | Export the entire database in a plaintext json format");
+    println!("  -j,--json                                | Print results in json format");
+    println!("  -s,--single                              | Print OTP codes in single mode");
+    println!("  -h,--help                                | Print this help");
 }
 
 pub fn import(args: Vec<String>){
@@ -38,7 +42,7 @@ pub fn import(args: Vec<String>){
         println!("Successfully imported database");
     }
     else{
-        println!("Invalid arguments, type cotp --import <appname> <path>");
+        println!("Invalid arguments, type cotp --import [APPNAME] [PATH]");
         println!("cotp can import backup from:");
         println!("\"cotp\"");
         println!("\"aegis\"");
@@ -54,7 +58,7 @@ pub fn add(args: Vec<String>){
         }
     }
     else{
-        println!("Invalid arguments, type cotp --add <secret> <issuer> <label>");
+        println!("Invalid arguments, type cotp --add [SECRET] [ISSUER] [LABEL]");
     }
 }
 
@@ -84,7 +88,7 @@ pub fn edit(args: Vec<String>){
         }
     }
     else{
-        println!("Invalid arguments, type cotp --edit <id> <secret> <issuer> <label>\n\nReplace the attribute value with \".\" to skip the attribute modification");
+        println!("Invalid arguments, type cotp --edit [ID] [SECRET] [ISSUER] [LABEL]\n\nReplace the attribute value with \".\" to skip the attribute modification");
     }
 }
 
@@ -113,3 +117,17 @@ pub fn json(args: Vec<String>){
         println!("Invalid argument, type cotp --json");
     }
 }
+
+pub fn single(args: Vec<String>){
+    if args.len() == 2{
+        match otp_helper::read_codes(){
+            Ok(result) => {
+                otp_helper::show_codes(&result);
+            },
+            Err(e) => println!("An error occurred: {}",e)
+        }
+    }
+    else{
+       println!("Invalid argument, type cotp --single");
+    }
+ }

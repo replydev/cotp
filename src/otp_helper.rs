@@ -22,18 +22,19 @@ impl JsonResult {
     }
 }
 
-pub fn show_codes(){
-    let elements: Vec<database_loader::OTPElement>;
+pub fn read_codes() -> Result<Vec<database_loader::OTPElement>,String>{
     match database_loader::read_from_file(){
-        Ok(result) => elements = result,
-        Err(e) => {
-            println!("An error as occurred: {}",e);
-            return;
-        }
+        Ok(result) => Ok(result),
+        Err(e) => Err(e),
     }
+}
+
+pub fn show_codes(elements: &Vec<database_loader::OTPElement>) -> usize{
+    //let elements;
     for i in 0..elements.len() {
         print_totp(i,&elements[i]);
     }
+    elements.len()
 }
 
 fn print_totp(i: usize,element: &database_loader::OTPElement){
