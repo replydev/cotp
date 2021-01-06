@@ -10,7 +10,7 @@ documentation = "https://github.com/replydev/cotp/blob/master/README.md"
 readme = "README.md"
 license-file = "LICENSE"
 categories = ["command-line-utilities","authentication"]
-keywords = ["cotp","totp","authenticator","google authenticator","argon2"]
+keywords = ["cotp","totp","authenticator","google-authenticator","argon2"]
 
 [dependencies]
 serde_json = "1.0.61"
