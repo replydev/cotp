@@ -4,8 +4,9 @@ mod utils;
 mod argument_functions;
 mod otp_helper;
 mod cryptograpy;
-use sodiumoxide;
 mod importers;
+mod otp;
+use sodiumoxide;
 use std::thread::sleep;
 use std::time::Duration;
 
