@@ -23,7 +23,13 @@ fn print_title(version: &str){
 }
 
 fn init() -> Result<(), ()>{
-    sodiumoxide::init()
+    match sodiumoxide::init(){
+        Err(()) => Err(()),
+        _=> {
+            utils::create_db_if_needed();
+            Ok(())
+        },
+    }
 }
 
 fn main() {
@@ -33,7 +39,7 @@ fn main() {
     match init_result {
         Ok(()) => {},
         Err(()) => { 
-            println!("Failed to init sodiumoxide");
+            println!("Failed to init cotp");
             return;
         }
     }
