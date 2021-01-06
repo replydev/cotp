@@ -5,7 +5,7 @@
 I believe that security is of paramount importance, especially in this digital world. I created cotp because I needed a minimalist, secure, desktop accessible software to manage my two-factor authentication codes.
 
 ## Overview
-cotp is written with simplicity in mind, it relies on only one database file, encrypted with XChaCha20Poly1305 authenticated encryption and scryptsalsa208sha256 for key derivation. Use of argon2id13 KDF is planned.
+cotp is written with simplicity in mind, it relies on only one database file, encrypted with XChaCha20Poly1305 authenticated encryption and argon2id13 for key derivation.
 
 The interface is quite minimalist and intuitive, by typing `cotp -h` you can see all the program features.
 
@@ -21,8 +21,10 @@ Before beginning check you already have the required packages:
 
 Then choose how you want to proceed
 
-- Using an AUR Helper like [yay]("https://github.com/Jguer/yay"): 
+- Using an AUR Helper like [yay](https://github.com/Jguer/yay): 
 `yay -S cotp`
+- Or [paru](https://github.com/morganamilo/paru):
+`paru -S cotp`
 - Manually cloning AUR repo and make the pkg
 
 	```
@@ -36,20 +38,25 @@ Go to [releases page](https://github.com/replydev/cotp/releases/) and get the la
 
 ## How to use
 If you are familiar with the command line interface using cotp will not be a problem.
+Please note that cotp requires at least an 8 chars length password.
 As i said before, if you type `cotp -h` you get some instruction on how to use cotp utilities.
-For example, the version 0.0.9 prints out this help screen:
+For example, the version 0.1.1 prints out this help screen:
 ```
-cotp v0.0.9
+cotp v0.1.1
 written by @replydev
 
+USAGE:
+  cotp [SUBCOMMAND]
+
 ARGUMENTS:
--a,--add <secret> <issuer> <label>       | Add a new OTP code
--r,--remove <secret> <issuer> <label>    | Remove an OTP code
--e,--edit <id> <secret> <issuer> <label> | Edit an OTP code
--i,--import aegis,andotp <filename>      | Import a backup from a given application
--ex,--export                             | Export the entire database in a plaintext json format
--j,--json                                | Print results in json format
--h,--help                                | Print this help
+  -a,--add [SECRET] [ISSUER] [LABEL]       | Add a new OTP code
+  -e,--edit [ID] [SECRET] [ISSUER] [LABEL] | Edit an OTP code
+  -r,--remove [ID]                         | Remove an OTP code
+  -i,--import [APPNAME] [PATH]             | Import a backup from a given application
+  -ex,--export                             | Export the entire database in a plaintext json format
+  -j,--json                                | Print results in json format
+  -s,--single                              | Print OTP codes in single mode
+  -h,--help                                | Print this help
 ```
 Note that in the `--edit` command if you type . instead of argument you are specifying not to modify that specific argument.
 ### Example:
@@ -81,6 +88,7 @@ You will find the compiled binary in **target/release** folder
 
  - [x] Reduce binary size and improve compilation speed by removing useless dependencies.
  - [x] Use argon2id13 for key derivation
+ - [x] CLI Dashboard
  - [ ] Backup compatibility with:
 	 - [x] Aegis
 	 - [x] andOTP
