@@ -40,12 +40,6 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     if !args_parser(args){
         utils::create_db_if_needed();
-        /*match otp_helper::read_codes(){
-            Ok(result) => {
-                otp_helper::show_codes(&result);
-            },
-            Err(e) => println!("An error as occurred: {}",e)
-        }*/
         dashboard();
     }
 }
