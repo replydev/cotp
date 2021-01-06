@@ -53,3 +53,13 @@ pub fn print_progress_bar(){
     let idx = step * width / 30000;
     println!("[{:60}]", "=".repeat(idx as usize));
 }
+
+#[cfg(test)]
+mod tests{
+    use super::create_db_if_needed;
+    #[test]
+    fn test_db_creation() {
+        let result = create_db_if_needed();
+        assert_eq!(Ok(()),result);
+    }
+}
