@@ -91,13 +91,14 @@ fn header_vec_to_header_array(byte_vec: Vec<u8>) -> [u8;24]{
         .unwrap_or_else(|v: Vec<u8>| panic!("Expected a Vec of length {} but it was {}", 24, v.len()))
 }
 
-pub fn prompt_for_passwords(message: &str) -> String{
+pub fn prompt_for_passwords(message: &str,minimum_password_legth: usize) -> String{
     let mut password;
     loop{
         password = rpassword::prompt_password_stdout(message).unwrap();
-        if password.len() >= 8 {
+        if password.len() >= minimum_password_legth {
             break;
         }
+        println!("Please insert a password with at least {} digits.",minimum_password_legth);
     }
     password
 }
