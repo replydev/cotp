@@ -5,7 +5,7 @@
 I believe that security is of paramount importance, especially in this digital world. I created cotp because I needed a minimalist, secure, desktop accessible software to manage my two-factor authentication codes.
 
 ## Overview
-cotp is written with simplicity in mind, it relies on only one database file, encrypted with XChaCha20Poly1305 authenticated encryption and argon2id13 for key derivation.
+cotp is written with simplicity in mind, it relies on only one database file, encrypted with [XChaCha20Poly1305](https://doc.libsodium.org/advanced/stream_ciphers/xchacha20) authenticated encryption and [Argon2id](https://en.wikipedia.org/wiki/Argon2) for key derivation.
 
 The interface is quite minimalist and intuitive, by typing `cotp -h` you can see all the program features.
 
@@ -40,6 +40,7 @@ Before beginning check that you have the required compilers to build cotp by you
 #### Using crates.io repository
 
 It's possible to install cotp directly through cargo, as it's listed in the [crates.io](https://crates.io/crates/cotp) repository.
+
 Just type `cargo install cotp` and wait for the installation
 
 #### Clone the Github repository and manually install
@@ -88,7 +89,7 @@ Note that in the `--edit` command if you type . instead of argument you are spec
 ## Planned features
 
  - [x] Reduce binary size and improve compilation speed by removing useless dependencies.
- - [x] Use argon2id13 for key derivation
+ - [x] Use Argon2id for key derivation
  - [x] CLI Dashboard
  - [ ] Backup compatibility with:
 	 - [x] Aegis
