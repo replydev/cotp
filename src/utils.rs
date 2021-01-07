@@ -1,9 +1,8 @@
 use std::fs::{File};
 use std::io::prelude::*;
-use std::path::{Path,PathBuf};
+use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use dirs::home_dir;
-use crate::database_loader;
 
 #[cfg(debug_assertions)]
 pub fn get_db_path() -> PathBuf{
@@ -26,22 +25,22 @@ fn get_cotp_folder() -> PathBuf{
     cotp_dir.join(".cotp")
 }
 
-pub fn create_db_if_needed() -> Result<(),()>{
+pub fn create_db_if_needed() -> Result<bool,()>{
     let cotp_folder = get_cotp_folder();
     if !cotp_folder.exists(){
         match std::fs::create_dir(cotp_folder){
-            Ok(()) => println!("Created .cotp folder"),
-            Err(_e) => (),
+            Ok(()) => {},
+            Err(_e) => {},
         }
     }
     let db_path = get_db_path();
     if !db_path.exists() {
         match std::fs::File::create(db_path){
-            Ok(_f) => return Ok(()),
+            Ok(_f) => return Ok(true),
             Err(_e) => return Err(()),
         }
     }
-    Ok(())
+    Ok(false)
 }
 
 pub fn write_to_file(content: &str, file: &mut File) -> Result<(),std::io::Error>{

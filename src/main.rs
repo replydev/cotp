@@ -31,14 +31,18 @@ fn init() -> Result<(), String>{
         _=> {},
     }
     match utils::create_db_if_needed() {
-        Ok(()) => {},
+        Ok(value) => {
+            if value {
+                match database_loader::overwrite_database_json("[]"){
+                    Ok(()) => return Ok(()),
+                    Err(_e) => return Err(String::from("An error occurred during database overwriting")),
+                }
+            }
+            Ok(())
+        },
         Err(()) => {
             return Err(String::from("An error occurred during database creation"));
         },
-    }
-    match database_loader::overwrite_database_json("[]"){
-        Ok(()) => Ok(()),
-        Err(_e) => Err(String::from("An error occurred during database overwriting")),
     }
 }
 

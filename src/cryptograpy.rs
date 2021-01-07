@@ -28,10 +28,8 @@ fn argon_derive_key(key: &mut[u8;32],password_bytes: &[u8],salt: &pwhash::argon2
         pwhash::argon2id13::OPSLIMIT_INTERACTIVE,
         pwhash::argon2id13::MEMLIMIT_INTERACTIVE);
     match result{
-        Ok(&[u8]) => Ok(Key(*key)),
-        Ok(&[]) => Ok(Key(*key)),
-        Ok(&[_,_,..]) =>Ok(Key(*key)),
-        Err(()) => Err(String::from("Failed to derive encryption key"))
+        Err(()) => Err(String::from("Failed to derive encryption key")),
+        _=> Ok(Key(*key)),
     }
 }
 

@@ -5,20 +5,20 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 struct AegisJson{
-    version: u64,
-    header: AegisHeader,
+    //version: u64,
+    //header: AegisHeader,
     db: AegisDb,
 }
 
 #[derive(Deserialize)]
 struct AegisHeader{
-    slots: Option<String>,
-    params: Option<String>,
+    //slots: Option<String>,
+    //params: Option<String>,
 }
 
 #[derive(Deserialize)]
 struct AegisDb{
-    version: u64,
+    //version: u64,
     entries: Vec<AegisElement>,
 }
 
@@ -26,10 +26,10 @@ struct AegisDb{
 struct AegisElement{
     #[serde(rename = "type")]
     _type: String,
-    uuid: String,
+    //uuid: String,
     name: String,
     issuer: String,
-    icon: Option<String>,
+    //icon: Option<String>,
     info: AegisInfo,
 }
 

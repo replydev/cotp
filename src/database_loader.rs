@@ -84,7 +84,7 @@ pub fn read_from_file() -> Result<Vec<OTPElement>,String>{
 
 pub fn check_secret(secret: &str) -> bool{
     //only uppercase characters and numbers
-    let upper_secret = secret.to_uppercase();
+    let upper_secret = secret.to_uppercase().replace("=", "");
     return upper_secret.chars().all(char::is_alphanumeric);
 }
 
@@ -99,8 +99,10 @@ pub fn add_element(secret: &String,issuer: &String,label: &String) -> Result<(),
         Err(e) => return Err(e)
     }
     elements.push(otp_element);
-    overwrite_database(elements);
-    Ok(())
+    match overwrite_database(elements){
+        Ok(()) => Ok(()),
+        Err(e) => Err(format!("{}",e))
+    }
 }
 
 pub fn remove_element_from_db(mut id: usize) -> Result<(),String>{
@@ -127,8 +129,10 @@ pub fn remove_element_from_db(mut id: usize) -> Result<(),String>{
                     break;
                 }
             }
-            overwrite_database(elements);
-            Ok(())
+            match overwrite_database(elements){
+                Ok(()) => Ok(()),
+                Err(e) => Err(format!("{}",e)),
+            }
         },
         Err(e) => Err(e)
     } 
@@ -162,8 +166,10 @@ pub fn edit_element(mut id: usize, secret: &str,issuer: &str,label: &str) -> Res
                     break;
                 }
             }
-            overwrite_database(elements);
-            Ok(())
+            match overwrite_database(elements){
+                Ok(()) => Ok(()),
+                Err(e) => Err(format!("{}",e)),
+            }
         },
         Err(e) => Err(e)
     }

@@ -38,8 +38,15 @@ pub fn import(args: Vec<String>){
                 return;
             }
         }
-        database_loader::overwrite_database(elements);
-        println!("Successfully imported database");
+        
+        match database_loader::overwrite_database(elements){
+            Ok(()) => {
+                println!("Successfully imported database");
+            },
+            Err(e) => {
+                println!("An error occurred during database overwriting: {}",e);
+            }
+        }
     }
     else{
         println!("Invalid arguments, type cotp --import [APPNAME] [PATH]");
