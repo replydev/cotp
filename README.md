@@ -33,8 +33,20 @@ Then choose how you want to proceed
 	makepkg -si
 	```
 ### Other distributions
-You can use prebuilt binaries or [build cotp](#building) yourself
-Go to [releases page](https://github.com/replydev/cotp/releases/) and get the latest version.
+
+Before beginning check that you have the required compilers to build cotp by yourself:
+ - gcc
+ - rust toolchain, can be installed through [rustup](https://rustup.rs/)
+#### Using crates.io repository
+
+It's possible to install cotp directly through cargo, as it's listed in the [crates.io](https://crates.io/crates/cotp) repository.
+Just type `cargo install cotp` and wait for the installation
+
+#### Clone the Github repository and manually install
+You can build cotp using these commands:
+
+    git clone https://github.com/replydev/cotp.git #or https://codeberg.org/replydev/cotp.git
+    cargo install --path cotp/
 
 ## How to use
 If you are familiar with the command line interface using cotp will not be a problem.
@@ -72,17 +84,6 @@ Note that in the `--edit` command if you type . instead of argument you are spec
 |index|secret|issuer|label|
 |--|--|--|--|
 |3|NB2HI4DTHIXS653XO4XHS33VOR2WEZJOMNXW2L3XMF2GG2B7OY6WIULXGR3TSV3HLBRVC | Rick | **cotp** |
-## Building
-First of all install the rust toolchain:
-
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
-Now clone the repository and build the release binary:
-
-    git clone https://github.com/replydev/cotp.git #or https://codeberg.org/replydev/cotp.git
-    cd cotp
-    cargo build --release
-You will find the compiled binary in **target/release** folder
 
 ## Planned features
 
