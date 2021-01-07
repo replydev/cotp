@@ -63,7 +63,6 @@ mod tests{
     use super::create_db_if_needed;
     #[test]
     fn test_db_creation() {
-        let result = create_db_if_needed();
-        assert_eq!(Ok(()),result);
+        assert_eq!(Ok(true),create_db_if_needed());
     }
 }
