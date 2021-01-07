@@ -189,14 +189,15 @@ pub fn export_database() -> Result<String, String> {
     }
 }
 
-pub fn overwrite_database(elements: Vec<OTPElement>){
-    let json_string: &str = &serde_json::to_string(&elements).unwrap();
-    overwrite_database_json(json_string);
+pub fn overwrite_database(elements: Vec<OTPElement>) -> Result<(),std::io::Error>{
+    let json_string: &str = &serde_json::to_string(&elements)?;
+    overwrite_database_json(json_string)
 }
 
-pub fn overwrite_database_json(json: &str){
+pub fn overwrite_database_json(json: &str) -> Result<(),std::io::Error>{
     let encrypted = cryptograpy::encrypt_string(json.to_string(), &cryptograpy::prompt_for_passwords("Insert password for database encryption: ",8));
-    utils::write_to_file(&encrypted, &mut File::create(utils::get_db_path()).expect("Failed to open file"));
+    let mut file = File::create(utils::get_db_path())?;
+    utils::write_to_file(&encrypted, &mut file)
 }
 
 fn check_elements(id: usize,elements: &Vec<OTPElement>) -> Result<(),String>{

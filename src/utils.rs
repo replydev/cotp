@@ -27,21 +27,26 @@ fn get_cotp_folder() -> PathBuf{
 }
 
 pub fn create_db_if_needed() -> Result<(),()>{
-    if !get_cotp_folder().exists(){
-        match std::fs::create_dir(get_cotp_folder()){
+    let cotp_folder = get_cotp_folder();
+    if !cotp_folder.exists(){
+        match std::fs::create_dir(cotp_folder){
             Ok(()) => println!("Created .cotp folder"),
             Err(_e) => (),
         }
     }
-    if !Path::new(&get_db_path()).exists() {
-        database_loader::overwrite_database_json("[]");
+    let db_path = get_db_path();
+    if !db_path.exists() {
+        match std::fs::File::create(db_path){
+            Ok(_f) => return Ok(()),
+            Err(_e) => return Err(()),
+        }
     }
     Ok(())
 }
 
-pub fn write_to_file(content: &str, file: &mut File){
-    file.write_all(content.as_bytes()).expect("Error writing to file");
-    file.sync_all().expect("Sync failed");
+pub fn write_to_file(content: &str, file: &mut File) -> Result<(),std::io::Error>{
+    file.write_all(content.as_bytes())?;
+    file.sync_all()
 }
 
 pub fn print_progress_bar(){

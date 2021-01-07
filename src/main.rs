@@ -34,9 +34,12 @@ fn init() -> Result<(), String>{
         Ok(()) => {},
         Err(()) => {
             return Err(String::from("An error occurred during database creation"));
-        }
+        },
     }
-    Ok(())
+    match database_loader::overwrite_database_json("[]"){
+        Ok(()) => Ok(()),
+        Err(_e) => Err(String::from("An error occurred during database overwriting")),
+    }
 }
 
 fn main() {
