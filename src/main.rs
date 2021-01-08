@@ -10,16 +10,18 @@ use sodiumoxide;
 use std::thread::sleep;
 use std::time::Duration;
 
+const VERSION: &str = "0.1.3";
+
 #[cfg(debug_assertions)]
-fn print_title(version: &str){
-    println!("cotp v{}",version);
+fn print_title(){
+    println!("cotp v{}",VERSION);
     println!("written by @replydev\n");
     println!("****DEBUG VERSION****\n");
 }
 
 #[cfg(not(debug_assertions))]
-fn print_title(version: &str){
-    println!("cotp v{}",version);
+fn print_title(){
+    println!("cotp v{}",VERSION);
     println!("written by @replydev\n");
 }
 
@@ -47,8 +49,7 @@ fn init() -> Result<(), String>{
 }
 
 fn main() {
-    let version = "0.1.2";
-    print_title(version);
+    print_title();
     let init_result = init();
     match init_result {
         Ok(()) => {},
