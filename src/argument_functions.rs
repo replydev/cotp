@@ -108,7 +108,7 @@ pub fn export(args: Vec<String>){
                 println!("Database was successfully exported at {}", export_result);
             },
             Err(e) =>{
-                println!("An error as occured while exporting database: {}", e);
+                println!("An error occured while exporting database: {}", e);
             }
         }
     }

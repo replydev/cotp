@@ -79,7 +79,7 @@ fn dashboard(){
                 }
             }
         },
-        Err(e) => println!("An error as occurred: {}",e),
+        Err(e) => println!("An error occurred: {}",e),
     }
 }
 
