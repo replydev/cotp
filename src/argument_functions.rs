@@ -35,7 +35,7 @@ pub fn import(args: Vec<String>){
         match result {
             Ok(result) => elements = result,
             Err(e) => {
-                println!("An error occurred: {}", e);
+                eprintln!("An error occurred: {}", e);
                 return;
             }
         }
@@ -45,7 +45,7 @@ pub fn import(args: Vec<String>){
                 println!("Successfully imported database");
             },
             Err(e) => {
-                println!("An error occurred during database overwriting: {}",e);
+                eprintln!("An error occurred during database overwriting: {}",e);
             }
         }
     }
@@ -62,7 +62,7 @@ pub fn add(args: Vec<String>){
     if args.len() == 4{
         match database_loader::add_element(&prompt_for_passwords("Insert the secret: ",0),&args[2],&args[3]){
             Ok(()) => println!("Success"),
-            Err(e) => println!("An error occurred: {}",e)
+            Err(e) => eprintln!("An error occurred: {}",e)
         }
     }
     else{
@@ -76,7 +76,7 @@ pub fn remove(args: Vec<String>){
 
         match database_loader::remove_element_from_db(id){
             Ok(()) => println!("Success"),
-            Err(e) => println!("An error has occurred: {}",e)
+            Err(e) => eprintln!("An error has occurred: {}",e)
         }
     }
     else{
@@ -92,7 +92,7 @@ pub fn edit(args: Vec<String>){
         let label = &args[4];
         match database_loader::edit_element(id, &secret, &issuer, &label){
             Ok(()) => println!("Success"),
-            Err(e) => println!("An error occurred: {}",e)
+            Err(e) => eprintln!("An error occurred: {}",e)
         }
     }
     else{
@@ -108,7 +108,7 @@ pub fn export(args: Vec<String>){
                 println!("Database was successfully exported at {}", export_result);
             },
             Err(e) =>{
-                println!("An error occured while exporting database: {}", e);
+                eprintln!("An error occured while exporting database: {}", e);
             }
         }
     }
@@ -121,7 +121,7 @@ pub fn json(args: Vec<String>){
     if args.len() == 2{
         match otp_helper::get_json_results(){
             Ok(results) => println!("{}",results),
-            Err(e) => println!("An error occurred while getting json result: {}",e),
+            Err(e) => eprintln!("An error occurred while getting json result: {}",e),
         }
     }
     else{
@@ -140,7 +140,7 @@ pub fn single(args: Vec<String>){
                     otp_helper::show_codes(&result);
                 }
             },
-            Err(e) => println!("An error occurred: {}",e)
+            Err(e) => eprintln!("An error occurred: {}",e)
         }
     }
     else{
