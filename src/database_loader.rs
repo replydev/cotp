@@ -76,8 +76,7 @@ pub fn read_from_file() -> Result<Vec<OTPElement>,String>{
             return Ok(vector);
         },
         Err(e) => {
-            println!("{}", e);
-            return Err(String::from("Cannot decrypt existing database"));
+            return Err(e);
         }
     }
 }

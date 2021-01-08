@@ -55,6 +55,9 @@ pub fn encrypt_string(plaintext: String,password: &str) -> String {
 pub fn decrypt_string(encrypted_text: &str,password: &str) -> Result<String, String> {
     let split = encrypted_text.split('|');
     let vec: Vec<&str> = split.collect();
+    if vec.len() != 4{
+        return Err(String::from("Corrupted database file"));
+    }
     let byte_salt = base64::decode(vec[1]).unwrap();
     let salt = pwhash::argon2id13::Salt(byte_vec_to_byte_array(byte_salt));
     let byte_header = base64::decode(vec[2]).unwrap();
