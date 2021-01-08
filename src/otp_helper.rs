@@ -29,12 +29,10 @@ pub fn read_codes() -> Result<Vec<database_loader::OTPElement>,String>{
     }
 }
 
-pub fn show_codes(elements: &Vec<database_loader::OTPElement>) -> usize{
-    //let elements;
+pub fn show_codes(elements: &Vec<database_loader::OTPElement>){
     for i in 0..elements.len() {
         print_totp(i,&elements[i]);
     }
-    elements.len()
 }
 
 fn print_totp(i: usize,element: &database_loader::OTPElement){

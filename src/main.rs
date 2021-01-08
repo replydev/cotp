@@ -1,4 +1,3 @@
-use std::env;
 mod database_loader;
 mod utils;
 mod argument_functions;
@@ -6,9 +5,11 @@ mod otp_helper;
 mod cryptograpy;
 mod importers;
 mod otp;
+use std::env;
 use sodiumoxide;
 use std::thread::sleep;
 use std::time::Duration;
+use ctrlc;
 
 const VERSION: &str = "0.1.3";
 
@@ -23,6 +24,22 @@ fn print_title(){
 fn print_title(){
     println!("cotp v{}",VERSION);
     println!("written by @replydev\n");
+}
+
+#[cfg(debug_assertions)]
+fn init_ctrlc_handler(lines: usize){
+    ctrlc::set_handler(move || {
+        utils::clear_lines(lines + 7);
+        std::process::exit(0);
+    }).expect("Failed to initialize ctrl-c handler");
+}
+
+#[cfg(not(debug_assertions))]
+fn init_ctrlc_handler(lines: usize){
+    ctrlc::set_handler(move || {
+        utils::clear_lines(lines + 6);
+        std::process::exit(0);
+    }).expect("Failed to initialize ctrl-c handler");
 }
 
 fn init() -> Result<(), String>{
@@ -65,22 +82,22 @@ fn main() {
 }
 
 fn dashboard(){
-    let mut lines;
     match otp_helper::read_codes(){
         Ok(elements) => {
             if elements.len() == 0{
                 println!("No codes, type \"cotp -h\" to get help");
             }
             else{
+                init_ctrlc_handler(elements.len());
                 loop{
                     utils::print_progress_bar();
-                    lines = otp_helper::show_codes(&elements);
+                    otp_helper::show_codes(&elements);
                     sleep(Duration::from_millis(1000));
-                    print!("\x1B[{}A", lines + 1);
+                    utils::clear_lines(elements.len() + 1);
                 }
             }
         },
-        Err(e) => println!("An error occurred: {}",e),
+        Err(e) => eprintln!("An error occurred: {}",e),
     }
 }
 
