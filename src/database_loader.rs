@@ -84,6 +84,9 @@ pub fn read_from_file() -> Result<Vec<OTPElement>,String>{
 
 pub fn check_secret(secret: &str) -> bool{
     //only uppercase characters and numbers
+    if secret.is_empty(){
+        return false;
+    }
     let upper_secret = secret.to_uppercase().replace("=", "");
     return upper_secret.chars().all(char::is_alphanumeric);
 }
@@ -154,7 +157,7 @@ pub fn edit_element(mut id: usize, secret: &str,issuer: &str,label: &str) -> Res
         Ok(()) => {
             for i in 0..elements.len() {
                 if i == id{
-                    if secret != "."{
+                    if secret != ""{
                         elements[i].set_secret(secret.to_string());
                     }
                     if issuer != "."{

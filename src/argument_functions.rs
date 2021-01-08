@@ -1,14 +1,15 @@
 use crate::database_loader;
 use crate::otp_helper;
 use crate::importers;
+use crate::cryptograpy::prompt_for_passwords;
 
 pub fn help(){
     println!("USAGE:");
     println!("  cotp [SUBCOMMAND]");
     println!();
     println!("ARGUMENTS:");
-    println!("  -a,--add [SECRET] [ISSUER] [LABEL]       | Add a new OTP code");
-    println!("  -e,--edit [ID] [SECRET] [ISSUER] [LABEL] | Edit an OTP code");
+    println!("  -a,--add [ISSUER] [LABEL]       | Add a new OTP code");
+    println!("  -e,--edit [ID] [ISSUER] [LABEL] | Edit an OTP code");
     println!("  -r,--remove [ID]                         | Remove an OTP code");
     println!("  -i,--import [APPNAME] [PATH]             | Import a backup from a given application");
     println!("  -ex,--export                             | Export the entire database in a plaintext json format");
@@ -58,14 +59,14 @@ pub fn import(args: Vec<String>){
 }
 
 pub fn add(args: Vec<String>){
-    if args.len() == 5{
-        match database_loader::add_element(&args[2],&args[3],&args[4]){
+    if args.len() == 4{
+        match database_loader::add_element(&prompt_for_passwords("Insert the secret: ",0),&args[2],&args[3]){
             Ok(()) => println!("Success"),
             Err(e) => println!("An error occurred: {}",e)
         }
     }
     else{
-        println!("Invalid arguments, type cotp --add [SECRET] [ISSUER] [LABEL]");
+        println!("Invalid arguments, type cotp --add [ISSUER] [LABEL]");
     }
 }
 
@@ -84,18 +85,18 @@ pub fn remove(args: Vec<String>){
 }
 
 pub fn edit(args: Vec<String>){
-    if args.len() == 6{
+    if args.len() == 5{
         let id = args[2].parse::<usize>().unwrap();
-        let secret = &args[3];
-        let issuer = &args[4];
-        let label = &args[5];
+        let secret = &prompt_for_passwords("Inser the secret (type ENTER to skip modification): ",0);
+        let issuer = &args[3];
+        let label = &args[4];
         match database_loader::edit_element(id, &secret, &issuer, &label){
             Ok(()) => println!("Success"),
             Err(e) => println!("An error occurred: {}",e)
         }
     }
     else{
-        println!("Invalid arguments, type cotp --edit [ID] [SECRET] [ISSUER] [LABEL]\n\nReplace the attribute value with \".\" to skip the attribute modification");
+        println!("Invalid arguments, type cotp --edit [ID] [ISSUER] [LABEL]\n\nReplace the attribute value with \".\" to skip the attribute modification");
     }
 }
 
