@@ -1,4 +1,3 @@
-
 # cotp - command line totp authenticator
 [![Actions Status](https://github.com/replydev/cotp/workflows/Rust/badge.svg)](https://github.com/replydev/cotp/actions)
 [![AUR package](https://img.shields.io/aur/version/cotp)](https://aur.archlinux.org/packages/cotp/)
@@ -79,15 +78,15 @@ Please note that cotp requires at least an 8 chars length password.
 If you type `cotp -h` you get some instruction on how to use cotp utilities.
 For example, the version 0.1.1 prints out this help screen:
 ```
-cotp v0.1.1
+cotp v0.1.3
 written by @replydev
 
 USAGE:
   cotp [SUBCOMMAND]
 
 ARGUMENTS:
-  -a,--add [SECRET] [ISSUER] [LABEL]       | Add a new OTP code
-  -e,--edit [ID] [SECRET] [ISSUER] [LABEL] | Edit an OTP code
+  -a,--add [ISSUER] [LABEL]       | Add a new OTP code
+  -e,--edit [ID] [ISSUER] [LABEL] | Edit an OTP code
   -r,--remove [ID]                         | Remove an OTP code
   -i,--import [APPNAME] [PATH]             | Import a backup from a given application
   -ex,--export                             | Export the entire database in a plaintext json format
@@ -100,7 +99,7 @@ Note that in the `--edit` command if you type . instead of argument you are spec
 #### Before:
 |index|issuer|label|
 |--|--|--|
-|3| Email_Provider | mymail@example.com |
+| 3 | Email_Provider | mymail@example.com |
 #### Command:
 
     cotp -e 3 . cotp 
@@ -108,7 +107,7 @@ Note that in the `--edit` command if you type . instead of argument you are spec
 #### After:
 |index|issuer|label|
 |--|--|--|
-|3| Email_Provider | **cotp** |
+| 3 | Email_Provider | **cotp** |
 
 ## Planned features
 
