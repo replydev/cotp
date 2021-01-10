@@ -2,7 +2,7 @@ use std::fs::{File,read_to_string};
 use std::io::prelude::*;
 use serde_json;
 use crate::utils;
-use utils::get_db_path;
+use utils::{get_db_path,check_elements};
 use crate::cryptograpy;
 use crate::otp::otp_element::OTPElement;
 
@@ -153,17 +153,5 @@ pub fn overwrite_database_json(json: &str) -> Result<(),std::io::Error>{
     let encrypted = cryptograpy::encrypt_string(json.to_string(), &cryptograpy::prompt_for_passwords("Insert password for database encryption: ",8));
     let mut file = File::create(utils::get_db_path())?;
     utils::write_to_file(&encrypted, &mut file)
-}
-
-fn check_elements(id: usize,elements: &Vec<OTPElement>) -> Result<(),String>{
-    if elements.len() == 0{
-        return Err(String::from("there are no elements in your database. Type \"cotp -h\" to get help."));
-    }
-
-    if id >= elements.len(){
-        return Err(format!("{} is a bad index",id+1));
-    }
-
-    Ok(())
 }
 

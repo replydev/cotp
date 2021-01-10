@@ -3,6 +3,7 @@ use serde_json;
 use serde::{Deserialize, Serialize};
 use crate::otp::otp_element::OTPElement;
 use crate::otp::otp_maker::make_totp;
+use crate::utils::check_elements;
 
 
 #[derive(Serialize, Deserialize)]
@@ -78,4 +79,28 @@ pub fn get_json_results() -> Result<String,String>{
     let json_string: &str = &serde_json::to_string_pretty(&results).unwrap();
 
     Ok(json_string.to_string())
+}
+
+pub fn print_json_result(index: usize) -> Result<(),String>{
+    let elements: Vec<OTPElement>;
+
+    match database_loader::read_from_file(){
+        Ok(result) => elements = result,
+        Err(e) => return Err(e),
+    }
+
+    match check_elements(index, &elements){
+        Ok(()) => {},
+        Err(e) => {
+            return Err(e);
+        }
+    }
+
+    let choosed_element: &OTPElement = &elements[index];
+
+    println!("Issuer: {}",choosed_element.issuer());
+    println!("Label: {}",choosed_element.label());
+    println!("Algoritmh: {}",choosed_element.algorithm());
+    println!("Digits: {}",choosed_element.digits());
+    Ok(())
 }

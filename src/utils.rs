@@ -3,6 +3,7 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use dirs::home_dir;
+use crate::otp::otp_element::OTPElement;
 
 #[cfg(debug_assertions)]
 pub fn get_db_path() -> PathBuf{
@@ -76,6 +77,18 @@ pub fn pow(base: f64,exp: i64) -> f64{
         tot *= base;
     }
     tot
+}
+
+pub fn check_elements(id: usize,elements: &Vec<OTPElement>) -> Result<(),String>{
+    if elements.len() == 0{
+        return Err(String::from("there are no elements in your database. Type \"cotp -h\" to get help."));
+    }
+
+    if id >= elements.len(){
+        return Err(format!("{} is a bad index",id+1));
+    }
+
+    Ok(())
 }
 
 

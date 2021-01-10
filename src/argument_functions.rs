@@ -15,6 +15,7 @@ pub fn help(){
     println!("  -ex,--export                                         | Export the entire database in a plaintext json format");
     println!("  -j,--json                                            | Print results in json format");
     println!("  -s,--single                                          | Print OTP codes in single mode");
+    println!("  -in,--info [ID]                                      | Print info of choosen OTP code");
     println!("  -h,--help                                            | Print this help");
 }
 
@@ -160,4 +161,17 @@ pub fn single(args: Vec<String>){
     else{
        println!("Invalid argument, type cotp --single");
     }
- }
+}
+
+pub fn info(args: Vec<String>){
+    if args.len() == 3{
+        let id = args[2].parse::<usize>().unwrap();
+        match otp_helper::print_json_result(id){
+            Ok(()) => {},
+            Err(e) => eprintln!("An error occurred: {}",e),
+        }
+    }
+    else{
+        println!("Invalid arguments, type cotp --info");
+    }
+}

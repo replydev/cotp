@@ -115,6 +115,7 @@ fn args_parser(args: Vec<String>) -> bool {
         "-ex"| "--export" => argument_functions::export(args),
         "-j" | "--json" => argument_functions::json(args),
         "-s" | "--single" => argument_functions::single(args),
+        "-in" | "--info" => argument_functions::info(args),
         _=>{
             println!("Invalid argument: {}, type cotp -h to get command options", args[1]);
             return true;
