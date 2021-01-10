@@ -59,9 +59,14 @@ pub fn print_progress_bar(){
     println!("[{:60}]", "=".repeat(idx as usize));
 }
 
-pub fn clear_lines(lines: usize){
-    // \x1B[{}A does not work during ctrl clear
-    print!("\x1B[{}A\x1B[0G\x1B[0J", lines);
+pub fn clear_lines(lines: usize,exit: bool){
+    if exit{
+        //  does not work during ctrl clear
+        print!("\x1B[{}A\x1B[0G\x1B[0J", lines);
+    }
+    else{
+        print!("\x1B[{}A", lines);
+    }
 }
 
 
