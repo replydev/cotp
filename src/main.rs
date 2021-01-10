@@ -37,7 +37,7 @@ fn init_ctrlc_handler(lines: usize){
 #[cfg(not(debug_assertions))]
 fn init_ctrlc_handler(lines: usize){
     ctrlc::set_handler(move || {
-        utils::clear_lines(lines + 6);
+        utils::clear_lines(lines + 6,true);
         std::process::exit(0);
     }).expect("Failed to initialize ctrl-c handler");
 }
