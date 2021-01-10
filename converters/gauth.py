@@ -12,6 +12,7 @@ def get_accounts(filename):
                 'label': row[0],
                 'secret': row[1],
                 'issuer': row[2],
+                'digits': 6,
             }
         )
     c.close()

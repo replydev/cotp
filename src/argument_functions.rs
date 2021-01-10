@@ -27,7 +27,9 @@ pub fn import(args: Vec<String>){
         match &args[2][..]{
             "cotp" | "andotp" => result = importers::and_otp::import(&args[3]),
             "aegis" => result = importers::aegis::import(&args[3]),
-            "gauth" | "google_authenticator" => result = importers::gauth::import(&args[3]),
+            "gauth" | 
+            "google_authenticator" |
+            "authy" => result = importers::converted::import(&args[3]),
             _=> {
                 println!("Invalid argument: {}", &args[2]);
                 return;
@@ -57,6 +59,8 @@ pub fn import(args: Vec<String>){
         println!("\"cotp\"");
         println!("\"aegis\"");
         println!("\"andotp\"");
+        println!("\"gauth\" or \"google_authenticator\"");
+        println!("\"authy\"");
     }
 }
 

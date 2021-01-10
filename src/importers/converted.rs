@@ -4,33 +4,35 @@ use serde_json;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
-struct GAuthJson{
+struct ConvertedJson{
     label: Option<String>,
     secret: String,
     issuer: Option<String>,
+    digits: u64,
 }
 
 pub fn import(filepath: &str) -> Result<Vec<OTPElement>,String> {
     let file_to_import_contents = read_to_string(filepath).unwrap();
-    let result: Result<Vec<GAuthJson>,serde_json::Error> = serde_json::from_str(&file_to_import_contents);
-    let gauth: Vec<GAuthJson>;
+    let result: Result<Vec<ConvertedJson>,serde_json::Error> = serde_json::from_str(&file_to_import_contents);
+    let vector: Vec<ConvertedJson>;
 
     match result{
-        Ok(r) => gauth = r,
+        Ok(r) => vector = r,
         Err(e) => return Err(format!("{}",e)),
     }
 
     let mut elements: Vec<OTPElement> = Vec::new();
 
-    for i in 0..gauth.len(){
-        let secret = gauth[i].secret.to_owned();
-        let issuer = gauth[i].issuer.to_owned().unwrap_or_default();
-        let label = gauth[i].label.to_owned().unwrap_or_default();
+    for i in 0..vector.len(){
+        let secret = vector[i].secret.to_owned();
+        let issuer = vector[i].issuer.to_owned().unwrap_or_default();
+        let label = vector[i].label.to_owned().unwrap_or_default();
+        let digits = vector[i].digits;
         elements.push(OTPElement::new(
             secret,
             issuer,
             label,
-            6,
+            digits,
             String::from("TOTP"), 
             String::from("SHA1"), 
             String::from(""), 
