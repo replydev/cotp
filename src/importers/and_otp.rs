@@ -1,4 +1,4 @@
-use crate::database_loader::OTPElement;
+use crate::otp::otp_element::OTPElement;
 use std::fs::read_to_string;
 
 //no need to declare andOTP json struct cause it's the same as OTP element

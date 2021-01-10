@@ -1,5 +1,5 @@
 use crate::database_loader;
-use crate::otp_helper;
+use crate::otp::{otp_element::OTPElement,otp_helper};
 use crate::importers;
 use crate::cryptograpy::prompt_for_passwords;
 
@@ -8,20 +8,20 @@ pub fn help(){
     println!("  cotp [SUBCOMMAND]");
     println!();
     println!("ARGUMENTS:");
-    println!("  -a,--add [ISSUER] [LABEL]       | Add a new OTP code");
-    println!("  -e,--edit [ID] [ISSUER] [LABEL] | Edit an OTP code");
-    println!("  -r,--remove [ID]                         | Remove an OTP code");
-    println!("  -i,--import [APPNAME] [PATH]             | Import a backup from a given application");
-    println!("  -ex,--export                             | Export the entire database in a plaintext json format");
-    println!("  -j,--json                                | Print results in json format");
-    println!("  -s,--single                              | Print OTP codes in single mode");
-    println!("  -h,--help                                | Print this help");
+    println!("  -a,--add [ISSUER] [LABEL] [ALGORITHM] [DIGITS]       | Add a new OTP code");
+    println!("  -e,--edit [ID] [ISSUER] [LABEL] [ALGORITHM] [DIGITS] | Edit an OTP code");
+    println!("  -r,--remove [ID]                                     | Remove an OTP code");
+    println!("  -i,--import [APPNAME] [PATH]                         | Import a backup from a given application");
+    println!("  -ex,--export                                         | Export the entire database in a plaintext json format");
+    println!("  -j,--json                                            | Print results in json format");
+    println!("  -s,--single                                          | Print OTP codes in single mode");
+    println!("  -h,--help                                            | Print this help");
 }
 
 pub fn import(args: Vec<String>){
     if args.len() == 4{
-        let result: Result<Vec<database_loader::OTPElement>,String>;
-        let elements: Vec<database_loader::OTPElement>;
+        let result: Result<Vec<OTPElement>,String>;
+        let elements: Vec<OTPElement>;
 
         match &args[2][..]{
             "cotp" | "andotp" => result = importers::and_otp::import(&args[3]),
@@ -59,14 +59,23 @@ pub fn import(args: Vec<String>){
 }
 
 pub fn add(args: Vec<String>){
-    if args.len() == 4{
-        match database_loader::add_element(&prompt_for_passwords("Insert the secret: ",0),&args[2],&args[3]){
+    if args.len() == 6{
+        let digits: u64 = match &args[5].parse::<>(){
+            Ok(r) => *r,
+            Err(_e) => 0,
+        };
+        if digits <= 0{
+            eprintln!("Insert a valid digits value!");
+            return;
+        }
+
+        match database_loader::add_element(&prompt_for_passwords("Insert the secret: ",0),&args[2],&args[3],&args[4],digits){
             Ok(()) => println!("Success"),
             Err(e) => eprintln!("An error occurred: {}",e)
         }
     }
     else{
-        println!("Invalid arguments, type cotp --add [ISSUER] [LABEL]");
+        println!("Invalid arguments, type cotp --add [ISSUER] [LABEL] [ALGORITHM] [DIGITS]");
     }
 }
 
@@ -85,18 +94,23 @@ pub fn remove(args: Vec<String>){
 }
 
 pub fn edit(args: Vec<String>){
-    if args.len() == 5{
+    if args.len() == 7{
         let id = args[2].parse::<usize>().unwrap();
         let secret = &prompt_for_passwords("Inser the secret (type ENTER to skip modification): ",0);
         let issuer = &args[3];
         let label = &args[4];
-        match database_loader::edit_element(id, &secret, &issuer, &label){
+        let algorithm = &args[5];
+        let digits: u64 = match &args[6].parse::<>(){
+            Ok(r) => *r,
+            Err(_e) => 0,
+        };
+        match database_loader::edit_element(id, &secret, &issuer, &label,&algorithm,digits){
             Ok(()) => println!("Success"),
             Err(e) => eprintln!("An error occurred: {}",e)
         }
     }
     else{
-        println!("Invalid arguments, type cotp --edit [ID] [ISSUER] [LABEL]\n\nReplace the attribute value with \".\" to skip the attribute modification");
+        println!("Invalid arguments, type cotp --edit [ID] [ISSUER] [LABEL] [ALGORITHM] [DIGITS]\n\nReplace the attribute value with \".\" to skip the attribute modification");
     }
 }
 

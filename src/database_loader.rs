@@ -1,70 +1,11 @@
 use std::fs::{File,read_to_string};
 use std::io::prelude::*;
 use serde_json;
-use serde::{Deserialize, Serialize};
 use crate::utils;
 use utils::get_db_path;
 use crate::cryptograpy;
+use crate::otp::otp_element::OTPElement;
 
-#[derive(Serialize, Deserialize)]
-pub struct OTPElement {
-    secret: String,
-    issuer: String,
-    label: String,
-    digits: u64,
-    #[serde(rename = "type")]
-    _type: String,
-    algorithm: String,
-    thumbnail: String,
-    last_used: u64,
-    used_frequency: u64,
-    period: u64,
-    tags: Vec<String>,
-}
-
-impl OTPElement {
-    pub fn new(secret: String,issuer: String,label: String,digits: u64,_type: String,algorithm: String,thumbnail: String,last_used: u64,used_frequency: u64,period: u64,tags: Vec<String>,
-    ) -> OTPElement {
-        OTPElement {
-            secret,
-            issuer,
-            label,
-            digits,
-            _type,
-            algorithm,
-            thumbnail,
-            last_used,
-            used_frequency,
-            period,
-            tags,
-        }
-    }
-    pub fn secret(&self) -> String {
-        self.secret.to_string().replace("=", "")
-    }
-    pub fn label(&self) -> String{
-        self.label.to_string()
-    }
-    pub fn issuer(&self) -> String{
-        self.issuer.to_string()
-    }
-    pub fn period(&self) -> u64{
-        self.period
-    }
-    pub fn digits(&self) -> u64{
-        self.digits
-    }
-
-    pub fn set_secret(&mut self,secret: String){
-        self.secret = secret;
-    }
-    pub fn set_label(&mut self,label: String){
-        self.label = label;
-    }
-    pub fn set_issuer(&mut self,issuer: String){
-        self.issuer = issuer;
-    }
-}
 
 pub fn read_from_file() -> Result<Vec<OTPElement>,String>{
     let encrypted_contents = read_to_string(&get_db_path()).unwrap();
@@ -90,11 +31,11 @@ pub fn check_secret(secret: &str) -> bool{
     return upper_secret.chars().all(char::is_alphanumeric);
 }
 
-pub fn add_element(secret: &String,issuer: &String,label: &String) -> Result<(),String>{
+pub fn add_element(secret: &String,issuer: &String,label: &String,algorithm: &str,digits: u64) -> Result<(),String>{
     if !check_secret(&secret){
         return Err(String::from("Bad secret"))
     }
-    let otp_element = OTPElement::new(secret.to_string(), issuer.to_string(), label.to_string(),6, String::from("TOTP"), String::from("SHA1"),String::from("Default"),0,0,30,vec![]);
+    let otp_element = OTPElement::new(secret.to_string(), issuer.to_string(), label.to_string(),digits, String::from("TOTP"), String::from(algorithm).to_uppercase(),String::from("Default"),0,0,30,vec![]);
     let mut elements;
     match read_from_file(){
         Ok(result) => elements = result,
@@ -140,7 +81,7 @@ pub fn remove_element_from_db(mut id: usize) -> Result<(),String>{
     } 
 }
 
-pub fn edit_element(mut id: usize, secret: &str,issuer: &str,label: &str) -> Result<(), String> {
+pub fn edit_element(mut id: usize, secret: &str,issuer: &str,label: &str,algorithm: &str,digits: u64) -> Result<(), String> {
     if id == 0{
         return Err(String::from("Invalid element"));
     }
@@ -164,6 +105,12 @@ pub fn edit_element(mut id: usize, secret: &str,issuer: &str,label: &str) -> Res
                     }
                     if label != "."{
                         elements[i].set_label(label.to_string());
+                    }
+                    if algorithm != "."{
+                        elements[i].set_algorithm(algorithm.to_string().to_uppercase());
+                    }
+                    if digits != 0{
+                        elements[i].set_digits(digits);
                     }
                     break;
                 }

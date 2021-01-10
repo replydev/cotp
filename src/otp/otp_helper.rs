@@ -1,7 +1,9 @@
 use crate::database_loader;
 use serde_json;
 use serde::{Deserialize, Serialize};
-use crate::otp::make_totp;
+use crate::otp::otp_element::OTPElement;
+use crate::otp::otp_maker::make_totp;
+
 
 #[derive(Serialize, Deserialize)]
 struct JsonResult{
@@ -22,20 +24,20 @@ impl JsonResult {
     }
 }
 
-pub fn read_codes() -> Result<Vec<database_loader::OTPElement>,String>{
+pub fn read_codes() -> Result<Vec<OTPElement>,String>{
     match database_loader::read_from_file(){
         Ok(result) => Ok(result),
         Err(e) => Err(e),
     }
 }
 
-pub fn show_codes(elements: &Vec<database_loader::OTPElement>){
+pub fn show_codes(elements: &Vec<OTPElement>){
     for i in 0..elements.len() {
         print_totp(i,&elements[i]);
     }
 }
 
-fn print_totp(i: usize,element: &database_loader::OTPElement){
+fn print_totp(i: usize,element: &OTPElement){
     if element.issuer() != ""{
         println!("{}) {} - {}: {}",i+1,element.issuer(),element.label(),get_good_otp_code(&element));
     }else{
@@ -43,10 +45,10 @@ fn print_totp(i: usize,element: &database_loader::OTPElement){
     }
 }
 
-fn get_good_otp_code(element: &database_loader::OTPElement) -> String {
+fn get_good_otp_code(element: &OTPElement) -> String {
     let otp = make_totp(
         &element.secret(), //we have replaced '=' in this method
-               element.period(), 0).unwrap();
+               element.period(), 0,&element.algorithm().to_uppercase(),element.digits()).unwrap();
     let mut s_otp = otp.to_string();
 
     while s_otp.len() < element.digits() as usize {
@@ -56,7 +58,7 @@ fn get_good_otp_code(element: &database_loader::OTPElement) -> String {
 }
 
 pub fn get_json_results() -> Result<String,String>{
-    let elements: Vec<database_loader::OTPElement>;
+    let elements: Vec<OTPElement>;
 
     match database_loader::read_from_file(){
         Ok(result) => elements = result,

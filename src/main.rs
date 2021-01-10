@@ -1,7 +1,6 @@
 mod database_loader;
 mod utils;
 mod argument_functions;
-mod otp_helper;
 mod cryptograpy;
 mod importers;
 mod otp;
@@ -10,6 +9,7 @@ use sodiumoxide;
 use std::thread::sleep;
 use std::time::Duration;
 use ctrlc;
+use otp::otp_helper;
 
 const VERSION: &str = "0.1.3";
 
@@ -48,7 +48,7 @@ fn init() -> Result<(), String>{
             return Err(String::from("Error during sodiumoxide initialization"))
         },
         _=> {},
-    }
+    };
     match utils::create_db_if_needed() {
         Ok(value) => {
             if value {
