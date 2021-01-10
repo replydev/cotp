@@ -81,7 +81,12 @@ pub fn get_json_results() -> Result<String,String>{
     Ok(json_string.to_string())
 }
 
-pub fn print_json_result(index: usize) -> Result<(),String>{
+pub fn print_json_result(mut index: usize) -> Result<(),String>{
+    if index == 0{
+        return Err(String::from("Invalid element"));
+    }
+    index -= 1;
+
     let elements: Vec<OTPElement>;
 
     match database_loader::read_from_file(){
