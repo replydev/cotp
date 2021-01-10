@@ -11,7 +11,7 @@ I believe that security is of paramount importance, especially in this digital w
 cotp is written with simplicity in mind, the interface is quite minimalist and intuitive as command line apps should be.
 This is an example:
 
-    cotp v0.1.3
+    cotp v0.1.4
     written by @replydev
 
     Password: 
@@ -25,6 +25,8 @@ This program relies on only one database file, encrypted with [XChaCha20Poly1305
 ### Import/Export
 You can import backups made by [Aegis](https://github.com/beemdevelopment/Aegis) and [andOTP](https://github.com/andOTP/andOTP) Authenticators, but backup compatibility is growing (check [planned features](#planned-features)).
 By typing `cotp -ex` you can export your database in unencrypted json format.
+### Compatibility
+cotp can generate two-factor authentication coded using HMAC-SHA1, HMAC-SHA256 and HMAC-SHA512, with any digits, to provide a good compatibility to most two-factor authentication systems.
 ### Cross Plaform
 Thanks to the glorious [Rust Language](https://www.rust-lang.org/) cotp is easily **compilable** in every platform supported by rust itself.
 As now i personally tested program functionalities in these systems:
@@ -76,44 +78,48 @@ You can build cotp using these commands:
 If you are familiar with the command line interface using cotp will not be a problem.
 Please note that cotp requires at least an 8 chars length password.
 If you type `cotp -h` you get some instruction on how to use cotp utilities.
-For example, the version 0.1.1 prints out this help screen:
+For example, the version 0.1.4 prints out this help screen:
 ```
-cotp v0.1.3
+cotp v0.1.4
 written by @replydev
 
 USAGE:
   cotp [SUBCOMMAND]
 
 ARGUMENTS:
-  -a,--add [ISSUER] [LABEL]       | Add a new OTP code
-  -e,--edit [ID] [ISSUER] [LABEL] | Edit an OTP code
-  -r,--remove [ID]                         | Remove an OTP code
-  -i,--import [APPNAME] [PATH]             | Import a backup from a given application
-  -ex,--export                             | Export the entire database in a plaintext json format
-  -j,--json                                | Print results in json format
-  -s,--single                              | Print OTP codes in single mode
-  -h,--help                                | Print this help
+  -a,--add [ISSUER] [LABEL] [ALGORITHM] [DIGITS]       | Add a new OTP code
+  -e,--edit [ID] [ISSUER] [LABEL] [ALGORITHM] [DIGITS] | Edit an OTP code
+  -r,--remove [ID]                                     | Remove an OTP code
+  -i,--import [APPNAME] [PATH]                         | Import a backup from a given application
+  -ex,--export                                         | Export the entire database in a plaintext json format
+  -j,--json                                            | Print results in json format
+  -s,--single                                          | Print OTP codes in single mode
+  -h,--help                                            | Print this help
 ```
 Note that in the `--edit` command if you type . instead of argument you are specifying not to modify that specific argument.
 ### Example:
 #### Before:
-|index|issuer|label|
-|--|--|--|
-| 3 | Email_Provider | mymail@example.com |
+|index|issuer|label|algorithm|digits|
+|--|--|--|--|--|
+| 3 | Email_Provider | mymail@example.com | SHA1 | 6 |
 #### Command:
 
-    cotp -e 3 . cotp 
+    cotp -e 3 . myothermail@example.com . 8
 
 #### After:
-|index|issuer|label|
-|--|--|--|
-| 3 | Email_Provider | **cotp** |
+|index|issuer|label|algorithm|digits|
+|--|--|--|--|--|
+| 3 | Email_Provider | **mymailother@example.com** | SHA1 | **8** |
 
 ## Planned features
 
  - [x] Reduce binary size and improve compilation speed by removing useless dependencies.
  - [x] Use Argon2id for key derivation
  - [x] CLI Dashboard
+ - [x] Support for:
+   - [x] SHA256
+   - [x] SHA512
+   - [x] Custom digit value
  - [ ] Backup compatibility with:
 	 - [x] Aegis
 	 - [x] andOTP
