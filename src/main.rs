@@ -11,7 +11,7 @@ use std::time::Duration;
 use ctrlc;
 use otp::otp_helper;
 
-const VERSION: &str = "0.1.3";
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg(debug_assertions)]
 fn print_title(){
