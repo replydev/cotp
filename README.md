@@ -94,6 +94,7 @@ ARGUMENTS:
   -ex,--export                                         | Export the entire database in a plaintext json format
   -j,--json                                            | Print results in json format
   -s,--single                                          | Print OTP codes in single mode
+  -in,--info [ID]                                      | Print info of choosen OTP code
   -h,--help                                            | Print this help
 ```
 Note that in the `--edit` command if you type . instead of argument you are specifying not to modify that specific argument.
