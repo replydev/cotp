@@ -11,7 +11,7 @@ I believe that security is of paramount importance, especially in this digital w
 cotp is written with simplicity in mind, the interface is quite minimalist and intuitive as command line apps should be.
 This is an example:
 
-    cotp v0.1.4
+    cotp v0.1.5
     written by @replydev
 
     Password: 
@@ -23,7 +23,13 @@ This is an example:
 ### Encryption
 This program relies on only one database file, encrypted with [XChaCha20Poly1305](https://doc.libsodium.org/advanced/stream_ciphers/xchacha20) authenticated encryption and [Argon2id](https://en.wikipedia.org/wiki/Argon2) for key derivation.
 ### Import/Export
-You can import backups made by [Aegis](https://github.com/beemdevelopment/Aegis) and [andOTP](https://github.com/andOTP/andOTP) Authenticators, but backup compatibility is growing (check [planned features](#planned-features)).
+You can import backups (or [converted databases](#converted-databases)) from:
+ - [Aegis](https://github.com/beemdevelopment/Aegis)
+ - [andOTP](https://github.com/andOTP/andOTP)
+ - [Authy](https://authy.com/)
+ - [Google Authenticator](https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2)
+
+Backup compatibility is growing (check [planned features](#planned-features)).
 By typing `cotp -ex` you can export your database in unencrypted json format.
 ### Compatibility
 cotp can generate two-factor authentication coded using HMAC-SHA1, HMAC-SHA256 and HMAC-SHA512, with any digits, to provide a good compatibility to most two-factor authentication systems.
@@ -78,9 +84,9 @@ You can build cotp using these commands:
 If you are familiar with the command line interface using cotp will not be a problem.
 Please note that cotp requires at least an 8 chars length password.
 If you type `cotp -h` you get some instruction on how to use cotp utilities.
-For example, the version 0.1.4 prints out this help screen:
+For example, the version 0.1.5 prints out this help screen:
 ```
-cotp v0.1.4
+cotp v0.1.5
 written by @replydev
 
 USAGE:
@@ -112,6 +118,19 @@ Note that in the `--edit` command if you type . instead of argument you are spec
 |--|--|--|--|--|
 | 3 | Email_Provider | **mymailother@example.com** | SHA1 | **8** |
 
+## Database conversion
+To import Authy or Google Authenticator databases you need first of all to obtain the respective files in your phone in the paths: 
+- **Authy**: `/data/data/com.authy.authy/shared_prefs/com.authy.storage.tokens.authenticator.xml`
+- **Google Authenticator**: `/data/data/com.google.android.apps.authenticator2/databases/databases`
+
+After that run the correct python script located in the converters/ folder in this source code:
+
+`python authy.py path/to/database.xml converted.json`
+
+It will convert the database in a json format readable by cotp.
+
+To finish import the database: `cotp -i authy path/to/database.json`
+
 ## Planned features
 
  - [x] Reduce binary size and improve compilation speed by removing useless dependencies.
@@ -124,8 +143,8 @@ Note that in the `--edit` command if you type . instead of argument you are spec
  - [ ] Backup compatibility with:
 	 - [x] Aegis
 	 - [x] andOTP
-	 - [ ] Authy
-	 - [ ] Google Authenticator
+	 - [x] Authy
+	 - [x] Google Authenticator
 	 - [ ] FreeOTP
  - [ ] Graphical User Interface 
 
