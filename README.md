@@ -23,7 +23,7 @@ This is an example:
 ### Encryption
 This program relies on only one database file, encrypted with [XChaCha20Poly1305](https://doc.libsodium.org/advanced/stream_ciphers/xchacha20) authenticated encryption and [Argon2id](https://en.wikipedia.org/wiki/Argon2) for key derivation.
 ### Import/Export
-You can import backups (or [converted databases](#converted-databases)) from:
+You can import backups (or [converted databases](#database-conversion)) from:
  - [Aegis](https://github.com/beemdevelopment/Aegis)
  - [andOTP](https://github.com/andOTP/andOTP)
  - [Authy](https://authy.com/)
