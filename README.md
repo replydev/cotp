@@ -9,16 +9,8 @@ I believe that security is of paramount importance, especially in this digital w
 ## Overview
 ### Interface
 cotp is written with simplicity in mind, the interface is quite minimalist and intuitive as command line apps should be.
-This is an example:
 
-    cotp v0.1.5
-    written by @replydev
-
-    Password: 
-    [========================                                    ]
-    1) Google - mymail@gmail.com: 460984
-    2) Github - myusername: 950152
-    3) Amazon - myusername: 208235
+![GIF demo](img/demo.gif)
 
 ### Encryption
 This program relies on only one database file, encrypted with [XChaCha20Poly1305](https://doc.libsodium.org/advanced/stream_ciphers/xchacha20) authenticated encryption and [Argon2id](https://en.wikipedia.org/wiki/Argon2) for key derivation.
