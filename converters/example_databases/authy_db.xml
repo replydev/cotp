@@ -1,0 +1,5 @@
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<map>
+	    <int name="key_version" value="121" />
+		        <string name="com.authy.storage.tokens.authenticator.key">[{&quot;accountType&quot;:&quot;authenticator&quot;,&quot;decryptedSecret&quot;:&quot;TLQEUBNC4ENYRDMLM2ZMQPN7PE272AW7&quot;,&quot;digits&quot;:6,&quot;encryptedSecret&quot;:&quot;w9AY/AQj2N5mt4AgZ90RvHImlKr2cgCST4YVBjGzbZGmLlgsswgiVQ7g4uA0diA0&quot;,&quot;logo&quot;:&quot;authenticator_blue&quot;,&quot;timestamp&quot;:1608576648,&quot;salt&quot;:&quot;Ncs2Qddux6kseLUZQOOh9Qbnlc4tFMkH&quot;,&quot;upload_state&quot;:&quot;uploaded&quot;,&quot;hidden&quot;:false,&quot;id&quot;:&quot;1608576712&quot;,&quot;isNew&quot;:false,&quot;name&quot;:&quot;Test&quot;}]</string>
+		</map>

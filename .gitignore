@@ -12,3 +12,5 @@ Cargo.lock
 *.cotp
 .vscode/
 venv/
+__pycache__
+.pytest_cache

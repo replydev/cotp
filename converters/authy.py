@@ -30,5 +30,7 @@ def main():
     output_file.write(json.dumps(object_to_cotp_json(data)))
     output_file.close()
 
-
 main()
+
+def test_conversion():
+    assert fetch_json("exported_databases/authy_db.xml") == [{"label": "Test", "secret": "TLQEUBNC4ENYRDMLM2ZMQPN7PE272AW7", "issuer": "", "digits": 6}]
