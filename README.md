@@ -1,5 +1,5 @@
 # cotp - command line totp authenticator
-[![Actions Status](https://github.com/replydev/cotp/workflows/Rust/badge.svg)](https://github.com/replydev/cotp/actions)
+[![Actions Status](https://github.com/replydev/cotp/workflows/Build/badge.svg)](https://github.com/replydev/cotp/actions)
 [![AUR package](https://img.shields.io/aur/version/cotp)](https://aur.archlinux.org/packages/cotp/)
 [![crates.io](https://img.shields.io/crates/v/cotp)](https://crates.io/crates/cotp)
 [![Downloads](https://img.shields.io/crates/d/cotp)](https://crates.io/crates/cotp)
