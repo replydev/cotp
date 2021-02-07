@@ -31,11 +31,13 @@ As now i personally tested program functionalities in these systems:
  - Arch Linux
  - Alpine Linux 3.12.3
  - Fedora 33
- - Windows 10 x64 LTSC 1809 Build 17763.1637
+ - Ubuntu 20.04 WSL
+ - Windows 10 Pro x64 20H2 Build 19042.746
+ - Windows 10 LTSC x64 1809 Build 17763.1637
 
 ## Installation
 
-### ArchLinux
+### Arch Linux and arch-based distributions
 You can install cotp through the Arch User Repository.
 Before beginning check you already have the required packages:
 
@@ -56,10 +58,13 @@ Then choose how you want to proceed:
 	```
 ### Other distributions, *nix or Windows
 
-Before beginning check that you have the required compilers to build cotp by yourself:
- - gcc for *nix operating systems
- - msvc for Windows
- - rust toolchain, can be installed through [rustup](https://rustup.rs/)
+Before beginning check that you have the required dependencies to build cotp by yourself:
+ - build-essential for debian-based distributions
+ - gcc for others
+ - [MSVC](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=BuildTools&rel=16) for Windows
+ - [rust compiler and utilities](https://rustup.rs/)
+
+⚠️**Attention** The `x86_64-pc-windows-gnu` rust toolchain is untested and may not compile! Use MSVC instead.
 #### Using crates.io repository
 
 It's possible to install cotp directly through cargo, as it's listed in the [crates.io](https://crates.io/crates/cotp) repository.
