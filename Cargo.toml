@@ -13,14 +13,14 @@ categories = ["command-line-utilities","authentication"]
 keywords = ["cotp","totp","authenticator","google-authenticator","argon2"]
 
 [dependencies]
-serde_json = "1.0.61"
-serde = { version = "1.0.118", features = ["derive"] }
+serde_json = "1.0.62"
+serde = { version = "1.0.123", features = ["derive"] }
 dirs = "3.0.1"
-rpassword = "5.0.0"
+rpassword = "5.0.1"
 sodiumoxide = "0.2.6"
 base64 = "0.13.0"
 ascii = "1.0"
-data-encoding = "2.3.1"
+data-encoding = "2.3.2"
 err-derive = "0.3.0"
-ring = "0.16.19"
+ring = "0.16.20"
 ctrlc = "3.1.7"
