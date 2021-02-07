@@ -27,15 +27,16 @@ pub fn check_secret(secret: &str) -> bool{
     if secret.is_empty(){
         return false;
     }
-    let upper_secret = secret.to_uppercase().replace("=", "");
-    return upper_secret.chars().all(char::is_alphanumeric);
+    // we have already uppercased the secret
+    return secret.chars().all(char::is_alphanumeric);
 }
 
 pub fn add_element(secret: &String,issuer: &String,label: &String,algorithm: &str,digits: u64) -> Result<(),String>{
-    if !check_secret(&secret){
+    let upper_secret = secret.to_uppercase().replace("=", "");
+    if !check_secret(&upper_secret){
         return Err(String::from("Bad secret"))
     }
-    let otp_element = OTPElement::new(secret.to_string(), issuer.to_string(), label.to_string(),digits, String::from("TOTP"), String::from(algorithm).to_uppercase(),String::from("Default"),0,0,30,vec![]);
+    let otp_element = OTPElement::new(upper_secret.to_string(), issuer.to_string(), label.to_string(),digits, String::from("TOTP"), String::from(algorithm).to_uppercase(),String::from("Default"),0,0,30,vec![]);
     let mut elements;
     match read_from_file(){
         Ok(result) => elements = result,
