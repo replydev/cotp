@@ -121,6 +121,7 @@ fn args_parser(args: Vec<String>) -> bool {
         "-j" | "--json" => argument_functions::json(args),
         "-s" | "--single" => argument_functions::single(args),
         "-in" | "--info" => argument_functions::info(args),
+        "-chpw" | "--change-password" => argument_functions::change_password(args),
         _=>{
             println!("Invalid argument: {}, type cotp -h to get command options", args[1]);
             return true;

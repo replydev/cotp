@@ -16,6 +16,7 @@ pub fn help(){
     println!("  -j,--json                                            | Print results in json format");
     println!("  -s,--single                                          | Print OTP codes in single mode");
     println!("  -in,--info [ID]                                      | Print info of choosen OTP code");
+    println!("  -chpw,--change-password                              | Change the database password");
     println!("  -h,--help                                            | Print this help");
 }
 
@@ -177,6 +178,28 @@ pub fn info(args: Vec<String>){
         }
     }
     else{
-        println!("Invalid arguments, type cotp --info");
+        println!("Invalid arguments, type cotp --info [ID]");
     }
 }
+
+pub fn change_password(args: Vec<String>) {
+    if args.len() == 2{
+        let old_password = &cryptograpy::prompt_for_passwords("Old password: ", 8, false);
+        let decrypted_text = database_loader::read_decrypted_text(old_password);
+        match decrypted_text{
+            Ok(s) => {
+                let new_password = &cryptograpy::prompt_for_passwords("New password: ", 8, true);
+                match database_loader::overwrite_database_json(&s, new_password) {
+                    Ok(()) => println!("Password changed"),
+                    Err(e) => eprintln!("An error has occurred: {}",e),
+                }
+            },
+            Err(e) => {
+                eprintln!("An error has occurred: {}",e);
+            }
+        }
+    }
+    else{
+        println!("Invalid arguments, type cotp --change-password");
+    }
+} 

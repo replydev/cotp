@@ -6,12 +6,14 @@ use utils::{get_db_path,check_elements};
 use crate::cryptograpy;
 use crate::otp::otp_element::OTPElement;
 
-
-pub fn read_from_file(password: &str) -> Result<Vec<OTPElement>,String>{
+pub fn read_decrypted_text(password: &str) -> Result<String,String>{
     let encrypted_contents = read_to_string(&get_db_path()).unwrap();
     //rust close files at the end of the function
-    let contents = cryptograpy::decrypt_string(&encrypted_contents, password);
-    match contents {
+    cryptograpy::decrypt_string(&encrypted_contents, password)
+}
+
+pub fn read_from_file(password: &str) -> Result<Vec<OTPElement>,String>{
+    match read_decrypted_text(password) {
         Ok(contents) => {
             let vector: Vec<OTPElement> = serde_json::from_str(&contents).unwrap();
             return Ok(vector);
