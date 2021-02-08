@@ -1,4 +1,4 @@
-use crate::database_loader;
+use crate::{cryptograpy, database_loader};
 use serde_json;
 use serde::{Deserialize, Serialize};
 use crate::otp::otp_element::OTPElement;
@@ -26,7 +26,7 @@ impl JsonResult {
 }
 
 pub fn read_codes() -> Result<Vec<OTPElement>,String>{
-    match database_loader::read_from_file(){
+    match database_loader::read_from_file(&cryptograpy::prompt_for_passwords("Password: ", 8,false)){
         Ok(result) => Ok(result),
         Err(e) => Err(e),
     }
@@ -61,7 +61,7 @@ fn get_good_otp_code(element: &OTPElement) -> String {
 pub fn get_json_results() -> Result<String,String>{
     let elements: Vec<OTPElement>;
 
-    match database_loader::read_from_file(){
+    match database_loader::read_from_file(&cryptograpy::prompt_for_passwords("Password: ",8,false)){
         Ok(result) => elements = result,
         Err(e) => return Err(e)
     }
@@ -89,7 +89,7 @@ pub fn print_json_result(mut index: usize) -> Result<(),String>{
 
     let elements: Vec<OTPElement>;
 
-    match database_loader::read_from_file(){
+    match database_loader::read_from_file(&cryptograpy::prompt_for_passwords("Password: ",8,false)){
         Ok(result) => elements = result,
         Err(e) => return Err(e),
     }

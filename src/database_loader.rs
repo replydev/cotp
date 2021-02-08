@@ -7,10 +7,10 @@ use crate::cryptograpy;
 use crate::otp::otp_element::OTPElement;
 
 
-pub fn read_from_file() -> Result<Vec<OTPElement>,String>{
+pub fn read_from_file(password: &str) -> Result<Vec<OTPElement>,String>{
     let encrypted_contents = read_to_string(&get_db_path()).unwrap();
     //rust close files at the end of the function
-    let contents = cryptograpy::decrypt_string(&encrypted_contents, &cryptograpy::prompt_for_passwords("Password: ",8));
+    let contents = cryptograpy::decrypt_string(&encrypted_contents, password);
     match contents {
         Ok(contents) => {
             let vector: Vec<OTPElement> = serde_json::from_str(&contents).unwrap();
@@ -36,14 +36,15 @@ pub fn add_element(secret: &String,issuer: &String,label: &String,algorithm: &st
     if !check_secret(&upper_secret){
         return Err(String::from("Bad secret"))
     }
+    let pw = &cryptograpy::prompt_for_passwords("Password: ",8,false);
     let otp_element = OTPElement::new(upper_secret.to_string(), issuer.to_string(), label.to_string(),digits, String::from("TOTP"), String::from(algorithm).to_uppercase(),String::from("Default"),0,0,30,vec![]);
     let mut elements;
-    match read_from_file(){
+    match read_from_file(pw){
         Ok(result) => elements = result,
         Err(e) => return Err(e)
     }
     elements.push(otp_element);
-    match overwrite_database(elements){
+    match overwrite_database(elements,pw){
         Ok(()) => Ok(()),
         Err(e) => Err(format!("{}",e))
     }
@@ -57,8 +58,8 @@ pub fn remove_element_from_db(mut id: usize) -> Result<(),String>{
     id -= 1;
 
     let mut elements: Vec<OTPElement>;
-
-    match read_from_file(){
+    let pw = &cryptograpy::prompt_for_passwords("Password: ",8,false);
+    match read_from_file(pw){
         Ok(result) => elements = result,
         Err(e) => {
             return Err(e);
@@ -73,7 +74,7 @@ pub fn remove_element_from_db(mut id: usize) -> Result<(),String>{
                     break;
                 }
             }
-            match overwrite_database(elements){
+            match overwrite_database(elements,pw){
                 Ok(()) => Ok(()),
                 Err(e) => Err(format!("{}",e)),
             }
@@ -89,7 +90,8 @@ pub fn edit_element(mut id: usize, secret: &str,issuer: &str,label: &str,algorit
     id -= 1;
 
     let mut elements: Vec<OTPElement>;
-    match read_from_file(){
+    let pw = &cryptograpy::prompt_for_passwords("Password: ",8,false);
+    match read_from_file(pw){
         Ok(result) => elements = result,
         Err(_e) => return Err(String::from("Cannot decrypt existing database"))
     }
@@ -116,7 +118,7 @@ pub fn edit_element(mut id: usize, secret: &str,issuer: &str,label: &str,algorit
                     break;
                 }
             }
-            match overwrite_database(elements){
+            match overwrite_database(elements,pw){
                 Ok(()) => Ok(()),
                 Err(e) => Err(format!("{}",e)),
             }
@@ -130,7 +132,7 @@ pub fn export_database() -> Result<String, String> {
     exported_path.push_str("/exported.cotp");
     let mut file = File::create(&exported_path).expect("Cannot create file");
     let encrypted_contents = read_to_string(&get_db_path()).unwrap();
-    let contents = cryptograpy::decrypt_string(&encrypted_contents, &cryptograpy::prompt_for_passwords("Password: ",8));
+    let contents = cryptograpy::decrypt_string(&encrypted_contents, &cryptograpy::prompt_for_passwords("Password: ",8,false));
     match contents {
         Ok(contents) => {
             if contents == "[]"{
@@ -145,13 +147,13 @@ pub fn export_database() -> Result<String, String> {
     }
 }
 
-pub fn overwrite_database(elements: Vec<OTPElement>) -> Result<(),std::io::Error>{
+pub fn overwrite_database(elements: Vec<OTPElement>,password: &str) -> Result<(),std::io::Error>{
     let json_string: &str = &serde_json::to_string(&elements)?;
-    overwrite_database_json(json_string)
+    overwrite_database_json(json_string,password)
 }
 
-pub fn overwrite_database_json(json: &str) -> Result<(),std::io::Error>{
-    let encrypted = cryptograpy::encrypt_string(json.to_string(), &cryptograpy::prompt_for_passwords("Insert password for database encryption: ",8));
+pub fn overwrite_database_json(json: &str,password: &str) -> Result<(),std::io::Error>{
+    let encrypted = cryptograpy::encrypt_string(json.to_string(), password);
     let mut file = File::create(utils::get_db_path())?;
     utils::write_to_file(&encrypted, &mut file)
 }

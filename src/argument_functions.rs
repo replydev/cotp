@@ -1,4 +1,4 @@
-use crate::database_loader;
+use crate::{cryptograpy, database_loader};
 use crate::otp::{otp_element::OTPElement,otp_helper};
 use crate::importers;
 use crate::cryptograpy::prompt_for_passwords;
@@ -44,7 +44,7 @@ pub fn import(args: Vec<String>){
             }
         }
         
-        match database_loader::overwrite_database(elements){
+        match database_loader::overwrite_database(elements,&cryptograpy::prompt_for_passwords("Choose a password: ", 8,true)){
             Ok(()) => {
                 println!("Successfully imported database");
             },
@@ -75,7 +75,7 @@ pub fn add(args: Vec<String>){
             return;
         }
 
-        match database_loader::add_element(&prompt_for_passwords("Insert the secret: ",0),&args[2],&args[3],&args[4],digits){
+        match database_loader::add_element(&prompt_for_passwords("Insert the secret: ",0,false),&args[2],&args[3],&args[4],digits){
             Ok(()) => println!("Success"),
             Err(e) => eprintln!("An error occurred: {}",e)
         }
@@ -102,7 +102,7 @@ pub fn remove(args: Vec<String>){
 pub fn edit(args: Vec<String>){
     if args.len() == 7{
         let id = args[2].parse::<usize>().unwrap();
-        let secret = &prompt_for_passwords("Inser the secret (type ENTER to skip modification): ",0);
+        let secret = &prompt_for_passwords("Inser the secret (type ENTER to skip modification): ",0,false);
         let issuer = &args[3];
         let label = &args[4];
         let algorithm = &args[5];

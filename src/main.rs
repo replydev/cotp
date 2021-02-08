@@ -42,7 +42,7 @@ fn init_ctrlc_handler(lines: usize){
     }).expect("Failed to initialize ctrl-c handler");
 }
 
-fn init() -> Result<(), String>{
+fn init() -> Result<bool, String>{
     match sodiumoxide::init(){
         Err(()) => {
             return Err(String::from("Error during sodiumoxide initialization"))
@@ -52,12 +52,13 @@ fn init() -> Result<(), String>{
     match utils::create_db_if_needed() {
         Ok(value) => {
             if value {
-                match database_loader::overwrite_database_json("[]"){
-                    Ok(()) => return Ok(()),
+                let pw = &cryptograpy::prompt_for_passwords("Choose a password: ", 8,true);
+                match database_loader::overwrite_database_json("[]",pw){
+                    Ok(()) => return Ok(true),
                     Err(_e) => return Err(String::from("An error occurred during database overwriting")),
                 }
             }
-            Ok(())
+            Ok(false)
         },
         Err(()) => {
             return Err(String::from("An error occurred during database creation"));
@@ -69,7 +70,11 @@ fn main() {
     print_title();
     let init_result = init();
     match init_result {
-        Ok(()) => {},
+        Ok(true) => {
+            println!("Database correctly initialized");
+            return;
+        },
+        Ok(false) => {},
         Err(e) => { 
             println!("{}",e);
             return;
