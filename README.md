@@ -27,13 +27,18 @@ By typing `cotp -ex` you can export your database in unencrypted json format.
 cotp can generate two-factor authentication coded using HMAC-SHA1, HMAC-SHA256 and HMAC-SHA512, with any digits, to provide a good compatibility to most two-factor authentication systems.
 ### Cross Plaform
 Thanks to the glorious [Rust Language](https://www.rust-lang.org/) cotp is easily **compilable** in every platform supported by rust itself.
-As now i personally tested program functionalities in these systems:
+
+#### So far, I have successfully tested the functionality of the software in the following systems:
  - Arch Linux
  - Alpine Linux 3.12.3
  - Fedora 33
  - Ubuntu 20.04 WSL
  - Windows 10 Pro x64 20H2 Build 19042.746
  - Windows 10 LTSC x64 1809 Build 17763.1637
+
+#### In addition, cotp has been successfully tested by the community in the following systems:
+ - Android (Termux)
+ - NixOS
 
 ## Installation
 
