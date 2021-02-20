@@ -98,7 +98,7 @@ fn dashboard(){
                     utils::print_progress_bar();
                     otp_helper::show_codes(&elements);
                     sleep(Duration::from_millis(1000));
-                    utils::clear_lines(elements.len() + 1,false);
+                    utils::clear_lines(elements.len() * 2 + 4,false);
                 }
             }
         },

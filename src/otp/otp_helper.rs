@@ -1,6 +1,7 @@
-use crate::{cryptograpy, database_loader};
+use prettytable::{Table, row, cell};
 use serde_json;
 use serde::{Deserialize, Serialize};
+use crate::{cryptograpy, database_loader};
 use crate::otp::otp_element::OTPElement;
 use crate::otp::otp_maker::make_totp;
 use crate::utils::check_elements;
@@ -33,17 +34,16 @@ pub fn read_codes() -> Result<Vec<OTPElement>,String>{
 }
 
 pub fn show_codes(elements: &Vec<OTPElement>){
+    let mut table = Table::new();
+    table.add_row(row!["Id","Issuer","Label","Code"]);
     for i in 0..elements.len() {
-        print_totp(i,&elements[i]);
+        add_element_to_table(i, &mut table, &elements[i]);
     }
+    table.printstd();
 }
 
-fn print_totp(i: usize,element: &OTPElement){
-    if element.issuer() != ""{
-        println!("{}) {} - {}: {}",i+1,element.issuer(),element.label(),get_good_otp_code(&element));
-    }else{
-        println!("{}) {}: {}",i+1,element.label(),get_good_otp_code(&element));
-    }
+fn add_element_to_table(i: usize, table: &mut Table,element: &OTPElement){
+    table.add_row(row![i+1,element.issuer(),element.label(),get_good_otp_code(&element)]);
 }
 
 fn get_good_otp_code(element: &OTPElement) -> String {
