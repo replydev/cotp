@@ -97,7 +97,7 @@ fn dashboard(){
                 loop{
                     utils::print_progress_bar();
                     otp_helper::show_codes(&elements);
-                    sleep(Duration::from_millis(1000));
+                    sleep(Duration::from_millis(2000));
                     utils::clear_lines(elements.len() * 2 + 4,false);
                 }
             }
