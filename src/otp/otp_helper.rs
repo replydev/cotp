@@ -1,4 +1,4 @@
-use prettytable::{Table, row, cell};
+use prettytable::{Table, row, cell,format};
 use serde_json;
 use serde::{Deserialize, Serialize};
 use crate::{cryptograpy, database_loader};
@@ -37,7 +37,8 @@ pub fn read_codes() -> Result<Vec<OTPElement>,String>{
 pub fn show_codes(elements: &Vec<OTPElement>) -> usize{
     let mut print_settings = PrintSettings::new();
     let mut table = Table::new();
-    table.add_row(row!["Id","Issuer","Label","Code"]);
+    table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
+    table.set_titles(row!["Id","Issuer","Label","Code"]);
     for i in 0..elements.len() {
         add_element_to_table(i, &mut table, &elements[i],&mut print_settings);
     }

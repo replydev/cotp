@@ -68,6 +68,6 @@ impl PrintSettings {
     }
 
     pub fn get_width(&self) -> usize {
-        self.max_id + 2 + self.max_issuer + 2 + self.max_label + 2 + self.max_code + 2 + 3
+        self.max_id + 2 + self.max_issuer + 2 + self.max_label + 2 + self.max_code + 2 + 2
     }
 }

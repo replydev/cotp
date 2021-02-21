@@ -30,7 +30,7 @@ fn print_title(){
 #[cfg(debug_assertions)]
 fn init_ctrlc_handler(lines: usize){
     ctrlc::set_handler(move || {
-        utils::clear_lines(lines + 7,true);
+        utils::clear_lines(lines + 9,true);
         std::process::exit(0);
     }).expect("Failed to initialize ctrl-c handler");
 }
@@ -38,7 +38,7 @@ fn init_ctrlc_handler(lines: usize){
 #[cfg(not(debug_assertions))]
 fn init_ctrlc_handler(lines: usize){
     ctrlc::set_handler(move || {
-        utils::clear_lines(lines + 6,true);
+        utils::clear_lines(lines + 8,true);
         std::process::exit(0);
     }).expect("Failed to initialize ctrl-c handler");
 }
@@ -99,7 +99,7 @@ fn dashboard(){
                     let width = otp_helper::show_codes(&elements);
                     utils::print_progress_bar(width as u64);
                     sleep(Duration::from_millis(2000));
-                    utils::clear_lines(elements.len() * 2 + 4,false);
+                    utils::clear_lines(elements.len() + 3,false);
                 }
             }
         },
