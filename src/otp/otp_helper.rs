@@ -5,6 +5,7 @@ use crate::{cryptograpy, database_loader};
 use crate::otp::otp_element::OTPElement;
 use crate::otp::otp_maker::make_totp;
 use crate::utils::check_elements;
+use crate::print_settings::PrintSettings;
 
 
 #[derive(Serialize, Deserialize)]
@@ -33,17 +34,31 @@ pub fn read_codes() -> Result<Vec<OTPElement>,String>{
     }
 }
 
-pub fn show_codes(elements: &Vec<OTPElement>){
+pub fn show_codes(elements: &Vec<OTPElement>) -> usize{
+    let mut print_settings = PrintSettings::new();
     let mut table = Table::new();
     table.add_row(row!["Id","Issuer","Label","Code"]);
     for i in 0..elements.len() {
-        add_element_to_table(i, &mut table, &elements[i]);
+        add_element_to_table(i, &mut table, &elements[i],&mut print_settings);
     }
     table.printstd();
+    print_settings.get_width()
 }
 
-fn add_element_to_table(i: usize, table: &mut Table,element: &OTPElement){
-    table.add_row(row![i+1,element.issuer(),element.label(),get_good_otp_code(&element)]);
+fn add_element_to_table(i: usize, table: &mut Table,element: &OTPElement,print_settings: &mut PrintSettings){
+    let index = (i+1).to_string();
+    let issuer = element.issuer();
+    let label = element.label();
+    let code = get_good_otp_code(&element);
+    table.add_row(row![index,issuer,label,code]);
+
+    let mut temp_print = PrintSettings::new();
+    temp_print.set_max_id(index.len());
+    temp_print.set_max_issuer(issuer.len());
+    temp_print.set_max_label(label.len());
+    temp_print.set_max_code(code.len());
+
+    print_settings.check_other(&temp_print);
 }
 
 fn get_good_otp_code(element: &OTPElement) -> String {

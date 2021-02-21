@@ -4,6 +4,7 @@ mod argument_functions;
 mod cryptograpy;
 mod importers;
 mod otp;
+mod print_settings;
 use std::env;
 use sodiumoxide;
 use std::thread::sleep;
@@ -95,8 +96,8 @@ fn dashboard(){
             else{
                 init_ctrlc_handler(elements.len());
                 loop{
-                    utils::print_progress_bar();
-                    otp_helper::show_codes(&elements);
+                    let width = otp_helper::show_codes(&elements);
+                    utils::print_progress_bar(width as u64);
                     sleep(Duration::from_millis(2000));
                     utils::clear_lines(elements.len() * 2 + 4,false);
                 }
