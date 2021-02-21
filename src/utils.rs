@@ -3,6 +3,7 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use dirs::home_dir;
+use terminal_size::{Width,Height,terminal_size};
 use crate::otp::otp_element::OTPElement;
 
 #[cfg(debug_assertions)]
@@ -111,7 +112,23 @@ pub fn check_elements(id: usize,elements: &Vec<OTPElement>) -> Result<(),String>
     Ok(())
 }
 
+pub fn get_terminal_height() -> usize {
+    let size = terminal_size();
+    if let Some((Width(_w), Height(h))) = size {
+        return h as usize;
+    } else {
+        0
+    }
+}
 
+pub fn get_usable_table_rows_number() -> usize {
+    let terminal_height = get_terminal_height();
+    if terminal_height <= 0 {
+        return 0;
+    }
+    0
+
+}
 #[cfg(test)]
 mod tests{
     use super::create_db_if_needed;

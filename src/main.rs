@@ -7,6 +7,7 @@ mod otp;
 mod print_settings;
 use std::env;
 use sodiumoxide;
+use utils::clear_lines;
 use std::thread::sleep;
 use std::time::Duration;
 use ctrlc;
@@ -16,9 +17,8 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg(debug_assertions)]
 fn print_title(){
-    println!("cotp v{}",VERSION);
+    println!("cotp v{} **DEBUG VERSION**",VERSION);
     println!("written by @replydev\n");
-    println!("****DEBUG VERSION****\n");
 }
 
 #[cfg(not(debug_assertions))]
@@ -27,18 +27,9 @@ fn print_title(){
     println!("written by @replydev\n");
 }
 
-#[cfg(debug_assertions)]
 fn init_ctrlc_handler(lines: usize){
     ctrlc::set_handler(move || {
-        utils::clear_lines(lines + 9,true);
-        std::process::exit(0);
-    }).expect("Failed to initialize ctrl-c handler");
-}
-
-#[cfg(not(debug_assertions))]
-fn init_ctrlc_handler(lines: usize){
-    ctrlc::set_handler(move || {
-        utils::clear_lines(lines + 8,true);
+        utils::clear_lines(lines + 3,true);
         std::process::exit(0);
     }).expect("Failed to initialize ctrl-c handler");
 }
@@ -68,6 +59,7 @@ fn init() -> Result<bool, String>{
 }
 
 fn main() {
+    clear_lines(utils::get_terminal_height(), true);
     print_title();
     let init_result = init();
     match init_result {
@@ -95,6 +87,7 @@ fn dashboard(){
             }
             else{
                 init_ctrlc_handler(elements.len());
+                clear_lines(4, true);
                 loop{
                     let width = otp_helper::show_codes(&elements);
                     utils::print_progress_bar(width as u64);
