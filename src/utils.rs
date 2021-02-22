@@ -126,7 +126,7 @@ pub fn get_usable_table_rows() -> usize {
     if terminal_height <= 3  {
         panic!("Not enough terminal space!");
     }
-    return get_terminal_height() - 3 ; // minus one becouse we have to count the last row
+    return get_terminal_height() - 4; // minus one becouse we have to count the last row
 }
 
 #[cfg(test)]

@@ -103,16 +103,19 @@ fn dashboard(){
                     let terminal_height_after = utils::get_terminal_height();
                     let device_state = DeviceState::new();
                     let keys: Vec<Keycode> = device_state.get_keys();
+                    let mut modified = false;
                     if keys.contains(&Keycode::Q) {
                         exit_clean(elements_len)
                     }
-                    if keys.contains(&Keycode::N) {
+                    if keys.contains(&Keycode::Right) {
                         current_page += 1;
+                        modified = true;
                     }
-                    if keys.contains(&Keycode::B) && current_page > 1 {
+                    if keys.contains(&Keycode::Left) && current_page > 1 {
                         current_page -= 1;
+                        modified = true;
                     }
-                    utils::clear_lines(elements_len + 3,terminal_height_before != terminal_height_after);
+                    utils::clear_lines(elements_len + 3,(terminal_height_before != terminal_height_after) || modified);
                 }
             }
         },
