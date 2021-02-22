@@ -129,6 +129,10 @@ pub fn get_usable_table_rows() -> usize {
     return get_terminal_height() - 4; // minus one becouse we have to count the last row
 }
 
+pub fn get_max_pages(elements: usize,usable: usize) -> usize{
+    (elements as f32 / usable as f32).ceil() as usize
+}
+
 #[cfg(test)]
 mod tests{
     use super::create_db_if_needed;

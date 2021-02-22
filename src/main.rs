@@ -107,7 +107,7 @@ fn dashboard(){
                     if keys.contains(&Keycode::Q) {
                         exit_clean(elements_len)
                     }
-                    if keys.contains(&Keycode::Right) {
+                    if keys.contains(&Keycode::Right) && current_page < utils::get_max_pages(elements_len, utils::get_usable_table_rows()){
                         current_page += 1;
                         modified = true;
                     }

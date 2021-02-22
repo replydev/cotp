@@ -40,8 +40,8 @@ pub fn show_codes(elements: &Vec<OTPElement>,mut page: usize) -> usize{
     table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
     table.set_titles(row!["Id","Issuer","Label","Code"]);
 
-    let mut first_index;
-    let mut last_index;
+    let first_index;
+    let last_index;
     
     if page == 0 {
         first_index = 0;
@@ -53,13 +53,12 @@ pub fn show_codes(elements: &Vec<OTPElement>,mut page: usize) -> usize{
             // we can print all the elements in one page
             page = 1;
         }
+        // already checked before calling this procedure
+        /*while page > utils::get_max_pages(elements.len(), usable_rows) {
+            page -= 1;
+        }*/
         last_index = page * usable_rows - 1;
         first_index = last_index - (usable_rows - 1);
-        while first_index >= elements.len() {
-            page -= 1;
-            last_index = page * usable_rows - 1;
-            first_index = last_index - (usable_rows - 1);
-        }  
     }
 
     for i in first_index..last_index + 1 {
