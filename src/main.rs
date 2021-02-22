@@ -12,6 +12,7 @@ use std::thread::sleep;
 use std::time::Duration;
 use ctrlc;
 use otp::otp_helper;
+use device_query::{DeviceQuery, DeviceState, Keycode};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -27,10 +28,14 @@ fn print_title(){
     println!("written by @replydev\n");
 }
 
+fn exit_clean(lines: usize){
+    utils::clear_lines(lines + 3,true);
+        std::process::exit(0);
+}
+
 fn init_ctrlc_handler(lines: usize){
     ctrlc::set_handler(move || {
-        utils::clear_lines(lines + 3,true);
-        std::process::exit(0);
+        exit_clean(lines);
     }).expect("Failed to initialize ctrl-c handler");
 }
 
@@ -86,13 +91,28 @@ fn dashboard(){
                 println!("No codes, type \"cotp -h\" to get help");
             }
             else{
-                init_ctrlc_handler(elements.len());
+                let mut current_page: usize = 1;
+                let elements_len = elements.len();
+                init_ctrlc_handler(elements_len);
                 clear_lines(4, true);
                 loop{
-                    let width = otp_helper::show_codes(&elements);
+                    let terminal_height_before = utils::get_terminal_height();
+                    let width = otp_helper::show_codes(&elements,current_page);
                     utils::print_progress_bar(width as u64);
-                    sleep(Duration::from_millis(2000));
-                    utils::clear_lines(elements.len() + 3,false);
+                    sleep(Duration::from_millis(500));
+                    let terminal_height_after = utils::get_terminal_height();
+                    let device_state = DeviceState::new();
+                    let keys: Vec<Keycode> = device_state.get_keys();
+                    if keys.contains(&Keycode::Q) {
+                        exit_clean(elements_len)
+                    }
+                    if keys.contains(&Keycode::N) {
+                        current_page += 1;
+                    }
+                    if keys.contains(&Keycode::B) && current_page > 1 {
+                        current_page -= 1;
+                    }
+                    utils::clear_lines(elements_len + 3,terminal_height_before != terminal_height_after);
                 }
             }
         },

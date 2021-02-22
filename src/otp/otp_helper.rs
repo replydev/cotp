@@ -1,12 +1,11 @@
 use prettytable::{Table, row, cell,format};
 use serde_json;
 use serde::{Deserialize, Serialize};
-use crate::{cryptograpy, database_loader};
+use crate::{cryptograpy, database_loader, utils};
 use crate::otp::otp_element::OTPElement;
 use crate::otp::otp_maker::make_totp;
 use crate::utils::check_elements;
 use crate::print_settings::PrintSettings;
-
 
 #[derive(Serialize, Deserialize)]
 struct JsonResult{
@@ -34,13 +33,35 @@ pub fn read_codes() -> Result<Vec<OTPElement>,String>{
     }
 }
 
-pub fn show_codes(elements: &Vec<OTPElement>) -> usize{
+pub fn show_codes(elements: &Vec<OTPElement>,mut page: usize) -> usize{
     let mut print_settings = PrintSettings::new();
+
     let mut table = Table::new();
     table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
     table.set_titles(row!["Id","Issuer","Label","Code"]);
-    for i in 0..elements.len() {
+
+    let first_index;
+    let last_index;
+    
+    if page == 0 {
+        first_index = 0;
+        last_index = elements.len() - 1;
+    }
+    else{
+        let usable_rows = utils::get_usable_table_rows();
+        if usable_rows / elements.len() >= 1{
+            // we can print all the elements in one page
+            page = 1;
+        }
+        last_index = page * usable_rows - 1;
+        first_index = last_index - (usable_rows - 1);
+    }
+
+    for i in first_index..last_index {
         add_element_to_table(i, &mut table, &elements[i],&mut print_settings);
+        if i + 1 >= elements.len(){
+            break;
+        }
     }
     table.printstd();
     print_settings.get_width()

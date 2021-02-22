@@ -121,14 +121,14 @@ pub fn get_terminal_height() -> usize {
     }
 }
 
-pub fn get_usable_table_rows_number() -> usize {
+pub fn get_usable_table_rows() -> usize {
     let terminal_height = get_terminal_height();
-    if terminal_height <= 0 {
-        return 0;
+    if terminal_height <= 3  {
+        panic!("Not enough terminal space!");
     }
-    0
-
+    return get_terminal_height() - 3 ; // minus one becouse we have to count the last row
 }
+
 #[cfg(test)]
 mod tests{
     use super::create_db_if_needed;
