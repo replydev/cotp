@@ -99,7 +99,7 @@ fn dashboard(){
                     let terminal_height_before = utils::get_terminal_height();
                     let width = otp_helper::show_codes(&elements,current_page);
                     utils::print_progress_bar(width as u64);
-                    sleep(Duration::from_millis(500));
+                    sleep(Duration::from_millis(200));
                     let terminal_height_after = utils::get_terminal_height();
                     let device_state = DeviceState::new();
                     let keys: Vec<Keycode> = device_state.get_keys();
