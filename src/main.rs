@@ -12,7 +12,9 @@ use std::thread::sleep;
 use std::time::Duration;
 use ctrlc;
 use otp::otp_helper;
-use device_query::{DeviceQuery, DeviceState, Keycode};
+use crossterm::event::{KeyCode,Event,read};
+use std::thread;
+use std::sync::{Arc, Mutex};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -91,31 +93,40 @@ fn dashboard(){
                 println!("No codes, type \"cotp -h\" to get help");
             }
             else{
-                let mut current_page: usize = 1;
+                let current_page = Arc::new(Mutex::new(1));
+                let current_page_clone = current_page.clone();
+                let modified = Arc::new(Mutex::new(false));
+                let modified_clone = modified.clone();
+                //let elements_mutex = Arc::new(Mutex::new(elements));
+                //let elements_mutex_clone = elements_mutex.clone();
+
                 let elements_len = elements.len();
                 init_ctrlc_handler(elements_len);
+                thread::spawn(move || {
+                    loop {
+                        let event = read().unwrap();
+                        *modified.lock().unwrap() = false;
+                        if event == Event::Key(KeyCode::Char('q').into()) {
+                            exit_clean(elements_len)
+                        }
+                        if event == Event::Key(KeyCode::Right.into()) && *current_page.lock().unwrap() < utils::get_max_pages(elements_len, utils::get_usable_table_rows()){
+                            *current_page.lock().unwrap() += 1;
+                            *modified.lock().unwrap() = true;
+                        }
+                        if event == Event::Key(KeyCode::Left.into()) && *current_page.lock().unwrap() > 1 {
+                            *current_page.lock().unwrap() -= 1;
+                            *modified.lock().unwrap() = true;
+                        }
+                    }
+                });
                 clear_lines(4, true);
                 loop{
                     let terminal_height_before = utils::get_terminal_height();
-                    let width = otp_helper::show_codes(&elements,current_page);
+                    let width = otp_helper::show_codes(&elements,*current_page_clone.lock().unwrap());
                     utils::print_progress_bar(width as u64);
-                    sleep(Duration::from_millis(500));
+                    sleep(Duration::from_millis(200));
                     let terminal_height_after = utils::get_terminal_height();
-                    let device_state = DeviceState::new();
-                    let keys: Vec<Keycode> = device_state.get_keys();
-                    let mut modified = false;
-                    if keys.contains(&Keycode::Q) {
-                        exit_clean(elements_len)
-                    }
-                    if keys.contains(&Keycode::Right) && current_page < utils::get_max_pages(elements_len, utils::get_usable_table_rows()){
-                        current_page += 1;
-                        modified = true;
-                    }
-                    if keys.contains(&Keycode::Left) && current_page > 1 {
-                        current_page -= 1;
-                        modified = true;
-                    }
-                    utils::clear_lines(elements_len + 3,(terminal_height_before != terminal_height_after) || modified);
+                    utils::clear_lines(elements_len + 3,(terminal_height_before != terminal_height_after) || *modified_clone.lock().unwrap());
                 }
             }
         },
