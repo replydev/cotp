@@ -86,13 +86,19 @@ You can build cotp using these commands:
 If you are familiar with the command line interface using cotp will not be a problem.
 Please note that cotp requires at least an 8 chars length password.
 If you type `cotp -h` you get some instruction on how to use cotp utilities.
-For example, the version 0.1.5 prints out this help screen:
+For example, the version 0.1.8 prints out this help screen:
 ```
-cotp v0.1.5
+cotp v0.1.8
 written by @replydev
 
 USAGE:
   cotp [SUBCOMMAND]
+
+To move between the pages (if all your tokens can't fit the screen):
+Press and hold the left arrow or the right arrow in your keyboard.
+
+To close the program:
+Use CTRL-C or press and hold "q"
 
 ARGUMENTS:
   -a,--add [ISSUER] [LABEL] [ALGORITHM] [DIGITS]       | Add a new OTP code
@@ -103,6 +109,7 @@ ARGUMENTS:
   -j,--json                                            | Print results in json format
   -s,--single                                          | Print OTP codes in single mode
   -in,--info [ID]                                      | Print info of choosen OTP code
+  -chpw,--change-password                              | Change the database password
   -h,--help                                            | Print this help
 ```
 Note that in the `--edit` command if you type . instead of argument you are specifying not to modify that specific argument.
