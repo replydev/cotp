@@ -7,6 +7,12 @@ pub fn help(){
     println!("USAGE:");
     println!("  cotp [SUBCOMMAND]");
     println!();
+    println!("To move between the pages (if all your tokens can't fit the screen):");
+    println!("Press and hold the left arrow or the right arrow in your keyboard.");
+    println!();
+    println!("To close the program:");
+    println!("Use CTRL-C or press and hold \"q\"");
+    println!();
     println!("ARGUMENTS:");
     println!("  -a,--add [ISSUER] [LABEL] [ALGORITHM] [DIGITS]       | Add a new OTP code");
     println!("  -e,--edit [ID] [ISSUER] [LABEL] [ALGORITHM] [DIGITS] | Edit an OTP code");
