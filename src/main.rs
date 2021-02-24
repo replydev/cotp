@@ -8,10 +8,8 @@ mod print_settings;
 use std::{env, io::stdout};
 use cursor::MoveTo;
 use sodiumoxide;
-use utils::clear_lines;
 use std::thread::sleep;
 use std::time::Duration;
-use ctrlc;
 use otp::otp_helper;
 #[macro_use]
 extern crate crossterm;
@@ -31,17 +29,6 @@ fn print_title(){
 fn print_title(){
     println!("cotp v{}",VERSION);
     println!("written by @replydev\n");
-}
-
-fn exit_clean(lines: usize){
-    utils::clear_lines(lines + 3,true);
-        std::process::exit(0);
-}
-
-fn init_ctrlc_handler(lines: usize){
-    ctrlc::set_handler(move || {
-        exit_clean(lines);
-    }).expect("Failed to initialize ctrl-c handler");
 }
 
 fn init() -> Result<bool, String>{
@@ -69,7 +56,6 @@ fn init() -> Result<bool, String>{
 }
 
 fn main() {
-    clear_lines(utils::get_terminal_height(), true);
     print_title();
     let init_result = init();
     match init_result {
@@ -85,11 +71,7 @@ fn main() {
     }
     let args: Vec<String> = env::args().collect();
     if !args_parser(args){
-        enable_raw_mode().unwrap();
         dashboard();
-        let mut stdout = stdout();
-        execute!(&mut stdout,Clear(ClearType::All),cursor::MoveTo(0,0)).unwrap();
-        disable_raw_mode().unwrap();
     }
 }
 
@@ -102,41 +84,34 @@ fn dashboard(){
             else{
                 let current_page = Arc::new(Mutex::new(1));
                 let current_page_clone = current_page.clone();
-                let modified = Arc::new(Mutex::new(false));
-                let modified_clone = modified.clone();
                 let exit_flag = Arc::new(Mutex::new(false));
                 let exit_flag_clone = exit_flag.clone();
                 //let elements_mutex = Arc::new(Mutex::new(elements));
                 //let elements_mutex_clone = elements_mutex.clone();
-
+                enable_raw_mode().unwrap();
                 let elements_len = elements.len();
-                init_ctrlc_handler(elements_len);
                 thread::spawn(move || {
                     loop {
                         let event = read().unwrap();
-                        *modified.lock().unwrap() = false;
                         if event == Event::Key(KeyCode::Char('q').into()) {
                             *exit_flag_clone.lock().unwrap() = true;
                         }
                         if event == Event::Key(KeyCode::Right.into()) && *current_page.lock().unwrap() < utils::get_max_pages(elements_len, utils::get_usable_table_rows()){
                             *current_page.lock().unwrap() += 1;
-                            *modified.lock().unwrap() = true;
                         }
                         if event == Event::Key(KeyCode::Left.into()) && *current_page.lock().unwrap() > 1 {
                             *current_page.lock().unwrap() -= 1;
-                            *modified.lock().unwrap() = true;
                         }
                     }
                 });
-                clear_lines(4, true);
                 while !*exit_flag.lock().unwrap(){
-                    let terminal_height_before = utils::get_terminal_height();
                     let width = otp_helper::show_codes(&elements,*current_page_clone.lock().unwrap());
                     utils::print_progress_bar(width as u64);
                     sleep(Duration::from_millis(200));
-                    let terminal_height_after = utils::get_terminal_height();
-                    utils::clear_lines(elements_len + 3,(terminal_height_before != terminal_height_after) || *modified_clone.lock().unwrap());
                 }
+                let mut stdout = stdout();
+                execute!(&mut stdout,Clear(ClearType::All),cursor::MoveTo(0,0)).unwrap();
+                disable_raw_mode().unwrap();
             }
         },
         Err(e) => eprintln!("An error occurred: {}",e),

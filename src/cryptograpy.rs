@@ -3,7 +3,6 @@ use std::convert::TryInto;
 use sodiumoxide::crypto::pwhash;
 use sodiumoxide::crypto::secretstream::{Stream, Tag, KEYBYTES};
 use sodiumoxide::crypto::secretstream::xchacha20poly1305::{Header, Key};
-use crate::utils::clear_lines;
 
 const SIGNATURE: [u8;4] = [0xC1, 0x0A, 0x4B, 0xED];
 
@@ -101,7 +100,6 @@ pub fn prompt_for_passwords(message: &str,minimum_password_length: usize,verify:
         if verify {
             verify_password = rpassword::prompt_password_stdout("Retype the same password: ").unwrap();
             if password != verify_password{
-                clear_lines(2, true);
                 println!("Passwords do not match");
                 continue;
             }
@@ -112,7 +110,6 @@ pub fn prompt_for_passwords(message: &str,minimum_password_length: usize,verify:
         else if password.len() >= minimum_password_length {
             break;
         }
-        clear_lines(1, true);
         println!("Please insert a password with at least {} digits.",minimum_password_length);
     }
     password

@@ -75,17 +75,6 @@ pub fn print_progress_bar(width: u64){
     println!("[{progress:<w$}]",  progress="=".repeat(idx as usize),w=width as usize,);
 }
 
-pub fn clear_lines(lines: usize,exit: bool){
-    if exit{
-        //  does not work during ctrl clear
-        print!("\x1B[{}A\x1B[0G\x1B[0J", lines);
-    }
-    else{
-        print!("\x1B[{}A", lines);
-    }
-}
-
-
 pub fn pow(base: f64,exp: i64) -> f64{
     if exp == 0{
         return 1.0;
