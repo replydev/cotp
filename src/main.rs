@@ -107,10 +107,10 @@ fn dashboard(){
                 while !*exit_flag.lock().unwrap(){
                     let width = otp_helper::show_codes(&elements,*current_page_clone.lock().unwrap());
                     utils::print_progress_bar(width as u64);
-                    sleep(Duration::from_millis(200));
+                    sleep(Duration::from_millis(500));
                 }
                 let mut stdout = stdout();
-                execute!(&mut stdout,Clear(ClearType::All),cursor::MoveTo(0,0)).unwrap();
+                execute!(&mut stdout,Clear(ClearType::All),MoveTo(0,0)).unwrap();
                 disable_raw_mode().unwrap();
             }
         },
