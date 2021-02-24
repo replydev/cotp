@@ -1,4 +1,4 @@
-use crossterm::{cursor, style::Print, terminal::{Clear, ClearType}};
+use crossterm::{cursor, terminal::{Clear, ClearType, disable_raw_mode, enable_raw_mode}};
 use prettytable::{Table, row, cell,format};
 use serde_json;
 use serde::{Deserialize, Serialize};
@@ -70,7 +70,10 @@ pub fn show_codes(elements: &Vec<OTPElement>,mut page: usize) -> usize{
         }
     }
     let mut stdout = stdout();
-    execute!(stdout, Clear(ClearType::All), cursor::MoveTo(0, 0), Print(table.to_string())).unwrap();
+    execute!(stdout, Clear(ClearType::All), cursor::MoveTo(0, 0),).unwrap();
+    disable_raw_mode().unwrap();
+    table.printstd();
+    enable_raw_mode().unwrap();
     //table.print(&mut stdout).unwrap();
     print_settings.get_width()
 }
