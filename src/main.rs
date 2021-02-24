@@ -5,14 +5,17 @@ mod cryptograpy;
 mod importers;
 mod otp;
 mod print_settings;
-use std::env;
+use std::{env, io::stdout};
+use cursor::MoveTo;
 use sodiumoxide;
 use utils::clear_lines;
 use std::thread::sleep;
 use std::time::Duration;
 use ctrlc;
 use otp::otp_helper;
-use crossterm::event::{KeyCode,Event,read};
+#[macro_use]
+extern crate crossterm;
+use crossterm::{cursor, event::{KeyCode,Event,read}, terminal::{Clear, ClearType, disable_raw_mode, enable_raw_mode}};
 use std::thread;
 use std::sync::{Arc, Mutex};
 
@@ -82,7 +85,11 @@ fn main() {
     }
     let args: Vec<String> = env::args().collect();
     if !args_parser(args){
+        enable_raw_mode().unwrap();
         dashboard();
+        let mut stdout = stdout();
+        execute!(&mut stdout,Clear(ClearType::All),cursor::MoveTo(0,0)).unwrap();
+        disable_raw_mode().unwrap();
     }
 }
 
@@ -97,6 +104,8 @@ fn dashboard(){
                 let current_page_clone = current_page.clone();
                 let modified = Arc::new(Mutex::new(false));
                 let modified_clone = modified.clone();
+                let exit_flag = Arc::new(Mutex::new(false));
+                let exit_flag_clone = exit_flag.clone();
                 //let elements_mutex = Arc::new(Mutex::new(elements));
                 //let elements_mutex_clone = elements_mutex.clone();
 
@@ -107,7 +116,7 @@ fn dashboard(){
                         let event = read().unwrap();
                         *modified.lock().unwrap() = false;
                         if event == Event::Key(KeyCode::Char('q').into()) {
-                            exit_clean(elements_len)
+                            *exit_flag_clone.lock().unwrap() = true;
                         }
                         if event == Event::Key(KeyCode::Right.into()) && *current_page.lock().unwrap() < utils::get_max_pages(elements_len, utils::get_usable_table_rows()){
                             *current_page.lock().unwrap() += 1;
@@ -120,7 +129,7 @@ fn dashboard(){
                     }
                 });
                 clear_lines(4, true);
-                loop{
+                while !*exit_flag.lock().unwrap(){
                     let terminal_height_before = utils::get_terminal_height();
                     let width = otp_helper::show_codes(&elements,*current_page_clone.lock().unwrap());
                     utils::print_progress_bar(width as u64);

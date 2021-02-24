@@ -1,3 +1,4 @@
+use crossterm::{cursor, style::Print, terminal::{Clear, ClearType}};
 use prettytable::{Table, row, cell,format};
 use serde_json;
 use serde::{Deserialize, Serialize};
@@ -6,6 +7,7 @@ use crate::otp::otp_element::OTPElement;
 use crate::otp::otp_maker::make_totp;
 use crate::utils::check_elements;
 use crate::print_settings::PrintSettings;
+use std::io::stdout;
 
 #[derive(Serialize, Deserialize)]
 struct JsonResult{
@@ -67,7 +69,9 @@ pub fn show_codes(elements: &Vec<OTPElement>,mut page: usize) -> usize{
             break;
         }
     }
-    table.printstd();
+    let mut stdout = stdout();
+    execute!(stdout, Clear(ClearType::All), cursor::MoveTo(0, 0), Print(table.to_string())).unwrap();
+    //table.print(&mut stdout).unwrap();
     print_settings.get_width()
 }
 
