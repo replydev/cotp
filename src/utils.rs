@@ -84,21 +84,6 @@ pub fn clear_lines(lines: usize,exit: bool){
     }
 }
 
-
-pub fn pow(base: f64,exp: i64) -> f64{
-    if exp == 0{
-        return 1.0;
-    }
-    if exp < 0{
-        return 1.0 / pow(base,-1 * exp);
-    }
-    let mut tot = 1.0;
-    for _i in 0..exp{
-        tot *= base;
-    }
-    tot
-}
-
 pub fn check_elements(id: usize,elements: &Vec<OTPElement>) -> Result<(),String>{
     if elements.len() == 0{
         return Err(String::from("there are no elements in your database. Type \"cotp -h\" to get help."));
@@ -119,13 +104,5 @@ mod tests{
     #[test]
     fn test_db_creation() {
         assert_eq!(Ok(true),create_db_if_needed());
-    }
-
-    #[test]
-    fn test_pow(){
-        assert_eq!(64.0,pow(8.0,2));
-        assert_eq!(1.0,pow(134234.0,0));
-        assert_eq!(0.2,pow(5.0,-1));
-        assert_eq!(0.000244140625,pow(64.0,-2));
     }
 }

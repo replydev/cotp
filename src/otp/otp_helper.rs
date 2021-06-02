@@ -19,7 +19,7 @@ struct JsonResult{
 impl JsonResult {
     pub fn new(index: usize, issuer: String, label: String,otp_code: String) -> JsonResult {
         JsonResult{
-            index: index, 
+            index: index,
             issuer: issuer,
             label: label,
             otp_code: otp_code
@@ -65,7 +65,7 @@ fn add_element_to_table(i: usize, table: &mut Table,element: &OTPElement,print_s
 fn get_good_otp_code(element: &OTPElement) -> String {
     let otp = make_totp(
         &element.secret(), //we have replaced '=' in this method
-               element.period(), 0,&element.algorithm().to_uppercase(),element.digits()).unwrap();
+               &element.algorithm().to_uppercase(),element.digits());
     let mut s_otp = otp.to_string();
 
     while s_otp.len() < element.digits() as usize {
