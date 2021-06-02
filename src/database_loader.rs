@@ -13,13 +13,13 @@ pub fn read_decrypted_text(password: &str) -> Result<String,String>{
 }
 
 pub fn read_from_file(password: &str) -> Result<Vec<OTPElement>,String>{
-    match read_decrypted_text(password) {
+    return match read_decrypted_text(password) {
         Ok(contents) => {
             let vector: Vec<OTPElement> = serde_json::from_str(&contents).unwrap();
-            return Ok(vector);
+            Ok(vector)
         },
         Err(e) => {
-            return Err(e);
+            Err(e)
         }
     }
 }
@@ -135,16 +135,16 @@ pub fn export_database() -> Result<String, String> {
     let mut file = File::create(&exported_path).expect("Cannot create file");
     let encrypted_contents = read_to_string(&get_db_path()).unwrap();
     let contents = cryptograpy::decrypt_string(&encrypted_contents, &cryptograpy::prompt_for_passwords("Password: ",8,false));
-    match contents {
+    return match contents {
         Ok(contents) => {
-            if contents == "[]"{
+            if contents == "[]" {
                 return Err(String::from("there are no elements in your database, type \"cotp -h\" to get help"));
             }
             file.write_all(contents.as_bytes()).expect("Failed to write contents");
-            return Ok(exported_path);
+            Ok(exported_path)
         },
         Err(e) => {
-            return Err(format!("{}",e));
+            Err(format!("{}", e))
         }
     }
 }

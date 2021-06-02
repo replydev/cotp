@@ -19,10 +19,10 @@ struct JsonResult{
 impl JsonResult {
     pub fn new(index: usize, issuer: String, label: String,otp_code: String) -> JsonResult {
         JsonResult{
-            index: index,
-            issuer: issuer,
-            label: label,
-            otp_code: otp_code
+            index,
+            issuer,
+            label,
+            otp_code
         }
     }
 }

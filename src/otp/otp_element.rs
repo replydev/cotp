@@ -42,9 +42,6 @@ impl OTPElement {
     pub fn issuer(&self) -> String{
         self.issuer.to_string()
     }
-    pub fn period(&self) -> u64{
-        self.period
-    }
     pub fn digits(&self) -> u64{
         self.digits
     }

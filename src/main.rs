@@ -54,9 +54,9 @@ fn init() -> Result<bool, String>{
         Ok(value) => {
             if value {
                 let pw = &cryptograpy::prompt_for_passwords("Choose a password: ", 8,true);
-                match database_loader::overwrite_database_json("[]",pw){
-                    Ok(()) => return Ok(true),
-                    Err(_e) => return Err(String::from("An error occurred during database overwriting")),
+                return match database_loader::overwrite_database_json("[]", pw) {
+                    Ok(()) => Ok(true),
+                    Err(_e) => Err(String::from("An error occurred during database overwriting")),
                 }
             }
             Ok(false)

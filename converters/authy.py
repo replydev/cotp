@@ -1,12 +1,14 @@
 import sys
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as Et
 import json
 
+
 def fetch_json(filename):
-    tree = ET.parse(filename)
-    j = tree.find("string").text.replace("&quot;","\"")
+    tree = Et.parse(filename)
+    j = tree.find("string").text.replace("&quot;", "\"")
     return json.loads(j)
-    
+
+
 def object_to_cotp_json(d):
     final = []
     for element in d:
@@ -20,14 +22,16 @@ def object_to_cotp_json(d):
         )
     return final
 
+
 def main():
     if len(sys.argv) != 3:
         print("Usage: python authy.py [INPUT_FILE] [OUTPUT_FILE]")
         return
 
     data = fetch_json(sys.argv[1])
-    output_file = open(sys.argv[2],'w')
+    output_file = open(sys.argv[2], 'w')
     output_file.write(json.dumps(object_to_cotp_json(data)))
     output_file.close()
+
 
 main()

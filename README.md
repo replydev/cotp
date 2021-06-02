@@ -121,7 +121,7 @@ Note that in the `--edit` command if you type . instead of argument you are spec
 | 3 | Email_Provider | **mymailother@example.com** | SHA1 | **8** |
 
 ## Database conversion
-To import Authy or Google Authenticator databases you need first of all to obtain the respective files in your phone in the paths: 
+To import Authy or Google Authenticator databases you need first to obtain the respective files in your phone in the paths: 
 - **Authy**: `/data/data/com.authy.authy/shared_prefs/com.authy.storage.tokens.authenticator.xml`
 - **Google Authenticator**: `/data/data/com.google.android.apps.authenticator2/databases/databases`
 
