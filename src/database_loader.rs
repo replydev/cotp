@@ -5,6 +5,7 @@ use crate::utils;
 use utils::{get_db_path,check_elements};
 use crate::cryptograpy;
 use crate::otp::otp_element::OTPElement;
+use data_encoding::{BASE32_NOPAD};
 
 pub fn read_decrypted_text(password: &str) -> Result<String,String>{
     let encrypted_contents = read_to_string(&get_db_path()).unwrap();
@@ -24,19 +25,18 @@ pub fn read_from_file(password: &str) -> Result<Vec<OTPElement>,String>{
     }
 }
 
-pub fn check_secret(secret: &str) -> bool{
-    //only uppercase characters and numbers
-    if secret.is_empty(){
-        return false;
+pub fn check_secret(secret: &str) -> Result<(),data_encoding::DecodeError>{
+    return match BASE32_NOPAD.decode(secret.as_bytes()) {
+        Ok(_r) => Ok(()),
+        Err(error)=> Err(error)
     }
-    // we have already uppercased the secret
-    return secret.chars().all(char::is_alphanumeric);
 }
 
 pub fn add_element(secret: &String,issuer: &String,label: &String,algorithm: &str,digits: u64) -> Result<(),String>{
     let upper_secret = secret.to_uppercase().replace("=", "");
-    if !check_secret(&upper_secret){
-        return Err(String::from("Bad secret"))
+    match check_secret(&upper_secret){
+        Ok(()) => {},
+        Err(error) => return Err(error.to_string())
     }
     let pw = &cryptograpy::prompt_for_passwords("Password: ",8,false);
     let otp_element = OTPElement::new(upper_secret.to_string(), issuer.to_string(), label.to_string(),digits, String::from("TOTP"), String::from(algorithm).to_uppercase(),String::from("Default"),0,0,30,vec![]);
