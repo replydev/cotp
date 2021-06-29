@@ -4,6 +4,7 @@ use sodiumoxide::crypto::pwhash;
 use sodiumoxide::crypto::secretstream::{Stream, Tag, KEYBYTES};
 use sodiumoxide::crypto::secretstream::xchacha20poly1305::{Header, Key};
 use crate::utils::clear_lines;
+use data_encoding::BASE64;
 
 const SIGNATURE: [u8;4] = [0xC1, 0x0A, 0x4B, 0xED];
 
@@ -36,20 +37,20 @@ fn argon_derive_key(key: &mut[u8;32],password_bytes: &[u8],salt: &pwhash::argon2
 
 pub fn encrypt_string(plaintext: String,password: &str) -> String {
     let mut encrypted = String::new();
-    encrypted.push_str(&base64::encode(SIGNATURE));
+    encrypted.push_str(&BASE64.encode(&SIGNATURE));
     encrypted.push('|');
     let salt = pwhash::argon2id13::gen_salt();
-    encrypted.push_str(&base64::encode(salt.0));
+    encrypted.push_str(&BASE64.encode(&salt.0));
     encrypted.push('|');
     let key = argon_derive_key(&mut [0u8; KEYBYTES],password.as_bytes(),&salt).unwrap();
     let (mut enc_stream, header) = Stream::init_push(&key).unwrap();
 
-    encrypted.push_str(&base64::encode(header.0));
+    encrypted.push_str(&BASE64.encode(&header.0));
     encrypted.push('|');
 
     let encrypted_string = enc_stream.push(plaintext.as_bytes(), None, Tag::Message).expect("Cannot encrypt");
 
-    encrypted.push_str(&base64::encode(encrypted_string));
+    encrypted.push_str(&BASE64.encode(&encrypted_string));
     encrypted
 }
 
@@ -59,11 +60,11 @@ pub fn decrypt_string(encrypted_text: &str,password: &str) -> Result<String, Str
     if vec.len() != 4{
         return Err(String::from("Corrupted database file"));
     }
-    let byte_salt = base64::decode(vec[1]).unwrap();
+    let byte_salt = BASE64.decode(vec[1].as_bytes()).unwrap();
     let salt = pwhash::argon2id13::Salt(byte_vec_to_byte_array(byte_salt));
-    let byte_header = base64::decode(vec[2]).unwrap();
+    let byte_header = BASE64.decode(vec[2].as_bytes()).unwrap();
     let header = Header(header_vec_to_header_array(byte_header));
-    let cipher = base64::decode(vec[3]).unwrap();
+    let cipher = BASE64.decode(vec[3].as_bytes()).unwrap();
 
     let mut key = [0u8; KEYBYTES];
     pwhash::argon2id13::derive_key(&mut key, password.as_bytes(), &salt,
