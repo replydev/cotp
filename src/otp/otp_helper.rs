@@ -66,12 +66,8 @@ fn get_good_otp_code(element: &OTPElement) -> String {
     let otp = make_totp(
         &element.secret(), //we have replaced '=' in this method
                &element.algorithm().to_uppercase(),element.digits());
-    let mut s_otp = otp.to_string();
 
-    while s_otp.len() < element.digits() as usize {
-        s_otp = String::from("0") + &s_otp;
-    }
-    s_otp
+    "0".repeat(otp.len() - element.digits() as usize) + otp.as_str()
 }
 
 pub fn get_json_results() -> Result<String,String>{
