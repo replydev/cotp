@@ -126,7 +126,7 @@ pub fn export(args: Vec<String>){
         let export_result = database_loader::export_database();
         match export_result{
             Ok(export_result) => {
-                println!("Database was successfully exported at {}", export_result);
+                println!("Database was successfully exported at {}", export_result.to_str().expect("**Invalid path**"));
             },
             Err(e) =>{
                 eprintln!("An error occured while exporting database: {}", e);

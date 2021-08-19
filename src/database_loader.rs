@@ -6,6 +6,7 @@ use utils::{get_db_path,check_elements};
 use crate::cryptograpy;
 use crate::otp::otp_element::OTPElement;
 use data_encoding::{BASE32_NOPAD};
+use std::path::PathBuf;
 
 pub fn read_decrypted_text(password: &str) -> Result<String,String>{
     let encrypted_contents = read_to_string(&get_db_path()).unwrap();
@@ -70,12 +71,7 @@ pub fn remove_element_from_db(mut id: usize) -> Result<(),String>{
 
     match check_elements(id, &elements){
         Ok(()) => {
-            for i in 0..elements.len(){
-                if i == id {
-                    elements.remove(i);
-                    break;
-                }
-            }
+            elements.remove(id);
             match overwrite_database(elements,pw){
                 Ok(()) => Ok(()),
                 Err(e) => Err(format!("{}",e)),
@@ -100,25 +96,20 @@ pub fn edit_element(mut id: usize, secret: &str,issuer: &str,label: &str,algorit
 
     match check_elements(id,&elements){
         Ok(()) => {
-            for i in 0..elements.len() {
-                if i == id{
-                    if secret != ""{
-                        elements[i].set_secret(secret.to_string());
-                    }
-                    if issuer != "."{
-                        elements[i].set_issuer(issuer.to_string());
-                    }
-                    if label != "."{
-                        elements[i].set_label(label.to_string());
-                    }
-                    if algorithm != "."{
-                        elements[i].set_algorithm(algorithm.to_string().to_uppercase());
-                    }
-                    if digits != 0{
-                        elements[i].set_digits(digits);
-                    }
-                    break;
-                }
+            if secret != ""{
+                elements[id].set_secret(secret.to_string());
+            }
+            if issuer != "."{
+                elements[id].set_issuer(issuer.to_string());
+            }
+            if label != "."{
+                elements[id].set_label(label.to_string());
+            }
+            if algorithm != "."{
+                elements[id].set_algorithm(algorithm.to_string().to_uppercase());
+            }
+            if digits != 0{
+                elements[id].set_digits(digits);
             }
             match overwrite_database(elements,pw){
                 Ok(()) => Ok(()),
@@ -129,9 +120,8 @@ pub fn edit_element(mut id: usize, secret: &str,issuer: &str,label: &str,algorit
     }
 }
 
-pub fn export_database() -> Result<String, String> {
-    let mut exported_path = utils::get_home_folder().to_str().unwrap().to_string();
-    exported_path.push_str("/exported.cotp");
+pub fn export_database() -> Result<PathBuf, String> {
+    let exported_path = utils::get_home_folder().join("exported.cotp");
     let mut file = File::create(&exported_path).expect("Cannot create file");
     let encrypted_contents = read_to_string(&get_db_path()).unwrap();
     let contents = cryptograpy::decrypt_string(&encrypted_contents, &cryptograpy::prompt_for_passwords("Password: ",8,false));
