@@ -10,6 +10,10 @@ use std::path::PathBuf;
 
 pub fn read_decrypted_text(password: &str) -> Result<String,String>{
     let encrypted_contents = read_to_string(&get_db_path()).unwrap();
+    if encrypted_contents.len() == 0{
+        utils::delete_db();
+        return Err(String::from("Your database file was empty, please restart to create a new one."))
+    }
     //rust close files at the end of the function
     cryptograpy::decrypt_string(&encrypted_contents, password)
 }
