@@ -4,7 +4,6 @@ mod argument_functions;
 mod cryptography;
 mod importers;
 mod otp;
-mod print_settings;
 use std::env;
 use sodiumoxide;
 use std::thread::sleep;
