@@ -1,7 +1,7 @@
 use prettytable::{Table, row, cell,format};
 use serde_json;
 use serde::{Deserialize, Serialize};
-use crate::{cryptograpy, database_loader};
+use crate::{cryptography, database_loader};
 use crate::otp::otp_element::OTPElement;
 use crate::otp::otp_maker::make_totp;
 use crate::utils::check_elements;
@@ -28,7 +28,7 @@ impl JsonResult {
 }
 
 pub fn read_codes() -> Result<Vec<OTPElement>,String>{
-    match database_loader::read_from_file(&cryptograpy::prompt_for_passwords("Password: ", 8,false)){
+    match database_loader::read_from_file(&cryptography::prompt_for_passwords("Password: ", 8,false)){
         Ok(result) => Ok(result),
         Err(e) => Err(e),
     }
@@ -73,7 +73,7 @@ fn get_good_otp_code(element: &OTPElement) -> String {
 pub fn get_json_results() -> Result<String,String>{
     let elements: Vec<OTPElement>;
 
-    match database_loader::read_from_file(&cryptograpy::prompt_for_passwords("Password: ",8,false)){
+    match database_loader::read_from_file(&cryptography::prompt_for_passwords("Password: ",8,false)){
         Ok(result) => elements = result,
         Err(e) => return Err(e)
     }
@@ -101,7 +101,7 @@ pub fn print_json_result(mut index: usize) -> Result<(),String>{
 
     let elements: Vec<OTPElement>;
 
-    match database_loader::read_from_file(&cryptograpy::prompt_for_passwords("Password: ",8,false)){
+    match database_loader::read_from_file(&cryptography::prompt_for_passwords("Password: ",8,false)){
         Ok(result) => elements = result,
         Err(e) => return Err(e),
     }
@@ -113,11 +113,11 @@ pub fn print_json_result(mut index: usize) -> Result<(),String>{
         }
     }
 
-    let choosed_element: &OTPElement = &elements[index];
+    let chosen_element: &OTPElement = &elements[index];
 
-    println!("Issuer: {}",choosed_element.issuer());
-    println!("Label: {}",choosed_element.label());
-    println!("Algoritmh: {}",choosed_element.algorithm());
-    println!("Digits: {}",choosed_element.digits());
+    println!("Issuer: {}", chosen_element.issuer());
+    println!("Label: {}", chosen_element.label());
+    println!("Algorithm: {}", chosen_element.algorithm());
+    println!("Digits: {}", chosen_element.digits());
     Ok(())
 }

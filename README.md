@@ -76,7 +76,7 @@ It's possible to install cotp directly through cargo, as it's listed in the [cra
 
 Just type `cargo install cotp` and wait for the installation.
 
-#### Clone the Github repository and manually install
+#### Clone the GitHub repository and manually install
 You can build cotp using these commands:
 
     git clone https://github.com/replydev/cotp.git #or https://codeberg.org/replydev/cotp.git

@@ -1,7 +1,7 @@
 mod database_loader;
 mod utils;
 mod argument_functions;
-mod cryptograpy;
+mod cryptography;
 mod importers;
 mod otp;
 mod print_settings;
@@ -41,7 +41,7 @@ fn init() -> Result<bool, String>{
     match utils::create_db_if_needed() {
         Ok(value) => {
             if value {
-                let pw = &cryptograpy::prompt_for_passwords("Choose a password: ", 8,true);
+                let pw = &cryptography::prompt_for_passwords("Choose a password: ", 8,true);
                 return match database_loader::overwrite_database_json("[]", pw) {
                     Ok(()) => Ok(true),
                     Err(_e) => Err(String::from("An error occurred during database overwriting")),
