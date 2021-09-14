@@ -78,16 +78,18 @@ fn main() {
         Ok(false) => {},
         Err(e) => { 
             println!("{}",e);
-            return;
+            std::process::exit(-1);
         }
     }
     let args: Vec<String> = env::args().collect();
     if !args_parser(args){
-        dashboard();
+        if ! dashboard() {
+	        std::process::exit(-2);
+	    }
     }
 }
 
-fn dashboard(){
+fn dashboard() -> bool {
     match otp_helper::read_codes(){
         Ok(elements) => {
             if elements.len() == 0{
@@ -103,8 +105,9 @@ fn dashboard(){
                 }
             }
         },
-        Err(e) => eprintln!("An error occurred: {}",e),
+        Err(e) => { eprintln!("An error occurred: {}",e); return false; },
     }
+    true
 }
 
 fn args_parser(args: Vec<String>) -> bool {
@@ -125,7 +128,7 @@ fn args_parser(args: Vec<String>) -> bool {
         "-chpw" | "--change-password" => argument_functions::change_password(args),
         _=>{
             println!("Invalid argument: {}, type cotp -h to get command options", args[1]);
-            return true;
+            std::process::exit(-1);
         }
     }
     true
