@@ -3,14 +3,21 @@ use std::io::prelude::*;
 use serde_json;
 use crate::utils;
 use utils::{get_db_path,check_elements};
-use crate::cryptograpy;
+use crate::cryptography;
 use crate::otp::otp_element::OTPElement;
 use data_encoding::{BASE32_NOPAD};
+use std::path::PathBuf;
 
 pub fn read_decrypted_text(password: &str) -> Result<String,String>{
     let encrypted_contents = read_to_string(&get_db_path()).unwrap();
+    if encrypted_contents.len() == 0{
+        return match utils::delete_db(){
+            Ok(_) => Err(String::from("Your database file was empty, please restart to create a new one.")),
+            Err(_) => Err(String::from("Your database file is empty, please remove it manually and restart."))
+        }
+    }
     //rust close files at the end of the function
-    cryptograpy::decrypt_string(&encrypted_contents, password)
+    cryptography::decrypt_string(&encrypted_contents, password)
 }
 
 pub fn read_from_file(password: &str) -> Result<Vec<OTPElement>,String>{
@@ -38,7 +45,7 @@ pub fn add_element(secret: &String,issuer: &String,label: &String,algorithm: &st
         Ok(()) => {},
         Err(error) => return Err(error.to_string())
     }
-    let pw = &cryptograpy::prompt_for_passwords("Password: ",8,false);
+    let pw = &cryptography::prompt_for_passwords("Password: ",8,false);
     let otp_element = OTPElement::new(upper_secret.to_string(), issuer.to_string(), label.to_string(),digits, String::from("TOTP"), String::from(algorithm).to_uppercase(),String::from("Default"),0,0,30,vec![]);
     let mut elements;
     match read_from_file(pw){
@@ -56,11 +63,11 @@ pub fn remove_element_from_db(mut id: usize) -> Result<(),String>{
     if id == 0{
         return Err(String::from("0 is a bad index"));
     }
-    //user inserts numbers starting from 1, so we will decrement the value becouse we use array indexes instead
+    //user inserts numbers starting from 1, so we will decrement the value because we use array indexes instead
     id -= 1;
 
     let mut elements: Vec<OTPElement>;
-    let pw = &cryptograpy::prompt_for_passwords("Password: ",8,false);
+    let pw = &cryptography::prompt_for_passwords("Password: ",8,false);
     match read_from_file(pw){
         Ok(result) => elements = result,
         Err(e) => {
@@ -70,12 +77,7 @@ pub fn remove_element_from_db(mut id: usize) -> Result<(),String>{
 
     match check_elements(id, &elements){
         Ok(()) => {
-            for i in 0..elements.len(){
-                if i == id {
-                    elements.remove(i);
-                    break;
-                }
-            }
+            elements.remove(id);
             match overwrite_database(elements,pw){
                 Ok(()) => Ok(()),
                 Err(e) => Err(format!("{}",e)),
@@ -92,7 +94,7 @@ pub fn edit_element(mut id: usize, secret: &str,issuer: &str,label: &str,algorit
     id -= 1;
 
     let mut elements: Vec<OTPElement>;
-    let pw = &cryptograpy::prompt_for_passwords("Password: ",8,false);
+    let pw = &cryptography::prompt_for_passwords("Password: ",8,false);
     match read_from_file(pw){
         Ok(result) => elements = result,
         Err(_e) => return Err(String::from("Cannot decrypt existing database"))
@@ -100,25 +102,20 @@ pub fn edit_element(mut id: usize, secret: &str,issuer: &str,label: &str,algorit
 
     match check_elements(id,&elements){
         Ok(()) => {
-            for i in 0..elements.len() {
-                if i == id{
-                    if secret != ""{
-                        elements[i].set_secret(secret.to_string());
-                    }
-                    if issuer != "."{
-                        elements[i].set_issuer(issuer.to_string());
-                    }
-                    if label != "."{
-                        elements[i].set_label(label.to_string());
-                    }
-                    if algorithm != "."{
-                        elements[i].set_algorithm(algorithm.to_string().to_uppercase());
-                    }
-                    if digits != 0{
-                        elements[i].set_digits(digits);
-                    }
-                    break;
-                }
+            if secret != ""{
+                elements[id].set_secret(secret.to_string());
+            }
+            if issuer != "."{
+                elements[id].set_issuer(issuer.to_string());
+            }
+            if label != "."{
+                elements[id].set_label(label.to_string());
+            }
+            if algorithm != "."{
+                elements[id].set_algorithm(algorithm.to_string().to_uppercase());
+            }
+            if digits != 0{
+                elements[id].set_digits(digits);
             }
             match overwrite_database(elements,pw){
                 Ok(()) => Ok(()),
@@ -129,12 +126,11 @@ pub fn edit_element(mut id: usize, secret: &str,issuer: &str,label: &str,algorit
     }
 }
 
-pub fn export_database() -> Result<String, String> {
-    let mut exported_path = utils::get_home_folder().to_str().unwrap().to_string();
-    exported_path.push_str("/exported.cotp");
+pub fn export_database() -> Result<PathBuf, String> {
+    let exported_path = utils::get_home_folder().join("exported.cotp");
     let mut file = File::create(&exported_path).expect("Cannot create file");
     let encrypted_contents = read_to_string(&get_db_path()).unwrap();
-    let contents = cryptograpy::decrypt_string(&encrypted_contents, &cryptograpy::prompt_for_passwords("Password: ",8,false));
+    let contents = cryptography::decrypt_string(&encrypted_contents, &cryptography::prompt_for_passwords("Password: ",8,false));
     return match contents {
         Ok(contents) => {
             if contents == "[]" {
@@ -155,7 +151,7 @@ pub fn overwrite_database(elements: Vec<OTPElement>,password: &str) -> Result<()
 }
 
 pub fn overwrite_database_json(json: &str,password: &str) -> Result<(),std::io::Error>{
-    let encrypted = cryptograpy::encrypt_string(json.to_string(), password);
+    let encrypted = cryptography::encrypt_string(json.to_string(), password);
     let mut file = File::create(utils::get_db_path())?;
     utils::write_to_file(&encrypted, &mut file)
 }

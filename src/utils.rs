@@ -20,7 +20,12 @@ pub fn get_home_folder() -> PathBuf {
     home_dir().unwrap()
 }
 
-// Push an absolute path to a PathBuf replaces the entire PathBuf: https://doc.rust-lang.org/std/path/struct.PathBuf.html#method.push
+#[cfg(debug_assertions)]
+fn get_cotp_folder() -> PathBuf{
+    PathBuf::from(".")
+}
+
+// Pushing an absolute path to a PathBuf replaces the entire PathBuf: https://doc.rust-lang.org/std/path/struct.PathBuf.html#method.push
 #[cfg(not(debug_assertions))]
 fn get_cotp_folder() -> PathBuf{
     let mut cotp_dir = PathBuf::new();
@@ -28,19 +33,6 @@ fn get_cotp_folder() -> PathBuf{
     cotp_dir.join(".cotp")
 }
 
-#[cfg(debug_assertions)]
-pub fn create_db_if_needed() -> Result<bool,()>{
-    let db_path = get_db_path();
-    if !db_path.exists() {
-        return match std::fs::File::create(db_path) {
-            Ok(_f) => Ok(true),
-            Err(_e) => Err(()),
-        }
-    }
-    Ok(false)
-}
-
-#[cfg(not(debug_assertions))]
 pub fn create_db_if_needed() -> Result<bool,()>{
     let cotp_folder = get_cotp_folder();
     if !cotp_folder.exists(){
@@ -57,6 +49,10 @@ pub fn create_db_if_needed() -> Result<bool,()>{
         }
     }
     Ok(false)
+}
+
+pub fn delete_db() -> std::io::Result<()> {
+    std::fs::remove_file(get_db_path())
 }
 
 pub fn write_to_file(content: &str, file: &mut File) -> Result<(),std::io::Error>{

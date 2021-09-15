@@ -1,12 +1,10 @@
 use prettytable::{Table, row, cell,format};
 use serde_json;
 use serde::{Deserialize, Serialize};
-use crate::{cryptograpy, database_loader};
+use crate::{cryptography, database_loader};
 use crate::otp::otp_element::OTPElement;
 use crate::otp::otp_maker::make_totp;
 use crate::utils::check_elements;
-use crate::print_settings::PrintSettings;
-
 
 #[derive(Serialize, Deserialize)]
 struct JsonResult{
@@ -27,8 +25,46 @@ impl JsonResult {
     }
 }
 
+pub struct PrintSettings {
+    max_id: usize,
+    max_issuer: usize,
+    max_label: usize,
+    max_code: usize,
+}
+
+impl PrintSettings {
+    pub fn new() -> PrintSettings{
+        // set the length of id, issuer, label, and code words
+        PrintSettings {
+            max_id: 2,
+            max_issuer: 6,
+            max_label: 5,
+            max_code: 4,
+        }
+    }
+
+    pub fn check_other(&mut self,other: &PrintSettings){
+        if other.max_id > self.max_id {
+            self.max_id = other.max_id;
+        }
+        if other.max_issuer > self.max_issuer {
+            self.max_issuer = other.max_issuer;
+        }
+        if other.max_label > self.max_label {
+            self.max_label = other.max_label;
+        }
+        if other.max_code > self.max_code {
+            self.max_code = other.max_code;
+        }
+    }
+
+    pub fn get_width(&self) -> usize {
+        self.max_id + 2 + self.max_issuer + 2 + self.max_label + 2 + self.max_code + 2 + 2
+    }
+}
+
 pub fn read_codes() -> Result<Vec<OTPElement>,String>{
-    match database_loader::read_from_file(&cryptograpy::prompt_for_passwords("Password: ", 8,false)){
+    match database_loader::read_from_file(&cryptography::prompt_for_passwords("Password: ", 8,false)){
         Ok(result) => Ok(result),
         Err(e) => Err(e),
     }
@@ -54,10 +90,10 @@ fn add_element_to_table(i: usize, table: &mut Table,element: &OTPElement,print_s
     table.add_row(row![index,issuer,label,code]);
 
     let mut temp_print = PrintSettings::new();
-    temp_print.set_max_id(index.len());
-    temp_print.set_max_issuer(issuer.len());
-    temp_print.set_max_label(label.len());
-    temp_print.set_max_code(code.len());
+    temp_print.max_id = index.chars().count();
+    temp_print.max_issuer = issuer.chars().count();
+    temp_print.max_label = label.chars().count();
+    temp_print.max_code = code.chars().count();
 
     print_settings.check_other(&temp_print);
 }
@@ -73,7 +109,7 @@ fn get_good_otp_code(element: &OTPElement) -> String {
 pub fn get_json_results() -> Result<String,String>{
     let elements: Vec<OTPElement>;
 
-    match database_loader::read_from_file(&cryptograpy::prompt_for_passwords("Password: ",8,false)){
+    match database_loader::read_from_file(&cryptography::prompt_for_passwords("Password: ",8,false)){
         Ok(result) => elements = result,
         Err(e) => return Err(e)
     }
@@ -101,7 +137,7 @@ pub fn print_json_result(mut index: usize) -> Result<(),String>{
 
     let elements: Vec<OTPElement>;
 
-    match database_loader::read_from_file(&cryptograpy::prompt_for_passwords("Password: ",8,false)){
+    match database_loader::read_from_file(&cryptography::prompt_for_passwords("Password: ",8,false)){
         Ok(result) => elements = result,
         Err(e) => return Err(e),
     }
@@ -113,11 +149,11 @@ pub fn print_json_result(mut index: usize) -> Result<(),String>{
         }
     }
 
-    let choosed_element: &OTPElement = &elements[index];
+    let chosen_element: &OTPElement = &elements[index];
 
-    println!("Issuer: {}",choosed_element.issuer());
-    println!("Label: {}",choosed_element.label());
-    println!("Algoritmh: {}",choosed_element.algorithm());
-    println!("Digits: {}",choosed_element.digits());
+    println!("Issuer: {}", chosen_element.issuer());
+    println!("Label: {}", chosen_element.label());
+    println!("Algorithm: {}", chosen_element.algorithm());
+    println!("Digits: {}", chosen_element.digits());
     Ok(())
 }

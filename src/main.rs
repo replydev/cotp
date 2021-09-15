@@ -1,10 +1,9 @@
 mod database_loader;
 mod utils;
 mod argument_functions;
-mod cryptograpy;
+mod cryptography;
 mod importers;
 mod otp;
-mod print_settings;
 use std::env;
 use sodiumoxide;
 use std::thread::sleep;
@@ -14,30 +13,18 @@ use otp::otp_helper;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-#[cfg(debug_assertions)]
 fn print_title(){
     println!("cotp v{}",VERSION);
     println!("written by @replydev\n");
+    #[cfg(debug_assertions)]
     println!("****DEBUG VERSION****\n");
 }
 
-#[cfg(not(debug_assertions))]
-fn print_title(){
-    println!("cotp v{}",VERSION);
-    println!("written by @replydev\n");
-}
-
-#[cfg(debug_assertions)]
 fn init_ctrlc_handler(lines: usize){
     ctrlc::set_handler(move || {
+        #[cfg(debug_assertions)]
         utils::clear_lines(lines + 9,true);
-        std::process::exit(0);
-    }).expect("Failed to initialize ctrl-c handler");
-}
-
-#[cfg(not(debug_assertions))]
-fn init_ctrlc_handler(lines: usize){
-    ctrlc::set_handler(move || {
+        #[cfg(not(debug_assertions))]
         utils::clear_lines(lines + 8,true);
         std::process::exit(0);
     }).expect("Failed to initialize ctrl-c handler");
@@ -53,7 +40,7 @@ fn init() -> Result<bool, String>{
     match utils::create_db_if_needed() {
         Ok(value) => {
             if value {
-                let pw = &cryptograpy::prompt_for_passwords("Choose a password: ", 8,true);
+                let pw = &cryptography::prompt_for_passwords("Choose a password: ", 8,true);
                 return match database_loader::overwrite_database_json("[]", pw) {
                     Ok(()) => Ok(true),
                     Err(_e) => Err(String::from("An error occurred during database overwriting")),

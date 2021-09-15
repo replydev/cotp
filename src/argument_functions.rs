@@ -1,7 +1,7 @@
-use crate::{cryptograpy, database_loader};
+use crate::{cryptography, database_loader};
 use crate::otp::{otp_element::OTPElement,otp_helper};
 use crate::importers;
-use crate::cryptograpy::prompt_for_passwords;
+use crate::cryptography::prompt_for_passwords;
 
 pub fn help(){
     println!("USAGE:");
@@ -15,7 +15,7 @@ pub fn help(){
     println!("  -ex,--export                                         | Export the entire database in a plaintext json format");
     println!("  -j,--json                                            | Print results in json format");
     println!("  -s,--single                                          | Print OTP codes in single mode");
-    println!("  -in,--info [ID]                                      | Print info of choosen OTP code");
+    println!("  -in,--info [ID]                                      | Print info of chosen OTP code");
     println!("  -chpw,--change-password                              | Change the database password");
     println!("  -h,--help                                            | Print this help");
 }
@@ -45,7 +45,7 @@ pub fn import(args: Vec<String>){
             }
         }
         
-        match database_loader::overwrite_database(elements,&cryptograpy::prompt_for_passwords("Choose a password: ", 8,true)){
+        match database_loader::overwrite_database(elements,&cryptography::prompt_for_passwords("Choose a password: ", 8,true)){
             Ok(()) => {
                 println!("Successfully imported database");
             },
@@ -103,7 +103,7 @@ pub fn remove(args: Vec<String>){
 pub fn edit(args: Vec<String>){
     if args.len() == 7{
         let id = args[2].parse::<usize>().unwrap();
-        let secret = &prompt_for_passwords("Inser the secret (type ENTER to skip modification): ",0,false);
+        let secret = &prompt_for_passwords("Insert the secret (type ENTER to skip modification): ",0,false);
         let issuer = &args[3];
         let label = &args[4];
         let algorithm = &args[5];
@@ -126,10 +126,10 @@ pub fn export(args: Vec<String>){
         let export_result = database_loader::export_database();
         match export_result{
             Ok(export_result) => {
-                println!("Database was successfully exported at {}", export_result);
+                println!("Database was successfully exported at {}", export_result.to_str().expect("**Invalid path**"));
             },
             Err(e) =>{
-                eprintln!("An error occured while exporting database: {}", e);
+                eprintln!("An error occurred while exporting database: {}", e);
             }
         }
     }
@@ -184,11 +184,11 @@ pub fn info(args: Vec<String>){
 
 pub fn change_password(args: Vec<String>) {
     if args.len() == 2{
-        let old_password = &cryptograpy::prompt_for_passwords("Old password: ", 8, false);
+        let old_password = &cryptography::prompt_for_passwords("Old password: ", 8, false);
         let decrypted_text = database_loader::read_decrypted_text(old_password);
         match decrypted_text{
             Ok(s) => {
-                let new_password = &cryptograpy::prompt_for_passwords("New password: ", 8, true);
+                let new_password = &cryptography::prompt_for_passwords("New password: ", 8, true);
                 match database_loader::overwrite_database_json(&s, new_password) {
                     Ok(()) => println!("Password changed"),
                     Err(e) => eprintln!("An error has occurred: {}",e),
