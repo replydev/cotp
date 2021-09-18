@@ -1,18 +1,14 @@
 use std::{env, io};
-use std::thread::sleep;
-use std::time::Duration;
 
 use sodiumoxide;
-
-use otp::otp_helper;
 use tui::backend::CrosstermBackend;
 use tui::Terminal;
-use handler::handle_key_events;
 
 use app::{App, AppResult};
 use event::{Event, EventHandler};
+use handler::handle_key_events;
+use otp::otp_helper;
 use ui::Tui;
-use std::fmt::Error;
 
 mod database_loader;
 mod utils;
@@ -28,38 +24,38 @@ mod table;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-fn print_title(){
-    println!("cotp v{}",VERSION);
+fn print_title() {
+    println!("cotp v{}", VERSION);
     println!("written by @replydev\n");
     #[cfg(debug_assertions)]
     println!("****DEBUG VERSION****\n");
 }
 
-fn init() -> Result<bool, String>{
-    match sodiumoxide::init(){
+fn init() -> Result<bool, String> {
+    match sodiumoxide::init() {
         Err(()) => {
-            return Err(String::from("Error during sodiumoxide initialization"))
-        },
-        _=> {},
+            return Err(String::from("Error during sodiumoxide initialization"));
+        }
+        _ => {}
     };
     match utils::create_db_if_needed() {
         Ok(value) => {
             if value {
-                let pw = &cryptography::prompt_for_passwords("Choose a password: ", 8,true);
+                let pw = &cryptography::prompt_for_passwords("Choose a password: ", 8, true);
                 return match database_loader::overwrite_database_json("[]", pw) {
                     Ok(()) => Ok(true),
                     Err(_e) => Err(String::from("An error occurred during database overwriting")),
-                }
+                };
             }
             Ok(false)
-        },
+        }
         Err(()) => {
             return Err(String::from("An error occurred during database creation"));
-        },
+        }
     }
 }
 
-fn main() -> AppResult<()>{
+fn main() -> AppResult<()> {
     print_title();
 
     let init_result = init();
@@ -67,15 +63,15 @@ fn main() -> AppResult<()>{
         Ok(true) => {
             println!("Database correctly initialized");
             return Ok(());
-        },
-        Ok(false) => {},
+        }
+        Ok(false) => {}
         Err(e) => {
-            println!("{}",e);
+            println!("{}", e);
             std::process::exit(-1);
         }
     }
     let args: Vec<String> = env::args().collect();
-    if !args_parser(args){
+    if !args_parser(args) {
         match dashboard() {
             Ok(_) => std::process::exit(0),
             Err(_) => std::process::exit(-2),
@@ -85,13 +81,11 @@ fn main() -> AppResult<()>{
 }
 
 fn dashboard() -> AppResult<()> {
-
-    match otp_helper::read_codes(){
+    match otp_helper::read_codes() {
         Ok(elements) => {
-            if elements.len() == 0{
+            if elements.len() == 0 {
                 println!("No codes, type \"cotp -h\" to get help");
-            }
-            else{
+            } else {
                 // Create an application.
                 let mut app = App::new(elements);
 
@@ -118,9 +112,11 @@ fn dashboard() -> AppResult<()> {
                 // Exit the user interface.
                 tui.exit()?;
             }
-        },
-        //TODO Replace OK(()) with Err
-        Err(e) => { eprintln!("An error occurred: {}",e); return Ok(()); },
+        }
+        Err(e) => {
+            eprintln!("An error occurred: {}", e);
+            return Err(Box::new(io::Error::new(io::ErrorKind::InvalidInput, e)));
+        }
     }
     Ok(())
 }
@@ -130,18 +126,18 @@ fn args_parser(args: Vec<String>) -> bool {
         return false;
     }
 
-    match &args[1][..]{
+    match &args[1][..] {
         "-i" | "--import" => argument_functions::import(args),
         "-h" | "--help" => argument_functions::help(),
         "-a" | "--add" => argument_functions::add(args),
         "-r" | "--remove" => argument_functions::remove(args),
         "-e" | "--edit" => argument_functions::edit(args),
-        "-ex"| "--export" => argument_functions::export(args),
+        "-ex" | "--export" => argument_functions::export(args),
         "-j" | "--json" => argument_functions::json(args),
         "-s" | "--single" => argument_functions::single(args),
         "-in" | "--info" => argument_functions::info(args),
         "-chpw" | "--change-password" => argument_functions::change_password(args),
-        _=>{
+        _ => {
             println!("Invalid argument: {}, type cotp -h to get command options", args[1]);
             std::process::exit(-1);
         }

@@ -1,4 +1,5 @@
 use tui::widgets::TableState;
+
 use crate::otp::otp_element::OTPElement;
 use crate::otp::otp_helper::get_good_otp_code;
 
@@ -14,8 +15,8 @@ impl StatefulTable {
             items: vec![],
         };
         let i = 0;
-        for element in elements{
-            table.items.push(vec![(i+1).to_string(),element.issuer(),element.label(),get_good_otp_code(element)])
+        for element in elements {
+            table.items.push(vec![(i + 1).to_string(), element.issuer(), element.label(), get_good_otp_code(element)])
         }
         table
     }

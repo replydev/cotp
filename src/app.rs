@@ -1,14 +1,15 @@
 use std::error;
+
 use tui::backend::Backend;
-use tui::layout::{Alignment, Layout, Constraint, Direction};
-use tui::style::{Color, Style, Modifier};
+use tui::layout::{Constraint, Direction, Layout};
+use tui::style::{Color, Modifier, Style};
 use tui::terminal::Frame;
-use tui::widgets::{Block, Borders, Paragraph, Row, Cell, Table, Gauge};
-use crate::table::StatefulTable;
+use tui::widgets::{Block, Borders, Cell, Gauge, Row, Table};
+
 use crate::otp::otp_element::OTPElement;
 use crate::otp::otp_helper::get_good_otp_code;
+use crate::table::StatefulTable;
 use crate::utils::percentage;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Application result type.
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
@@ -30,7 +31,7 @@ impl App {
         let mut title = String::from(env!("CARGO_PKG_NAME"));
         title.push_str(" v");
         title.push_str(env!("CARGO_PKG_VERSION"));
-        Self { running: true, title, table: StatefulTable::new(&elements),elements, progress: percentage(), }
+        Self { running: true, title, table: StatefulTable::new(&elements), elements, progress: percentage() }
     }
 
     /// Handles the tick event of the terminal.
@@ -38,8 +39,8 @@ impl App {
         // Update codes
         self.table.items.clear();
         let i = 0;
-        for element in &self.elements{
-            self.table.items.push(vec![(i+1).to_string(),element.issuer(),element.label(),get_good_otp_code(element)])
+        for element in &self.elements {
+            self.table.items.push(vec![(i + 1).to_string(), element.issuer(), element.label(), get_good_otp_code(element)])
         }
         // Update progress bar
         self.progress = percentage();
@@ -63,13 +64,13 @@ impl App {
 
         let rects = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Percentage(95),Constraint::Percentage(5)].as_ref())
+            .constraints([Constraint::Percentage(95), Constraint::Percentage(5)].as_ref())
             .margin(2)
             .split(frame.size());
 
         let selected_style = Style::default().add_modifier(Modifier::REVERSED);
         let normal_style = Style::default().bg(Color::DarkGray);
-        let header_cells = ["Id", "Issuer", "Label","OTP"]
+        let header_cells = ["Id", "Issuer", "Label", "OTP"]
             .iter()
             .map(|h| Cell::from(*h).style(Style::default().fg(Color::White)));
         let header = Row::new(header_cells)
@@ -98,7 +99,7 @@ impl App {
                 Constraint::Percentage(25),
             ]);
 
-        let progress_label = format!("{}%",self.progress);
+        let progress_label = format!("{}%", self.progress);
         let progress_bar = Gauge::default()
             .block(Block::default())
             .gauge_style(
@@ -109,7 +110,7 @@ impl App {
             .percent(self.progress as u16)
             .label(progress_label);
 
-        frame.render_stateful_widget(t,rects[0],&mut self.table.state);
-        frame.render_widget(progress_bar,rects[1]);
+        frame.render_stateful_widget(t, rects[0], &mut self.table.state);
+        frame.render_widget(progress_bar, rects[1]);
     }
 }

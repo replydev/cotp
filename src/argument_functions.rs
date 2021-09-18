@@ -1,9 +1,9 @@
 use crate::{cryptography, database_loader};
-use crate::otp::{otp_element::OTPElement,otp_helper};
-use crate::importers;
 use crate::cryptography::prompt_for_passwords;
+use crate::importers;
+use crate::otp::{otp_element::OTPElement, otp_helper};
 
-pub fn help(){
+pub fn help() {
     println!("USAGE:");
     println!("  cotp [SUBCOMMAND]");
     println!();
@@ -20,18 +20,18 @@ pub fn help(){
     println!("  -h,--help                                            | Print this help");
 }
 
-pub fn import(args: Vec<String>){
-    if args.len() == 4{
-        let result: Result<Vec<OTPElement>,String>;
+pub fn import(args: Vec<String>) {
+    if args.len() == 4 {
+        let result: Result<Vec<OTPElement>, String>;
         let elements: Vec<OTPElement>;
 
-        match &args[2][..]{
+        match &args[2][..] {
             "cotp" | "andotp" => result = importers::and_otp::import(&args[3]),
             "aegis" => result = importers::aegis::import(&args[3]),
-            "gauth" | 
+            "gauth" |
             "google_authenticator" |
             "authy" => result = importers::converted::import(&args[3]),
-            _=> {
+            _ => {
                 println!("Invalid argument: {}", &args[2]);
                 return;
             }
@@ -44,17 +44,16 @@ pub fn import(args: Vec<String>){
                 return;
             }
         }
-        
-        match database_loader::overwrite_database(elements,&cryptography::prompt_for_passwords("Choose a password: ", 8,true)){
+
+        match database_loader::overwrite_database(elements, &cryptography::prompt_for_passwords("Choose a password: ", 8, true)) {
             Ok(()) => {
                 println!("Successfully imported database");
-            },
+            }
             Err(e) => {
-                eprintln!("An error occurred during database overwriting: {}",e);
+                eprintln!("An error occurred during database overwriting: {}", e);
             }
         }
-    }
-    else{
+    } else {
         println!("Invalid arguments, type cotp --import [APPNAME] [PATH]");
         println!("cotp can import backup from:");
         println!("\"cotp\"");
@@ -65,141 +64,132 @@ pub fn import(args: Vec<String>){
     }
 }
 
-pub fn add(args: Vec<String>){
-    if args.len() == 6{
-        let digits: u64 = match &args[5].parse::<>(){
+pub fn add(args: Vec<String>) {
+    if args.len() == 6 {
+        let digits: u64 = match &args[5].parse::<>() {
             Ok(r) => *r,
             Err(_e) => 0,
         };
-        if digits <= 0{
+        if digits <= 0 {
             eprintln!("Insert a valid digits value!");
             return;
         }
 
-        match database_loader::add_element(&prompt_for_passwords("Insert the secret: ",0,false),&args[2],&args[3],&args[4],digits){
+        match database_loader::add_element(&prompt_for_passwords("Insert the secret: ", 0, false), &args[2], &args[3], &args[4], digits) {
             Ok(()) => println!("Success"),
-            Err(e) => eprintln!("An error occurred: {}",e)
+            Err(e) => eprintln!("An error occurred: {}", e)
         }
-    }
-    else{
+    } else {
         println!("Invalid arguments, type cotp --add [ISSUER] [LABEL] [ALGORITHM] [DIGITS]");
     }
 }
 
-pub fn remove(args: Vec<String>){
-    if args.len() == 3{
+pub fn remove(args: Vec<String>) {
+    if args.len() == 3 {
         let id = args[2].parse::<usize>().unwrap();
 
-        match database_loader::remove_element_from_db(id){
+        match database_loader::remove_element_from_db(id) {
             Ok(()) => println!("Success"),
-            Err(e) => eprintln!("An error has occurred: {}",e)
+            Err(e) => eprintln!("An error has occurred: {}", e)
         }
-    }
-    else{
+    } else {
         println!("Invalid argument, type cotp --remove <index>");
     }
 }
 
-pub fn edit(args: Vec<String>){
-    if args.len() == 7{
+pub fn edit(args: Vec<String>) {
+    if args.len() == 7 {
         let id = args[2].parse::<usize>().unwrap();
-        let secret = &prompt_for_passwords("Insert the secret (type ENTER to skip modification): ",0,false);
+        let secret = &prompt_for_passwords("Insert the secret (type ENTER to skip modification): ", 0, false);
         let issuer = &args[3];
         let label = &args[4];
         let algorithm = &args[5];
-        let digits: u64 = match &args[6].parse::<>(){
+        let digits: u64 = match &args[6].parse::<>() {
             Ok(r) => *r,
             Err(_e) => 0,
         };
-        match database_loader::edit_element(id, &secret, &issuer, &label,&algorithm,digits){
+        match database_loader::edit_element(id, &secret, &issuer, &label, &algorithm, digits) {
             Ok(()) => println!("Success"),
-            Err(e) => eprintln!("An error occurred: {}",e)
+            Err(e) => eprintln!("An error occurred: {}", e)
         }
-    }
-    else{
+    } else {
         println!("Invalid arguments, type cotp --edit [ID] [ISSUER] [LABEL] [ALGORITHM] [DIGITS]\n\nReplace the attribute value with \".\" to skip the attribute modification");
     }
 }
 
-pub fn export(args: Vec<String>){
-    if args.len() == 2{
+pub fn export(args: Vec<String>) {
+    if args.len() == 2 {
         let export_result = database_loader::export_database();
-        match export_result{
+        match export_result {
             Ok(export_result) => {
                 println!("Database was successfully exported at {}", export_result.to_str().expect("**Invalid path**"));
-            },
-            Err(e) =>{
+            }
+            Err(e) => {
                 eprintln!("An error occurred while exporting database: {}", e);
             }
         }
-    }
-    else{
+    } else {
         println!("Invalid argument, type cotp --export");
     }
 }
 
-pub fn json(args: Vec<String>){
-    if args.len() == 2{
-        match otp_helper::get_json_results(){
-            Ok(results) => println!("{}",results),
-            Err(e) => eprintln!("An error occurred while getting json result: {}",e),
+pub fn json(args: Vec<String>) {
+    if args.len() == 2 {
+        match otp_helper::get_json_results() {
+            Ok(results) => println!("{}", results),
+            Err(e) => eprintln!("An error occurred while getting json result: {}", e),
         }
-    }
-    else{
+    } else {
         println!("Invalid argument, type cotp --json");
     }
 }
 
-pub fn single(args: Vec<String>){
-    if args.len() == 2{
-        match otp_helper::read_codes(){
+pub fn single(args: Vec<String>) {
+    if args.len() == 2 {
+        match otp_helper::read_codes() {
             Ok(result) => {
-                if result.len() == 0{
+                if result.len() == 0 {
                     println!("No codes, type \"cotp -h\" to get help");
-                }
-                else{
+                } else {
                     //otp_helper::show_codes(&result);
                 }
-            },
-            Err(e) => eprintln!("An error occurred: {}",e)
+            }
+            Err(e) => eprintln!("An error occurred: {}", e)
         }
-    }
-    else{
-       println!("Invalid argument, type cotp --single");
+    } else {
+        println!("Invalid argument, type cotp --single");
     }
 }
 
-pub fn info(args: Vec<String>){
-    if args.len() == 3{
+pub fn info(args: Vec<String>) {
+    if args.len() == 3 {
         let id = args[2].parse::<usize>().unwrap();
-        match otp_helper::print_json_result(id){
-            Ok(()) => {},
-            Err(e) => eprintln!("An error occurred: {}",e),
+        match otp_helper::print_json_result(id) {
+            Ok(()) => {}
+            Err(e) => eprintln!("An error occurred: {}", e),
         }
-    }
-    else{
+    } else {
         println!("Invalid arguments, type cotp --info [ID]");
     }
 }
 
 pub fn change_password(args: Vec<String>) {
-    if args.len() == 2{
+    if args.len() == 2 {
         let old_password = &cryptography::prompt_for_passwords("Old password: ", 8, false);
         let decrypted_text = database_loader::read_decrypted_text(old_password);
-        match decrypted_text{
+        match decrypted_text {
             Ok(s) => {
                 let new_password = &cryptography::prompt_for_passwords("New password: ", 8, true);
                 match database_loader::overwrite_database_json(&s, new_password) {
                     Ok(()) => println!("Password changed"),
-                    Err(e) => eprintln!("An error has occurred: {}",e),
+                    Err(e) => eprintln!("An error has occurred: {}", e),
                 }
-            },
+            }
             Err(e) => {
-                eprintln!("An error has occurred: {}",e);
+                eprintln!("An error has occurred: {}", e);
             }
         }
-    }
-    else{
+    } else {
         println!("Invalid arguments, type cotp --change-password");
     }
 } 

@@ -1,29 +1,31 @@
-use crate::otp::otp_element::OTPElement;
 use std::fs::read_to_string;
-use serde_json;
+
 use serde::Deserialize;
+use serde_json;
+
+use crate::otp::otp_element::OTPElement;
 
 #[derive(Deserialize)]
-struct ConvertedJson{
+struct ConvertedJson {
     label: Option<String>,
     secret: String,
     issuer: Option<String>,
     digits: u64,
 }
 
-pub fn import(filepath: &str) -> Result<Vec<OTPElement>,String> {
+pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
     let file_to_import_contents = read_to_string(filepath).unwrap();
-    let result: Result<Vec<ConvertedJson>,serde_json::Error> = serde_json::from_str(&file_to_import_contents);
+    let result: Result<Vec<ConvertedJson>, serde_json::Error> = serde_json::from_str(&file_to_import_contents);
     let vector: Vec<ConvertedJson>;
 
-    match result{
+    match result {
         Ok(r) => vector = r,
-        Err(e) => return Err(format!("{}",e)),
+        Err(e) => return Err(format!("{}", e)),
     }
 
     let mut elements: Vec<OTPElement> = Vec::new();
 
-    for i in 0..vector.len(){
+    for i in 0..vector.len() {
         let secret = vector[i].secret.to_owned();
         let issuer = vector[i].issuer.to_owned().unwrap_or_default();
         let label = vector[i].label.to_owned().unwrap_or_default();
@@ -33,12 +35,12 @@ pub fn import(filepath: &str) -> Result<Vec<OTPElement>,String> {
             issuer,
             label,
             digits,
-            String::from("TOTP"), 
-            String::from("SHA1"), 
-            String::from(""), 
-            0, 
-            0, 
-            30, 
+            String::from("TOTP"),
+            String::from("SHA1"),
+            String::from(""),
+            0,
+            0,
+            30,
             vec![]))
     }
     Ok(elements)

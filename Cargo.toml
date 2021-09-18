@@ -18,9 +18,7 @@ serde = { version = "1.0.126", features = ["derive"] }
 dirs = "3.0.2"
 rpassword = "5.0.1"
 sodiumoxide = "0.2.6"
-ascii = "1.0"
 data-encoding = "2.3.2"
-err-derive = "0.3.0"
 totp-lite = "1.0.3"
 crossterm = "0.20"
 tui = { version = "0.16.0", features = ["crossterm"], default-features = false }
