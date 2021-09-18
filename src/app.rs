@@ -38,9 +38,10 @@ impl App {
     pub fn tick(&mut self) {
         // Update codes
         self.table.items.clear();
-        let i = 0;
+        let mut i = 0;
         for element in &self.elements {
-            self.table.items.push(vec![(i + 1).to_string(), element.issuer(), element.label(), get_good_otp_code(element)])
+            self.table.items.push(vec![(i + 1).to_string(), element.issuer(), element.label(), get_good_otp_code(element)]);
+            i += 1;
         }
         // Update progress bar
         self.progress = percentage();

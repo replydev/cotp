@@ -151,7 +151,7 @@ pub fn single(args: Vec<String>) {
                 if result.len() == 0 {
                     println!("No codes, type \"cotp -h\" to get help");
                 } else {
-                    //otp_helper::show_codes(&result);
+                    otp_helper::list_codes(&result);
                 }
             }
             Err(e) => eprintln!("An error occurred: {}", e)

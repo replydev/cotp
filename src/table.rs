@@ -14,9 +14,10 @@ impl StatefulTable {
             state: TableState::default(),
             items: vec![],
         };
-        let i = 0;
+        let mut i = 0;
         for element in elements {
-            table.items.push(vec![(i + 1).to_string(), element.issuer(), element.label(), get_good_otp_code(element)])
+            table.items.push(vec![(i + 1).to_string(), element.issuer(), element.label(), get_good_otp_code(element)]);
+            i += 1;
         }
         table
     }

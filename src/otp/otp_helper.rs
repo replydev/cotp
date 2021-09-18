@@ -32,33 +32,14 @@ pub fn read_codes() -> Result<Vec<OTPElement>, String> {
     }
 }
 
-/*pub fn show_codes(elements: &Vec<OTPElement>) -> usize{
-    let mut print_settings = PrintSettings::new();
-    let mut table = Table::new();
-    table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
-    table.set_titles(row!["Id","Issuer","Label","Code"]);
-    for i in 0..elements.len() {
-        add_element_to_table(i, &mut table, &elements[i],&mut print_settings);
+pub fn list_codes(elements: &Vec<OTPElement>) {
+    // used in single mode
+    let mut i = 0;
+    for element in elements {
+        println!("{}) {} {} -> {}", i + 1, element.issuer(), element.label(), get_good_otp_code(element));
+        i += 1;
     }
-    table.printstd();
-    print_settings.get_width()
 }
-
-fn add_element_to_table(i: usize, table: &mut Table,element: &OTPElement,print_settings: &mut PrintSettings){
-    let index = (i+1).to_string();
-    let issuer = element.issuer();
-    let label = element.label();
-    let code = get_good_otp_code(&element);
-    table.add_row(row![index,issuer,label,code]);
-
-    let mut temp_print = PrintSettings::new();
-    temp_print.max_id = index.chars().count();
-    temp_print.max_issuer = issuer.chars().count();
-    temp_print.max_label = label.chars().count();
-    temp_print.max_code = code.chars().count();
-
-    print_settings.check_other(&temp_print);
-}*/
 
 pub fn get_good_otp_code(element: &OTPElement) -> String {
     let otp = make_totp(
