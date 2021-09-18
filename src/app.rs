@@ -36,15 +36,19 @@ impl App {
 
     /// Handles the tick event of the terminal.
     pub fn tick(&mut self) {
-        // Update codes
-        self.table.items.clear();
-        let mut i = 0;
-        for element in &self.elements {
-            self.table.items.push(vec![(i + 1).to_string(), element.issuer(), element.label(), get_good_otp_code(element)]);
-            i += 1;
-        }
         // Update progress bar
-        self.progress = percentage();
+        let new_progress = percentage();
+        // Check for new cycle
+        if new_progress < self.progress {
+            // Update codes
+            self.table.items.clear();
+            let mut i = 0;
+            for element in &self.elements {
+                self.table.items.push(vec![(i + 1).to_string(), element.issuer(), element.label(), get_good_otp_code(element)]);
+                i += 1;
+            }
+        }
+        self.progress = new_progress;
     }
 
     /// Renders the user interface widgets.
