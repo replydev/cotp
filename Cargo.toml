@@ -21,6 +21,6 @@ sodiumoxide = "0.2.6"
 ascii = "1.0"
 data-encoding = "2.3.2"
 err-derive = "0.3.0"
-ctrlc = "3.1.9"
-prettytable-rs = "0.8.0"
 totp-lite = "1.0.3"
+crossterm = "0.20"
+tui = { version = "0.16.0", features = ["crossterm"], default-features = false }

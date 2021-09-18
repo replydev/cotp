@@ -1,4 +1,3 @@
-use prettytable::{Table, row, cell,format};
 use serde_json;
 use serde::{Deserialize, Serialize};
 use crate::{cryptography, database_loader};
@@ -25,44 +24,6 @@ impl JsonResult {
     }
 }
 
-pub struct PrintSettings {
-    max_id: usize,
-    max_issuer: usize,
-    max_label: usize,
-    max_code: usize,
-}
-
-impl PrintSettings {
-    pub fn new() -> PrintSettings{
-        // set the length of id, issuer, label, and code words
-        PrintSettings {
-            max_id: 2,
-            max_issuer: 6,
-            max_label: 5,
-            max_code: 4,
-        }
-    }
-
-    pub fn check_other(&mut self,other: &PrintSettings){
-        if other.max_id > self.max_id {
-            self.max_id = other.max_id;
-        }
-        if other.max_issuer > self.max_issuer {
-            self.max_issuer = other.max_issuer;
-        }
-        if other.max_label > self.max_label {
-            self.max_label = other.max_label;
-        }
-        if other.max_code > self.max_code {
-            self.max_code = other.max_code;
-        }
-    }
-
-    pub fn get_width(&self) -> usize {
-        self.max_id + 2 + self.max_issuer + 2 + self.max_label + 2 + self.max_code + 2 + 2
-    }
-}
-
 pub fn read_codes() -> Result<Vec<OTPElement>,String>{
     match database_loader::read_from_file(&cryptography::prompt_for_passwords("Password: ", 8,false)){
         Ok(result) => Ok(result),
@@ -70,7 +31,7 @@ pub fn read_codes() -> Result<Vec<OTPElement>,String>{
     }
 }
 
-pub fn show_codes(elements: &Vec<OTPElement>) -> usize{
+/*pub fn show_codes(elements: &Vec<OTPElement>) -> usize{
     let mut print_settings = PrintSettings::new();
     let mut table = Table::new();
     table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
@@ -96,9 +57,9 @@ fn add_element_to_table(i: usize, table: &mut Table,element: &OTPElement,print_s
     temp_print.max_code = code.chars().count();
 
     print_settings.check_other(&temp_print);
-}
+}*/
 
-fn get_good_otp_code(element: &OTPElement) -> String {
+pub fn get_good_otp_code(element: &OTPElement) -> String {
     let otp = make_totp(
         &element.secret(), //we have replaced '=' in this method
                &element.algorithm().to_uppercase(),element.digits());

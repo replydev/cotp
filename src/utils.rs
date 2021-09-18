@@ -60,16 +60,6 @@ pub fn write_to_file(content: &str, file: &mut File) -> Result<(),std::io::Error
     file.sync_all()
 }
 
-pub fn print_progress_bar(width: u64){
-    let now = SystemTime::now();
-    let since_the_epoch = now.duration_since(UNIX_EPOCH).unwrap();
-    let in_ms = since_the_epoch.as_secs() * 1000 + since_the_epoch.subsec_nanos() as u64 / 1000000;
-    let step = in_ms % 30000;
-    let idx = step * width / 30000;
-    //println!("[{progress:>w$}]",  progress="=".repeat(idx as usize),w=width as usize,);
-    println!("[{progress:<w$}]",  progress="=".repeat(idx as usize),w=width as usize,);
-}
-
 pub fn clear_lines(lines: usize,exit: bool){
     if exit{
         //  does not work during ctrl clear
@@ -92,6 +82,13 @@ pub fn check_elements(id: usize,elements: &Vec<OTPElement>) -> Result<(),String>
     Ok(())
 }
 
+pub fn percentage() -> u16{
+    let now = SystemTime::now();
+    let since_the_epoch = now.duration_since(UNIX_EPOCH).unwrap();
+    let in_ms = since_the_epoch.as_secs() * 1000 + since_the_epoch.subsec_nanos() as u64 / 1000000;
+    let step = in_ms % 30000;
+    (step * 100 / 30000) as u16
+}
 
 #[cfg(test)]
 mod tests{

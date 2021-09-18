@@ -1,15 +1,30 @@
+use std::{env, io};
+use std::thread::sleep;
+use std::time::Duration;
+
+use sodiumoxide;
+
+use otp::otp_helper;
+use tui::backend::CrosstermBackend;
+use tui::Terminal;
+use handler::handle_key_events;
+
+use app::{App, AppResult};
+use event::{Event, EventHandler};
+use ui::Tui;
+use std::fmt::Error;
+
 mod database_loader;
 mod utils;
 mod argument_functions;
 mod cryptography;
 mod importers;
 mod otp;
-use std::env;
-use sodiumoxide;
-use std::thread::sleep;
-use std::time::Duration;
-use ctrlc;
-use otp::otp_helper;
+mod ui;
+mod event;
+mod app;
+mod handler;
+mod table;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -18,16 +33,6 @@ fn print_title(){
     println!("written by @replydev\n");
     #[cfg(debug_assertions)]
     println!("****DEBUG VERSION****\n");
-}
-
-fn init_ctrlc_handler(lines: usize){
-    ctrlc::set_handler(move || {
-        #[cfg(debug_assertions)]
-        utils::clear_lines(lines + 9,true);
-        #[cfg(not(debug_assertions))]
-        utils::clear_lines(lines + 8,true);
-        std::process::exit(0);
-    }).expect("Failed to initialize ctrl-c handler");
 }
 
 fn init() -> Result<bool, String>{
@@ -54,47 +59,70 @@ fn init() -> Result<bool, String>{
     }
 }
 
-fn main() {
+fn main() -> AppResult<()>{
     print_title();
+
     let init_result = init();
     match init_result {
         Ok(true) => {
             println!("Database correctly initialized");
-            return;
+            return Ok(());
         },
         Ok(false) => {},
-        Err(e) => { 
+        Err(e) => {
             println!("{}",e);
             std::process::exit(-1);
         }
     }
     let args: Vec<String> = env::args().collect();
     if !args_parser(args){
-        if ! dashboard() {
-	        std::process::exit(-2);
-	    }
+        match dashboard() {
+            Ok(_) => std::process::exit(0),
+            Err(_) => std::process::exit(-2),
+        }
     }
+    Ok(())
 }
 
-fn dashboard() -> bool {
+fn dashboard() -> AppResult<()> {
+
     match otp_helper::read_codes(){
         Ok(elements) => {
             if elements.len() == 0{
                 println!("No codes, type \"cotp -h\" to get help");
             }
             else{
-                init_ctrlc_handler(elements.len());
-                loop{
-                    let width = otp_helper::show_codes(&elements);
-                    utils::print_progress_bar(width as u64);
-                    sleep(Duration::from_millis(2000));
-                    utils::clear_lines(elements.len() + 3,false);
+                // Create an application.
+                let mut app = App::new(elements);
+
+                // Initialize the terminal user interface.
+                let backend = CrosstermBackend::new(io::stderr());
+                let terminal = Terminal::new(backend)?;
+                let events = EventHandler::new(250);
+                let mut tui = Tui::new(terminal, events);
+                tui.init()?;
+
+                // Start the main loop.
+                while app.running {
+                    // Render the user interface.
+                    tui.draw(&mut app)?;
+                    // Handle events.
+                    match tui.events.next()? {
+                        Event::Tick => app.tick(),
+                        Event::Key(key_event) => handle_key_events(key_event, &mut app)?,
+                        Event::Mouse(_) => {}
+                        Event::Resize(_, _) => {}
+                    }
                 }
+
+                // Exit the user interface.
+                tui.exit()?;
             }
         },
-        Err(e) => { eprintln!("An error occurred: {}",e); return false; },
+        //TODO Replace OK(()) with Err
+        Err(e) => { eprintln!("An error occurred: {}",e); return Ok(()); },
     }
-    true
+    Ok(())
 }
 
 fn args_parser(args: Vec<String>) -> bool {
