@@ -4,7 +4,7 @@ use std::time::{Duration, Instant};
 
 use crossterm::event::{self, Event as CrosstermEvent, KeyEvent, MouseEvent};
 
-use crate::app::AppResult;
+use crate::interface::app::AppResult;
 
 /// Terminal events.
 #[derive(Clone, Copy, Debug)]

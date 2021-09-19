@@ -8,7 +8,7 @@ use tui::widgets::{Block, Borders, Cell, Gauge, Row, Table};
 
 use crate::otp::otp_element::OTPElement;
 use crate::otp::otp_helper::get_good_otp_code;
-use crate::table::StatefulTable;
+use crate::interface::table::StatefulTable;
 use crate::utils::percentage;
 
 /// Application result type.

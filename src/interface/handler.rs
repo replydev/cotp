@@ -1,6 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::app::{App, AppResult};
+use crate::interface::app::{App, AppResult};
 use copypasta_ext::prelude::*;
 use copypasta_ext::x11_fork::ClipboardContext;
 

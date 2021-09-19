@@ -5,8 +5,8 @@ use crossterm::terminal::{self, EnterAlternateScreen, LeaveAlternateScreen};
 use tui::backend::Backend;
 use tui::Terminal;
 
-use crate::app::{App, AppResult};
-use crate::event::EventHandler;
+use crate::interface::app::{App, AppResult};
+use crate::interface::event::EventHandler;
 
 /// Representation of a terminal user interface.
 ///

@@ -4,11 +4,11 @@ use sodiumoxide;
 use tui::backend::CrosstermBackend;
 use tui::Terminal;
 
-use app::{App, AppResult};
-use event::{Event, EventHandler};
-use handler::handle_key_events;
+use interface::app::{App, AppResult};
+use interface::event::{Event, EventHandler};
+use interface::handler::handle_key_events;
 use otp::otp_helper;
-use ui::Tui;
+use interface::ui::Tui;
 
 mod database_loader;
 mod utils;
@@ -16,11 +16,7 @@ mod argument_functions;
 mod cryptography;
 mod importers;
 mod otp;
-mod ui;
-mod event;
-mod app;
-mod handler;
-mod table;
+mod interface;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
