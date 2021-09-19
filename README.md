@@ -1,8 +1,5 @@
 # cotp - command line totp authenticator
-[![Actions Status](https://github.com/replydev/cotp/workflows/Build/badge.svg)](https://github.com/replydev/cotp/actions)    
-[![AUR package](https://img.shields.io/aur/version/cotp)](https://aur.archlinux.org/packages/cotp/)    
-[![crates.io](https://img.shields.io/crates/v/cotp)](https://crates.io/crates/cotp)    
-[![Downloads](https://img.shields.io/crates/d/cotp)](https://crates.io/crates/cotp)
+[![Actions Status](https://github.com/replydev/cotp/workflows/Build/badge.svg)](https://github.com/replydev/cotp/actions) [![AUR package](https://img.shields.io/aur/version/cotp)](https://aur.archlinux.org/packages/cotp/) [![crates.io](https://img.shields.io/crates/v/cotp)](https://crates.io/crates/cotp) [![Downloads](https://img.shields.io/crates/d/cotp)](https://crates.io/crates/cotp)
 
 I believe that security is of paramount importance, especially in this digital world. I created cotp because I needed a minimalist, secure, desktop accessible software to manage my two-factor authentication codes.
 
@@ -121,14 +118,16 @@ Note that in the `--edit` command if you type . instead of argument you are spec
 To import Authy or Google Authenticator databases you need first to obtain the respective files in your phone in the paths:
 - **Authy**: `/data/data/com.authy.authy/shared_prefs/com.authy.storage.tokens.authenticator.xml`
 - **Google Authenticator**: `/data/data/com.google.android.apps.authenticator2/databases/databases`    
-  You may need root privileges to access these folders.    
-  After that run the correct python script located in the converters/ folder in this source code:
+
+You may need root privileges to access these folders.    
+Once you got those files run the correct python script located in the converters/ folder in this source code:
 
 `python authy.py path/to/database.xml converted.json`
 
 It will convert the database in a json format readable by cotp.
+To finish import the database: 
 
-To finish import the database: `cotp -i authy path/to/database.json`
+`cotp -i authy path/to/database.json`
 
 ## Planned features
 
