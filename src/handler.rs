@@ -1,7 +1,8 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::app::{App, AppResult};
-use copypasta::{ClipboardContext, ClipboardProvider};
+use copypasta_ext::prelude::*;
+use copypasta_ext::x11_fork::ClipboardContext;
 
 /// Handles the key events and updates the state of [`App`].
 pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
