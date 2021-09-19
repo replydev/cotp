@@ -22,3 +22,4 @@ data-encoding = "2.3.2"
 totp-lite = "1.0.3"
 crossterm = "0.20"
 tui = { version = "0.16.0", features = ["crossterm"], default-features = false }
+copypasta = "0.7.1"
