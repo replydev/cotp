@@ -9,6 +9,7 @@ use interface::event::{Event, EventHandler};
 use interface::handler::handle_key_events;
 use otp::otp_helper;
 use interface::ui::Tui;
+use zeroize::Zeroize;
 
 mod database_loader;
 mod utils;
@@ -37,11 +38,13 @@ fn init() -> Result<bool, String> {
     match utils::create_db_if_needed() {
         Ok(value) => {
             if value {
-                let pw = &cryptography::prompt_for_passwords("Choose a password: ", 8, true);
-                return match database_loader::overwrite_database_json("[]", pw) {
+                let mut pw = cryptography::prompt_for_passwords("Choose a password: ", 8, true);
+                let result = match database_loader::overwrite_database_json("[]", &pw) {
                     Ok(()) => Ok(true),
                     Err(_e) => Err(String::from("An error occurred during database overwriting")),
                 };
+                pw.zeroize();
+                return result;
             }
             Ok(false)
         }

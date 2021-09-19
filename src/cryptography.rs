@@ -96,11 +96,10 @@ fn header_vec_to_header_array(byte_vec: Vec<u8>) -> [u8; 24] {
 
 pub fn prompt_for_passwords(message: &str, minimum_password_length: usize, verify: bool) -> String {
     let mut password;
-    let mut verify_password;
     loop {
         password = rpassword::prompt_password_stdout(message).unwrap();
         if verify {
-            verify_password = rpassword::prompt_password_stdout("Retype the same password: ").unwrap();
+            let verify_password = rpassword::prompt_password_stdout("Retype the same password: ").unwrap();
             if password != verify_password {
                 println!("Passwords do not match");
                 continue;

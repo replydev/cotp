@@ -2,6 +2,7 @@ use crate::{cryptography, database_loader};
 use crate::cryptography::prompt_for_passwords;
 use crate::importers;
 use crate::otp::{otp_element::OTPElement, otp_helper};
+use zeroize::Zeroize;
 
 pub fn help() {
     println!("USAGE:");
@@ -45,7 +46,8 @@ pub fn import(args: Vec<String>) {
             }
         }
 
-        match database_loader::overwrite_database(elements, &cryptography::prompt_for_passwords("Choose a password: ", 8, true)) {
+        let mut pw = cryptography::prompt_for_passwords("Choose a password: ", 8, true);
+        match database_loader::overwrite_database(elements, &pw) {
             Ok(()) => {
                 println!("Successfully imported database");
             }
@@ -53,6 +55,7 @@ pub fn import(args: Vec<String>) {
                 eprintln!("An error occurred during database overwriting: {}", e);
             }
         }
+        pw.zeroize();
     } else {
         println!("Invalid arguments, type cotp --import [APPNAME] [PATH]");
         println!("cotp can import backup from:");
@@ -75,10 +78,12 @@ pub fn add(args: Vec<String>) {
             return;
         }
 
-        match database_loader::add_element(&prompt_for_passwords("Insert the secret: ", 0, false), &args[2], &args[3], &args[4], digits) {
+        let mut secret = prompt_for_passwords("Insert the secret: ", 0, false);
+        match database_loader::add_element(&secret, &args[2], &args[3], &args[4], digits) {
             Ok(()) => println!("Success"),
             Err(e) => eprintln!("An error occurred: {}", e)
         }
+        secret.zeroize();
     } else {
         println!("Invalid arguments, type cotp --add [ISSUER] [LABEL] [ALGORITHM] [DIGITS]");
     }
@@ -100,7 +105,7 @@ pub fn remove(args: Vec<String>) {
 pub fn edit(args: Vec<String>) {
     if args.len() == 7 {
         let id = args[2].parse::<usize>().unwrap();
-        let secret = &prompt_for_passwords("Insert the secret (type ENTER to skip modification): ", 0, false);
+        let mut secret = prompt_for_passwords("Insert the secret (type ENTER to skip modification): ", 0, false);
         let issuer = &args[3];
         let label = &args[4];
         let algorithm = &args[5];
@@ -112,6 +117,7 @@ pub fn edit(args: Vec<String>) {
             Ok(()) => println!("Success"),
             Err(e) => eprintln!("An error occurred: {}", e)
         }
+        secret.zeroize();
     } else {
         println!("Invalid arguments, type cotp --edit [ID] [ISSUER] [LABEL] [ALGORITHM] [DIGITS]\n\nReplace the attribute value with \".\" to skip the attribute modification");
     }
@@ -164,7 +170,7 @@ pub fn single(args: Vec<String>) {
 pub fn info(args: Vec<String>) {
     if args.len() == 3 {
         let id = args[2].parse::<usize>().unwrap();
-        match otp_helper::print_json_result(id) {
+        match otp_helper::print_element_info(id) {
             Ok(()) => {}
             Err(e) => eprintln!("An error occurred: {}", e),
         }
@@ -175,15 +181,17 @@ pub fn info(args: Vec<String>) {
 
 pub fn change_password(args: Vec<String>) {
     if args.len() == 2 {
-        let old_password = &cryptography::prompt_for_passwords("Old password: ", 8, false);
-        let decrypted_text = database_loader::read_decrypted_text(old_password);
+        let mut old_password = cryptography::prompt_for_passwords("Old password: ", 8, false);
+        let decrypted_text = database_loader::read_decrypted_text(&old_password);
+        old_password.zeroize();
         match decrypted_text {
             Ok(s) => {
-                let new_password = &cryptography::prompt_for_passwords("New password: ", 8, true);
-                match database_loader::overwrite_database_json(&s, new_password) {
+                let mut new_password = cryptography::prompt_for_passwords("New password: ", 8, true);
+                match database_loader::overwrite_database_json(&s, &new_password) {
                     Ok(()) => println!("Password changed"),
                     Err(e) => eprintln!("An error has occurred: {}", e),
                 }
+                new_password.zeroize();
             }
             Err(e) => {
                 eprintln!("An error has occurred: {}", e);

@@ -5,6 +5,7 @@ use crate::{cryptography, database_loader};
 use crate::otp::otp_element::OTPElement;
 use crate::otp::otp_maker::make_totp;
 use crate::utils::check_elements;
+use zeroize::Zeroize;
 
 #[derive(Serialize, Deserialize)]
 struct JsonResult {
@@ -26,10 +27,13 @@ impl JsonResult {
 }
 
 pub fn read_codes() -> Result<Vec<OTPElement>, String> {
-    match database_loader::read_from_file(&cryptography::prompt_for_passwords("Password: ", 8, false)) {
+    let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
+    let result = match database_loader::read_from_file(&pw) {
         Ok(result) => Ok(result),
         Err(e) => Err(e),
-    }
+    };
+    pw.zeroize();
+    result
 }
 
 pub fn list_codes(elements: &Vec<OTPElement>) {
@@ -51,11 +55,12 @@ pub fn get_good_otp_code(element: &OTPElement) -> String {
 
 pub fn get_json_results() -> Result<String, String> {
     let elements: Vec<OTPElement>;
-
-    match database_loader::read_from_file(&cryptography::prompt_for_passwords("Password: ", 8, false)) {
+    let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
+    match database_loader::read_from_file(&pw) {
         Ok(result) => elements = result,
         Err(e) => return Err(e)
     }
+    pw.zeroize();
     let mut results: Vec<JsonResult> = Vec::new();
 
     if elements.len() == 0 {
@@ -72,18 +77,19 @@ pub fn get_json_results() -> Result<String, String> {
     Ok(json_string.to_string())
 }
 
-pub fn print_json_result(mut index: usize) -> Result<(), String> {
+pub fn print_element_info(mut index: usize) -> Result<(), String> {
     if index == 0 {
         return Err(String::from("Invalid element"));
     }
     index -= 1;
 
     let elements: Vec<OTPElement>;
-
-    match database_loader::read_from_file(&cryptography::prompt_for_passwords("Password: ", 8, false)) {
+    let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
+    match database_loader::read_from_file(&pw) {
         Ok(result) => elements = result,
         Err(e) => return Err(e),
     }
+    pw.zeroize();
 
     match check_elements(index, &elements) {
         Ok(()) => {}

@@ -10,6 +10,7 @@ use utils::{check_elements, get_db_path};
 use crate::cryptography;
 use crate::otp::otp_element::OTPElement;
 use crate::utils;
+use zeroize::Zeroize;
 
 pub fn read_decrypted_text(password: &str) -> Result<String, String> {
     let encrypted_contents = read_to_string(&get_db_path()).unwrap();
@@ -48,18 +49,20 @@ pub fn add_element(secret: &String, issuer: &String, label: &String, algorithm: 
         Ok(()) => {}
         Err(error) => return Err(error.to_string())
     }
-    let pw = &cryptography::prompt_for_passwords("Password: ", 8, false);
+    let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
     let otp_element = OTPElement::new(upper_secret.to_string(), issuer.to_string(), label.to_string(), digits, String::from("TOTP"), String::from(algorithm).to_uppercase(), String::from("Default"), 0, 0, 30, vec![]);
     let mut elements;
-    match read_from_file(pw) {
+    match read_from_file(&pw) {
         Ok(result) => elements = result,
         Err(e) => return Err(e)
     }
     elements.push(otp_element);
-    match overwrite_database(elements, pw) {
+    let result = match overwrite_database(elements, &pw) {
         Ok(()) => Ok(()),
         Err(e) => Err(format!("{}", e))
-    }
+    };
+    pw.zeroize();
+    result
 }
 
 pub fn remove_element_from_db(mut id: usize) -> Result<(), String> {
@@ -70,24 +73,26 @@ pub fn remove_element_from_db(mut id: usize) -> Result<(), String> {
     id -= 1;
 
     let mut elements: Vec<OTPElement>;
-    let pw = &cryptography::prompt_for_passwords("Password: ", 8, false);
-    match read_from_file(pw) {
+    let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
+    match read_from_file(&pw) {
         Ok(result) => elements = result,
         Err(e) => {
             return Err(e);
         }
     }
 
-    match check_elements(id, &elements) {
+    let result = match check_elements(id, &elements) {
         Ok(()) => {
             elements.remove(id);
-            match overwrite_database(elements, pw) {
+            match overwrite_database(elements, &pw) {
                 Ok(()) => Ok(()),
                 Err(e) => Err(format!("{}", e)),
             }
         }
         Err(e) => Err(e)
-    }
+    };
+    pw.zeroize();
+    result
 }
 
 pub fn edit_element(mut id: usize, secret: &str, issuer: &str, label: &str, algorithm: &str, digits: u64) -> Result<(), String> {
@@ -97,13 +102,13 @@ pub fn edit_element(mut id: usize, secret: &str, issuer: &str, label: &str, algo
     id -= 1;
 
     let mut elements: Vec<OTPElement>;
-    let pw = &cryptography::prompt_for_passwords("Password: ", 8, false);
-    match read_from_file(pw) {
+    let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
+    match read_from_file(&pw) {
         Ok(result) => elements = result,
         Err(_e) => return Err(String::from("Cannot decrypt existing database"))
     }
 
-    match check_elements(id, &elements) {
+    let result = match check_elements(id, &elements) {
         Ok(()) => {
             if secret != "" {
                 elements[id].set_secret(secret.to_string());
@@ -120,20 +125,24 @@ pub fn edit_element(mut id: usize, secret: &str, issuer: &str, label: &str, algo
             if digits != 0 {
                 elements[id].set_digits(digits);
             }
-            match overwrite_database(elements, pw) {
+            match overwrite_database(elements, &pw) {
                 Ok(()) => Ok(()),
                 Err(e) => Err(format!("{}", e)),
             }
         }
         Err(e) => Err(e)
-    }
+    };
+    pw.zeroize();
+    result
 }
 
 pub fn export_database() -> Result<PathBuf, String> {
     let exported_path = utils::get_home_folder().join("exported.cotp");
     let mut file = File::create(&exported_path).expect("Cannot create file");
     let encrypted_contents = read_to_string(&get_db_path()).unwrap();
-    let contents = cryptography::decrypt_string(&encrypted_contents, &cryptography::prompt_for_passwords("Password: ", 8, false));
+    let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
+    let contents = cryptography::decrypt_string(&encrypted_contents, &pw);
+    pw.zeroize();
     return match contents {
         Ok(contents) => {
             if contents == "[]" {
