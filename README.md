@@ -1,7 +1,7 @@
 # cotp - command line totp authenticator
-[![Actions Status](https://github.com/replydev/cotp/workflows/Build/badge.svg)](https://github.com/replydev/cotp/actions)
-[![AUR package](https://img.shields.io/aur/version/cotp)](https://aur.archlinux.org/packages/cotp/)
-[![crates.io](https://img.shields.io/crates/v/cotp)](https://crates.io/crates/cotp)
+[![Actions Status](https://github.com/replydev/cotp/workflows/Build/badge.svg)](https://github.com/replydev/cotp/actions)    
+[![AUR package](https://img.shields.io/aur/version/cotp)](https://aur.archlinux.org/packages/cotp/)    
+[![crates.io](https://img.shields.io/crates/v/cotp)](https://crates.io/crates/cotp)    
 [![Downloads](https://img.shields.io/crates/d/cotp)](https://crates.io/crates/cotp)
 
 I believe that security is of paramount importance, especially in this digital world. I created cotp because I needed a minimalist, secure, desktop accessible software to manage my two-factor authentication codes.
@@ -26,19 +26,18 @@ By typing `cotp -ex` you can export your database in unencrypted json format.
 ### Compatibility
 cotp can generate two-factor authentication coded using HMAC-SHA1, HMAC-SHA256 and HMAC-SHA512, with any digits, to provide a good compatibility to most two-factor authentication systems.
 ### Cross Plaform
-Thanks to the glorious [Rust Language](https://www.rust-lang.org/) cotp is easily **compilable** in every platform supported by rust itself.
-
 #### So far, I have successfully tested the functionality of the software in the following systems:
- - Arch Linux
- - Alpine Linux 3.12.3
- - Fedora 33
- - Ubuntu 20.04 WSL
- - Windows 10 Pro x64 20H2 Build 19042.746
- - Windows 10 LTSC x64 1809 Build 17763.1637
+|System|Version|Rust Version|Rust Toolchain|Working|
+|--|--|--|--|--|
+|Arch Linux|N/A|1.55.0|`x86_64-unknown-linux-gnu`|Yes|  
+|Alpine Linux|3.12.3|1.54.0|`x86_64-unknown-linux-gnu`|Yes|
+|Fedora|33|1.52.0|`x86_64-unknown-linux-gnu`|Yes|
+|Ubuntu|20.04 WSL|1.52.0|`x86_64-unknown-linux-gnu`|Yes|   
+|Windows 10 Pro|20H2|1.55.0|`x86_64-pc-windows-msvc`|Yes|
+|Windows 10 LTSC|1809|1.52.0|`x86_64-pc-windows-msvc`|Yes|
 
 #### In addition, cotp has been successfully tested by the community in the following systems:
- - Android (Termux)
- - NixOS
+- NixOS
 
 ## Installation
 
@@ -50,10 +49,8 @@ Before beginning check you already have the required packages:
 
 Then choose how you want to proceed:
 
-- Using an AUR Helper like [yay](https://github.com/Jguer/yay): 
-`yay -S cotp`
-- Or [paru](https://github.com/morganamilo/paru):
-`paru -S cotp`
+- Using an AUR Helper like [paru](https://github.com/morganamilo/paru):    
+  `paru -S cotp`
 - Manually cloning AUR repo and make the pkg
 
 	```
@@ -116,16 +113,16 @@ Note that in the `--edit` command if you type . instead of argument you are spec
     cotp -e 3 . myothermail@example.com . 8
 
 #### After:
-|index|issuer|label|algorithm|digits|
-|--|--|--|--|--|
-| 3 | Email_Provider | **mymailother@example.com** | SHA1 | **8** |
+|index|issuer|label|algorithm|digits|    
+|--|--|--|--|--|    
+| 3 | Email_Provider | *mymailother@example.com* | SHA1 | *8* |
 
 ## Database conversion
-To import Authy or Google Authenticator databases you need first to obtain the respective files in your phone in the paths: 
+To import Authy or Google Authenticator databases you need first to obtain the respective files in your phone in the paths:
 - **Authy**: `/data/data/com.authy.authy/shared_prefs/com.authy.storage.tokens.authenticator.xml`
-- **Google Authenticator**: `/data/data/com.google.android.apps.authenticator2/databases/databases`
-
-After that run the correct python script located in the converters/ folder in this source code:
+- **Google Authenticator**: `/data/data/com.google.android.apps.authenticator2/databases/databases`    
+  You may need root privileges to access these folders.    
+  After that run the correct python script located in the converters/ folder in this source code:
 
 `python authy.py path/to/database.xml converted.json`
 
@@ -135,20 +132,19 @@ To finish import the database: `cotp -i authy path/to/database.json`
 
 ## Planned features
 
- - [x] Reduce binary size and improve compilation speed by removing useless dependencies.
- - [x] Use Argon2id for key derivation
- - [x] CLI Dashboard
- - [x] Support for:
-   - [x] SHA256
-   - [x] SHA512
-   - [x] Custom digit value
- - [ ] Backup compatibility with:
-	 - [x] Aegis
-	 - [x] andOTP
-	 - [x] Authy
-	 - [x] Google Authenticator
-	 - [ ] FreeOTP
- - [ ] Graphical User Interface 
+- [x] Reduce binary size and improve compilation speed by removing useless dependencies.
+- [x] Use Argon2id for key derivation
+- [x] CLI Dashboard
+- [x] Support for:
+	- [x] SHA256
+	- [x] SHA512
+	- [x] Custom digit value
+- [ ] Backup compatibility with:
+	- [x] Aegis
+	- [x] andOTP
+	- [x] Authy
+	- [x] Google Authenticator
+	- [ ] FreeOTP
 
 ## Contribution
 I created this project for my own needs, but I would be happy if this little program is useful to someone else, and I gratefully accept any contributions.
