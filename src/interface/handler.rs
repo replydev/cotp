@@ -35,8 +35,10 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
             if let Some(selected) = app.table.state.selected(){
                 if let Some(element) = app.table.items.get(selected){
                     if let Some(otp_code) = element.get(3){
-                        let mut ctx = ClipboardContext::new().unwrap();
-                        ctx.set_contents(otp_code.to_owned()).unwrap();
+                        // in some occasions we can't copy contents to clipboard, so let's check for a good result
+                        if let Ok(mut ctx) = ClipboardContext::new(){
+                            ctx.set_contents(otp_code.to_owned()).unwrap();
+                        }
                     }
                 }
             }
