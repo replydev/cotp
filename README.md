@@ -31,6 +31,7 @@ cotp can generate two-factor authentication coded using HMAC-SHA1, HMAC-SHA256 a
 |Fedora|33|1.52.0|`x86_64-unknown-linux-gnu`|Yes|
 |Ubuntu|20.04 WSL|1.52.0|`x86_64-unknown-linux-gnu`|Yes|   
 |Windows 10 Pro|20H2|1.55.0|`x86_64-pc-windows-msvc`|Yes|
+|Windows 10 Pro|20H2|1.55.0|`x86_64-pc-windows-gnu`|Yes|
 |Windows 10 LTSC|1809|1.52.0|`x86_64-pc-windows-msvc`|Yes|
 
 #### In addition, cotp has been successfully tested by the community in the following systems:
@@ -57,13 +58,11 @@ Then choose how you want to proceed:
 	```
 ### Other distributions, *nix or Windows
 
-Before beginning check that you have the required dependencies to build cotp by yourself:
- - build-essential for debian-based distributions
- - gcc for others
- - [MSVC](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=BuildTools&rel=16) for Windows
- - [rust compiler and utilities](https://rustup.rs/)
+Before beginning check that you have the required build dependencies to use the rust compiler.
 
-⚠️**Attention** The `x86_64-pc-windows-gnu` rust toolchain is untested and may not compile! Use MSVC instead.
+Windows compilation is supported with both of toolchains.
+If you want to use `x86_64-pc-windows-msvc` you will need to install the [Visual C++ 2019 Build Tools](https://visualstudio.microsoft.com/it/thank-you-downloading-visual-studio/?sku=BuildTools&rel=16)
+
 #### Using crates.io repository
 
 It's possible to install cotp directly through cargo, as it's listed in the [crates.io](https://crates.io/crates/cotp) repository.
@@ -78,27 +77,14 @@ You can build cotp using these commands:
 
 ## How to use
 If you are familiar with the command line interface using cotp will not be a problem.
-Please note that cotp requires at least an 8 chars length password.
+In the first run you will be prompted to insert a password to initialize the database.
+Please note that the software requires at least an 8 chars length password.
+
 If you type `cotp -h` you get some instruction on how to use cotp utilities.
-For example, the version 0.1.5 prints out this help screen:
-```
-cotp v0.1.5
-written by @replydev
-
-USAGE:
-  cotp [SUBCOMMAND]
-
-ARGUMENTS:
-  -a,--add [ISSUER] [LABEL] [ALGORITHM] [DIGITS]       | Add a new OTP code
-  -e,--edit [ID] [ISSUER] [LABEL] [ALGORITHM] [DIGITS] | Edit an OTP code
-  -r,--remove [ID]                                     | Remove an OTP code
-  -i,--import [APPNAME] [PATH]                         | Import a backup from a given application
-  -ex,--export                                         | Export the entire database in a plaintext json format
-  -j,--json                                            | Print results in json format
-  -s,--single                                          | Print OTP codes in single mode
-  -in,--info [ID]                                      | Print info of choosen OTP code
-  -h,--help                                            | Print this help
-```
+### Coping
+You can copy the otp code of the element you selected by simply pressing enter.
+This is supported in Windows, Mac OS, X11 and Wayland.
+### Edit
 Note that in the `--edit` command if you type . instead of argument you are specifying not to modify that specific argument.
 ### Example:
 #### Before:
