@@ -1,7 +1,7 @@
 [package]
 name = "cotp"
 version = "0.1.8"
-authors = ["replydev <replydev@protonmail.com>"]
+authors = ["replydev <commoncargo@tutanota.com>"]
 edition = "2018"
 description = "Trustworthy encrypted command line authenticator app compatible with multiple backups."
 repository = "https://github.com/replydev/cotp"
