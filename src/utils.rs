@@ -45,9 +45,9 @@ pub fn create_db_if_needed() -> Result<bool, ()> {
     }
     let db_path = get_db_path();
     if !db_path.exists() {
-        match std::fs::File::create(db_path) {
-            Ok(_f) => return Ok(true),
-            Err(_e) => return Err(()),
+        return match std::fs::File::create(db_path) {
+            Ok(_f) => Ok(true),
+            Err(_e) => Err(()),
         }
     }
     Ok(false)

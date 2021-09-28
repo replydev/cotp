@@ -50,7 +50,7 @@ pub fn get_good_otp_code(element: &OTPElement) -> String {
         &element.secret(), //we have replaced '=' in this method
         &element.algorithm().to_uppercase(), element.digits());
 
-    "0".repeat(otp.len() - element.digits() as usize) + otp.as_str()
+    "0".repeat(otp.chars().count() - element.digits() as usize) + otp.as_str()
 }
 
 pub fn get_json_results() -> Result<String, String> {

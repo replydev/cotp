@@ -92,7 +92,6 @@ pub fn add(args: Vec<String>) {
 pub fn remove(args: Vec<String>) {
     if args.len() == 3 {
         let id = args[2].parse::<usize>().unwrap();
-
         match database_loader::remove_element_from_db(id) {
             Ok(()) => println!("Success"),
             Err(e) => eprintln!("An error has occurred: {}", e)
@@ -128,7 +127,7 @@ pub fn export(args: Vec<String>) {
         let export_result = database_loader::export_database();
         match export_result {
             Ok(export_result) => {
-                println!("Database was successfully exported at {}", export_result.to_str().expect("**Invalid path**"));
+                println!("Database was successfully exported at {}", export_result.to_str().unwrap_or("**Invalid path**"));
             }
             Err(e) => {
                 eprintln!("An error occurred while exporting database: {}", e);

@@ -104,10 +104,10 @@ pub fn prompt_for_passwords(message: &str, minimum_password_length: usize, verif
                 println!("Passwords do not match");
                 continue;
             }
-            if password.len() >= minimum_password_length {
+            if password.chars().count() >= minimum_password_length {
                 break;
             }
-        } else if password.len() >= minimum_password_length {
+        } else if password.chars().count() >= minimum_password_length {
             break;
         }
         println!("Please insert a password with at least {} digits.", minimum_password_length);
