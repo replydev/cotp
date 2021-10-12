@@ -72,14 +72,16 @@ pub fn get_json_results() -> Result<String, String> {
         results.push(JsonResult::new(i + 1, elements[i].issuer(), elements[i].label(), otp_code))
     }
 
-    let json_string: &str = &serde_json::to_string_pretty(&results).unwrap();
-
-    Ok(json_string.to_string())
+    let json_string: String = match serde_json::to_string_pretty(&results){
+        Ok(result) => result,
+        Err(e) => return Err(format!("Error during serialization: {:?}",e)),
+    };
+    Ok(json_string)
 }
 
 pub fn print_element_info(mut index: usize) -> Result<(), String> {
     if index == 0 {
-        return Err(String::from("Invalid element"));
+        return Err(String::from("Invalid index"));
     }
     index -= 1;
 

@@ -91,7 +91,13 @@ pub fn add(args: Vec<String>) {
 
 pub fn remove(args: Vec<String>) {
     if args.len() == 3 {
-        let id = args[2].parse::<usize>().unwrap();
+        let id = match args[2].parse::<usize>() {
+            Ok(result) => result,
+            Err(_) => {
+                eprintln!("Invalid index: {}",args[2]);
+                return;
+            }
+        };
         match database_loader::remove_element_from_db(id) {
             Ok(()) => println!("Success"),
             Err(e) => eprintln!("An error has occurred: {}", e)
@@ -103,7 +109,13 @@ pub fn remove(args: Vec<String>) {
 
 pub fn edit(args: Vec<String>) {
     if args.len() == 7 {
-        let id = args[2].parse::<usize>().unwrap();
+        let id = match args[2].parse::<usize>() {
+            Ok(result) => result,
+            Err(_) => {
+                eprintln!("Invalid index: {}",args[2]);
+                return;
+            }
+        };
         let mut secret = prompt_for_passwords("Insert the secret (type ENTER to skip modification): ", 0, false);
         let issuer = &args[3];
         let label = &args[4];
@@ -168,13 +180,19 @@ pub fn single(args: Vec<String>) {
 
 pub fn info(args: Vec<String>) {
     if args.len() == 3 {
-        let id = args[2].parse::<usize>().unwrap();
+        let id = match args[2].parse::<usize>(){
+            Ok(result) => result,
+            Err(_) => {
+                eprintln!("Invalid index: {}",args[2]);
+                return;
+            }
+        };
         match otp_helper::print_element_info(id) {
             Ok(()) => {}
             Err(e) => eprintln!("An error occurred: {}", e),
         }
     } else {
-        println!("Invalid arguments, type cotp --info [ID]");
+        eprintln!("Invalid arguments, type cotp --info [ID]");
     }
 }
 

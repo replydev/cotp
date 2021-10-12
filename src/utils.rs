@@ -19,7 +19,19 @@ pub fn get_db_path() -> PathBuf {
 }
 
 pub fn get_home_folder() -> PathBuf {
-    home_dir().unwrap()
+    match home_dir() {
+        Some(home) => home,
+        None => {
+            let current_dir = PathBuf::from(".");
+            if let Some(str_dir) = current_dir.to_str(){
+                eprintln!("Cannot get home folder, using: {}",str_dir);
+            }
+            else{
+                eprintln!("Cannot get home folder, using");
+            }
+            current_dir
+        },
+    }
 }
 
 #[cfg(debug_assertions)]

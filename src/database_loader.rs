@@ -13,7 +13,13 @@ use crate::utils;
 use zeroize::Zeroize;
 
 pub fn read_decrypted_text(password: &str) -> Result<String, String> {
-    let encrypted_contents = read_to_string(&get_db_path()).unwrap();
+    let encrypted_contents = match read_to_string(&get_db_path()) {
+        Ok(result) => result,
+        Err(e) => {
+            // no need to zeroize since contents are encrypted
+            return Err(format!("Error during file reading: {:?}",e));
+        },
+    };
     if encrypted_contents.len() == 0 {
         return match utils::delete_db() {
             Ok(_) => Err(String::from("Your database file was empty, please restart to create a new one.")),
@@ -26,8 +32,15 @@ pub fn read_decrypted_text(password: &str) -> Result<String, String> {
 
 pub fn read_from_file(password: &str) -> Result<Vec<OTPElement>, String> {
     return match read_decrypted_text(password) {
-        Ok(contents) => {
-            let vector: Vec<OTPElement> = serde_json::from_str(&contents).unwrap();
+        Ok(mut contents) => {
+            let vector: Vec<OTPElement> = match serde_json::from_str(&contents){
+                Ok(results) => results,
+                Err(e) => {
+                    contents.zeroize();
+                    return Err(format!("Failed to deserialize database: {:?}",e));
+                },
+            };
+            contents.zeroize();
             Ok(vector)
         }
         Err(e) => {
@@ -97,7 +110,7 @@ pub fn remove_element_from_db(mut id: usize) -> Result<(), String> {
 
 pub fn edit_element(mut id: usize, secret: &str, issuer: &str, label: &str, algorithm: &str, digits: u64) -> Result<(), String> {
     if id == 0 {
-        return Err(String::from("Invalid element"));
+        return Err(String::from("Invalid index"));
     }
     id -= 1;
 
@@ -139,7 +152,10 @@ pub fn edit_element(mut id: usize, secret: &str, issuer: &str, label: &str, algo
 pub fn export_database() -> Result<PathBuf, String> {
     let exported_path = utils::get_home_folder().join("exported.cotp");
     let mut file = File::create(&exported_path).expect("Cannot create file");
-    let encrypted_contents = read_to_string(&get_db_path()).unwrap();
+    let encrypted_contents = match read_to_string(&get_db_path()){
+        Ok(result) => result,
+        Err(e) => return Err(format!("Error during file reading: {:?}",e)),
+    };
     let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
     let contents = cryptography::decrypt_string(&encrypted_contents, &pw);
     pw.zeroize();

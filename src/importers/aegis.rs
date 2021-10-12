@@ -44,7 +44,10 @@ struct AegisInfo {
 }
 
 pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
-    let file_to_import_contents = read_to_string(filepath).unwrap();
+    let file_to_import_contents = match read_to_string(filepath){
+        Ok(result) => result,
+        Err(e) => return Err(format!("Error during file reading: {:?}",e)),
+    };
     let result: Result<AegisJson, serde_json::Error> = serde_json::from_str(&file_to_import_contents);
     let aegis;
     match result {
