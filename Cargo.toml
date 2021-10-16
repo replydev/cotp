@@ -24,3 +24,4 @@ crossterm = "0.21.0"
 tui = { version = "0.16.0", features = ["crossterm"], default-features = false }
 copypasta-ext = "0.3.7"
 zeroize = "1.4.2"
+clap = "3.0.0-beta.4"

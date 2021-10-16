@@ -56,7 +56,7 @@ pub fn check_secret(secret: &str) -> Result<(), data_encoding::DecodeError> {
     };
 }
 
-pub fn add_element(secret: &String, issuer: &String, label: &String, algorithm: &str, digits: u64) -> Result<(), String> {
+pub fn add_element(secret: &str, issuer: &str, label: &str, algorithm: &str, digits: u64) -> Result<(), String> {
     let upper_secret = secret.to_uppercase().replace("=", "");
     match check_secret(&upper_secret) {
         Ok(()) => {}
@@ -78,12 +78,12 @@ pub fn add_element(secret: &String, issuer: &String, label: &String, algorithm: 
     result
 }
 
-pub fn remove_element_from_db(mut id: usize) -> Result<(), String> {
-    if id == 0 {
+pub fn remove_element_from_db(mut index: usize) -> Result<(), String> {
+    if index == 0 {
         return Err(String::from("0 is a bad index"));
     }
     //user inserts numbers starting from 1, so we will decrement the value because we use array indexes instead
-    id -= 1;
+    index -= 1;
 
     let mut elements: Vec<OTPElement>;
     let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
@@ -94,9 +94,9 @@ pub fn remove_element_from_db(mut id: usize) -> Result<(), String> {
         }
     }
 
-    let result = match check_elements(id, &elements) {
+    let result = match check_elements(index, &elements) {
         Ok(()) => {
-            elements.remove(id);
+            elements.remove(index);
             match overwrite_database(elements, &pw) {
                 Ok(()) => Ok(()),
                 Err(e) => Err(format!("{}", e)),
@@ -160,11 +160,13 @@ pub fn export_database() -> Result<PathBuf, String> {
     let contents = cryptography::decrypt_string(&encrypted_contents, &pw);
     pw.zeroize();
     return match contents {
-        Ok(contents) => {
+        Ok(mut contents) => {
             if contents == "[]" {
                 return Err(String::from("there are no elements in your database, type \"cotp -h\" to get help"));
             }
-            file.write_all(contents.as_bytes()).expect("Failed to write contents");
+            let contents_bytes = contents.as_bytes();
+            file.write_all(contents_bytes).expect("Failed to write contents");
+            contents.zeroize();
             Ok(exported_path)
         }
         Err(e) => {

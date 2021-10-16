@@ -1,48 +1,18 @@
-use serde::{Deserialize, Serialize};
-use serde_json;
-
-use crate::{cryptography, database_loader};
+use crate::{cryptography, database_management};
 use crate::otp::otp_element::OTPElement;
 use crate::otp::otp_maker::make_totp;
 use crate::utils::check_elements;
 use zeroize::Zeroize;
 
-#[derive(Serialize, Deserialize)]
-struct JsonResult {
-    index: usize,
-    issuer: String,
-    label: String,
-    otp_code: String,
-}
-
-impl JsonResult {
-    pub fn new(index: usize, issuer: String, label: String, otp_code: String) -> JsonResult {
-        JsonResult {
-            index,
-            issuer,
-            label,
-            otp_code,
-        }
-    }
-}
 
 pub fn read_codes() -> Result<Vec<OTPElement>, String> {
     let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
-    let result = match database_loader::read_from_file(&pw) {
+    let result = match database_management::read_from_file(&pw) {
         Ok(result) => Ok(result),
         Err(e) => Err(e),
     };
     pw.zeroize();
     result
-}
-
-pub fn list_codes(elements: &Vec<OTPElement>) {
-    // used in single mode
-    let mut i = 0;
-    for element in elements {
-        println!("{}) {} {} -> {}", i + 1, element.issuer(), element.label(), get_good_otp_code(element));
-        i += 1;
-    }
 }
 
 pub fn get_good_otp_code(element: &OTPElement) -> String {
@@ -53,32 +23,6 @@ pub fn get_good_otp_code(element: &OTPElement) -> String {
     "0".repeat(otp.chars().count() - element.digits() as usize) + otp.as_str()
 }
 
-pub fn get_json_results() -> Result<String, String> {
-    let elements: Vec<OTPElement>;
-    let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
-    match database_loader::read_from_file(&pw) {
-        Ok(result) => elements = result,
-        Err(e) => return Err(e)
-    }
-    pw.zeroize();
-    let mut results: Vec<JsonResult> = Vec::new();
-
-    if elements.len() == 0 {
-        return Err(String::from("there are no elements in your database, type \"cotp -h\" to get help"));
-    }
-
-    for i in 0..elements.len() {
-        let otp_code = get_good_otp_code(&elements[i]);
-        results.push(JsonResult::new(i + 1, elements[i].issuer(), elements[i].label(), otp_code))
-    }
-
-    let json_string: String = match serde_json::to_string_pretty(&results){
-        Ok(result) => result,
-        Err(e) => return Err(format!("Error during serialization: {:?}",e)),
-    };
-    Ok(json_string)
-}
-
 pub fn print_element_info(mut index: usize) -> Result<(), String> {
     if index == 0 {
         return Err(String::from("Invalid index"));
@@ -87,7 +31,7 @@ pub fn print_element_info(mut index: usize) -> Result<(), String> {
 
     let elements: Vec<OTPElement>;
     let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
-    match database_loader::read_from_file(&pw) {
+    match database_management::read_from_file(&pw) {
         Ok(result) => elements = result,
         Err(e) => return Err(e),
     }
