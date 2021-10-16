@@ -15,7 +15,6 @@ use crate::utils::percentage;
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
 /// Application.
-//#[derive(Debug)]
 pub struct App {
     /// Is the application running?
     pub running: bool,
@@ -53,20 +52,6 @@ impl App {
 
     /// Renders the user interface widgets.
     pub fn render<B: Backend>(&mut self, frame: &mut Frame<'_, B>) {
-        // This is where you add new widgets.
-        // See the following resources:
-        // - https://docs.rs/tui/0.16.0/tui/widgets/index.html
-        // - https://github.com/fdehau/tui-rs/tree/v0.16.0/examples
-
-        /*frame.render_widget(
-            Paragraph::new(self.title.as_str())
-                .block(Block::default().borders(Borders::ALL))
-                .style(Style::default().fg(Color::White).bg(Color::Black))
-                .alignment(Alignment::Center),
-            frame.size(),
-        )*/
-
-
         let rects = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Percentage(95), Constraint::Percentage(5)].as_ref())
