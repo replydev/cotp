@@ -21,16 +21,6 @@ mod otp;
 mod interface;
 mod database_management;
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-
-fn print_title() {
-    #[cfg(not(debug_assertions))]
-    println!("cotp v{}", VERSION);
-    #[cfg(debug_assertions)]
-    println!("cotp DEBUG v{}", VERSION);
-    println!("written by @replydev\n");
-}
-
 fn init() -> Result<bool, String> {
     match sodiumoxide::init() {
         Err(()) => {
@@ -58,10 +48,7 @@ fn init() -> Result<bool, String> {
 }
 
 fn main() -> AppResult<()> {
-    print_title();
-
-    let init_result = init();
-    match init_result {
+    match init() {
         Ok(true) => {
             println!("Database correctly initialized");
             return Ok(());
