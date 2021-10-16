@@ -12,9 +12,7 @@ pub fn import(matches: &ArgMatches) {
     let result = match app_name {
         "cotp" | "andotp" => importers::and_otp::import(path),
         "aegis" => importers::aegis::import(path),
-        "gauth" |
-        "google_authenticator" |
-        "authy" => importers::converted::import(path),
+        "gauth" | "authy" => importers::converted::import(path),
         _ => {
             println!("Invalid argument: {}", app_name);
             return;
@@ -65,11 +63,14 @@ pub fn remove(matches: &ArgMatches) {
 
 pub fn edit(matches: &ArgMatches) {
     let index: usize = matches.value_of_t_or_exit("index");
-    let mut secret = prompt_for_passwords("Insert the secret (type ENTER to skip modification): ", 0, false);
-    let issuer = matches.value_of("issuer").unwrap();
-    let label = matches.value_of("label").unwrap();
-    let algorithm = matches.value_of("algorithm").unwrap();
-    let digits: u64 = matches.value_of_t("digits").unwrap_or(6);
+    let issuer = matches.value_of("issuer").unwrap_or("");
+    let label = matches.value_of("label").unwrap_or("");
+    let algorithm = matches.value_of("algorithm").unwrap_or("");
+    let digits: u64 = matches.value_of_t("digits").unwrap_or(0);
+    let mut secret = match matches.is_present("change-secret") {
+        true => prompt_for_passwords("Insert the secret (type ENTER to skip): ", 0, false),
+        false => String::from(""),
+    };
     match database_management::edit_element(index, &secret, &issuer, &label, &algorithm, digits) {
         Ok(()) => println!("Success"),
         Err(e) => eprintln!("An error occurred: {}", e)

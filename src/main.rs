@@ -133,7 +133,8 @@ fn get_matches() -> ArgMatches{
                 .setting(AppSettings::ArgRequiredElseHelp)
                 .arg(
                     Arg::new("issuer")
-                    .short('s')
+                    .short('i')
+                    .long("issuer")
                     .about("OTP Code issuer")
                     .takes_value(true)
                     .required(false)
@@ -142,6 +143,7 @@ fn get_matches() -> ArgMatches{
                 .arg(
                     Arg::new("label")
                     .short('l')
+                    .long("label")
                     .about("OTP Code label")
                     .takes_value(true)
                     .required(true)
@@ -149,14 +151,17 @@ fn get_matches() -> ArgMatches{
                 .arg(
                     Arg::new("algorithm")
                     .short('a')
+                    .long("algoritmh")
                     .about("OTP Code algorithm")
                     .takes_value(true)
                     .required(false)
+                    .possible_values(&["SHA1","SHA256","SHA512"])
                     .default_value("SHA1")
                 )
                 .arg(
                     Arg::new("digits")
                     .short('d')
+                    .long("digits")
                     .about("OTP Code digits")
                     .takes_value(true)
                     .required(false)
@@ -169,42 +174,51 @@ fn get_matches() -> ArgMatches{
                 .setting(AppSettings::ArgRequiredElseHelp)
                 .arg(
                     Arg::new("index")
-                    .short('i')
+                    .short('n')
+                    .long("index")
                     .about("OTP Code index")
                     .takes_value(true)
                     .required(true)
                 )
                 .arg(
                     Arg::new("issuer")
-                    .short('s')
+                    .short('i')
+                    .long("issuer")
                     .about("OTP Code issuer")
                     .takes_value(true)
-                    .required(false)
-                    .default_value("")
+                    .required_unless_present_any(["label","algorithm","digits"])
                 )
                 .arg(
                     Arg::new("label")
                     .short('l')
+                    .long("label")
                     .about("OTP Code label")
                     .takes_value(true)
-                    .required(false)
-                    .default_value("")
+                    .required_unless_present_any(["issuer","algorithm","digits"])
                 )
                 .arg(
                     Arg::new("algorithm")
                     .short('a')
+                    .long("algoritmh")
                     .about("OTP Code algorithm")
                     .takes_value(true)
-                    .required(false)
-                    .default_value("")
+                    .required_unless_present_any(["label","issuer","digits"])
+                    .possible_values(&["SHA1","SHA256","SHA512"])
                 )
                 .arg(
                     Arg::new("digits")
                     .short('d')
+                    .long("digits")
                     .about("OTP Code digits")
                     .takes_value(true)
-                    .required(false)
-                    .default_value("")
+                    .required_unless_present_any(["label","algorithm","issuer"])
+                )
+                .arg(
+                    Arg::new("change-secret")
+                    .short('c')
+                    .long("change-secret")
+                    .about("Change the OTP code secret")
+                    .takes_value(false)
                 )
         )
         .subcommand(
@@ -213,7 +227,8 @@ fn get_matches() -> ArgMatches{
                 .setting(AppSettings::ArgRequiredElseHelp) // They can even have different settings
                 .arg(
                     Arg::new("index")
-                        .short('i')
+                        .short('n')
+                        .long("index")
                         .about("OTP code index")
                         .takes_value(true)
                         .required(true),
@@ -226,13 +241,16 @@ fn get_matches() -> ArgMatches{
                 .arg(
                     Arg::new("appname")
                         .short('a')
+                        .long("appname")
                         .about("App from which you are importing the backup")
+                        .possible_values(&["cotp","andotp","aegis","gauth","authy"])
                         .takes_value(true)
                         .required(true),
                 )
                 .arg(
                     Arg::new("path")
                         .short('p')
+                        .long("path")
                         .about("Backup path")
                         .takes_value(true)
                         .required(true),
@@ -249,7 +267,8 @@ fn get_matches() -> ArgMatches{
                 .setting(AppSettings::ArgRequiredElseHelp) // They can even have different settings
                 .arg(
                     Arg::new("index")
-                        .short('i')
+                        .short('n')
+                        .long("index")
                         .about("OTP code index")
                         .takes_value(true)
                         .required(true),

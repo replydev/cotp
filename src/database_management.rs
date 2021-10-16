@@ -123,19 +123,19 @@ pub fn edit_element(mut id: usize, secret: &str, issuer: &str, label: &str, algo
 
     let result = match check_elements(id, &elements) {
         Ok(()) => {
-            if secret != "" {
+            if !secret.trim().is_empty(){
                 elements[id].set_secret(secret.to_string());
             }
-            if issuer != "." {
+            if !issuer.trim().is_empty() {
                 elements[id].set_issuer(issuer.to_string());
             }
-            if label != "." {
+            if !label.trim().is_empty() {
                 elements[id].set_label(label.to_string());
             }
-            if algorithm != "." {
+            if !algorithm.trim().is_empty() {
                 elements[id].set_algorithm(algorithm.to_string().to_uppercase());
             }
-            if digits != 0 {
+            if digits > 0 {
                 elements[id].set_digits(digits);
             }
             match overwrite_database(elements, &pw) {
