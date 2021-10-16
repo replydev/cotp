@@ -44,7 +44,7 @@ impl App {
             self.table.items.clear();
             let mut i = 0;
             for element in &self.elements {
-                self.table.items.push(vec![(i + 1).to_string(), element.issuer(), element.label(), get_good_otp_code(element)]);
+                self.table.items.push(vec![(i + 1).to_string(), element.label(), element.issuer(), get_good_otp_code(element)]);
                 i += 1;
             }
         }
@@ -75,7 +75,7 @@ impl App {
 
         let selected_style = Style::default().add_modifier(Modifier::REVERSED);
         let normal_style = Style::default().bg(Color::DarkGray);
-        let header_cells = ["Id", "Issuer", "Label", "OTP"]
+        let header_cells = ["Id", "Label", "Issuer", "OTP"]
             .iter()
             .map(|h| Cell::from(*h).style(Style::default().fg(Color::White)));
         let header = Row::new(header_cells)
