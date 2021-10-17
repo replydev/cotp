@@ -1,10 +1,8 @@
 use std::convert::TryInto;
-use std::fmt::Error;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::SystemTime;
 
-use data_encoding::{BASE32_NOPAD, DecodeError};
+use data_encoding::BASE32_NOPAD;
 use hmac::{Hmac, Mac, NewMac};
-use hmac::crypto_mac::Output;
 use hmac::digest::{BlockInput, FixedOutputDirty, Reset, Update};
 use sha1::Sha1;
 use sha2::{Sha256, Sha512};
