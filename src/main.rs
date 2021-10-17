@@ -132,6 +132,14 @@ fn get_matches() -> ArgMatches{
                 .about("Add a new OTP Code")
                 .setting(AppSettings::ArgRequiredElseHelp)
                 .arg(
+                    Arg::new("hotp")
+                    .short('o')
+                    .long("hotp")
+                    .about("Specify this is an HOTP Code")
+                    .takes_value(false)
+                    .requires("counter")
+                )
+                .arg(
                     Arg::new("issuer")
                     .short('s')
                     .long("issuer")
@@ -167,6 +175,13 @@ fn get_matches() -> ArgMatches{
                     .required(false)
                     .default_value("6")
                 )
+                .arg(
+                    Arg::new("counter")
+                    .short('c')
+                    .long("counter")
+                    .about("HOTP code counter")
+                    .takes_value(true)
+                )
         )
         .subcommand(
             App::new("edit")
@@ -186,7 +201,7 @@ fn get_matches() -> ArgMatches{
                     .long("issuer")
                     .about("OTP Code issuer")
                     .takes_value(true)
-                    .required_unless_present_any(["label","algorithm","digits"])
+                    .required_unless_present_any(["label","algorithm","digits","counter"])
                 )
                 .arg(
                     Arg::new("label")
@@ -194,7 +209,7 @@ fn get_matches() -> ArgMatches{
                     .long("label")
                     .about("OTP Code label")
                     .takes_value(true)
-                    .required_unless_present_any(["issuer","algorithm","digits"])
+                    .required_unless_present_any(["issuer","algorithm","digits","counter"])
                 )
                 .arg(
                     Arg::new("algorithm")
@@ -202,7 +217,7 @@ fn get_matches() -> ArgMatches{
                     .long("algoritmh")
                     .about("OTP Code algorithm")
                     .takes_value(true)
-                    .required_unless_present_any(["label","issuer","digits"])
+                    .required_unless_present_any(["label","issuer","digits","counter"])
                     .possible_values(&["SHA1","SHA256","SHA512"])
                 )
                 .arg(
@@ -211,11 +226,19 @@ fn get_matches() -> ArgMatches{
                     .long("digits")
                     .about("OTP Code digits")
                     .takes_value(true)
-                    .required_unless_present_any(["label","algorithm","issuer"])
+                    .required_unless_present_any(["label","algorithm","issuer","counter"])
+                )
+                .arg(
+                    Arg::new("counter")
+                    .short('c')
+                    .long("counter")
+                    .about("HOTP code counter (only for HOTP codes)")
+                    .takes_value(true)
+                    .required_unless_present_any(["label","algorithm","issuer","digits"])
                 )
                 .arg(
                     Arg::new("change-secret")
-                    .short('c')
+                    .short('k')
                     .long("change-secret")
                     .about("Change the OTP code secret")
                     .takes_value(false)

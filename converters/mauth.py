@@ -23,6 +23,8 @@ def get_accounts(filename):
                 'secret': secret,
                 'issuer': row[1],
                 'digits': 6,
+                'type': 'TOTP',
+                'counter': 0,
             }
         )
     c.close()

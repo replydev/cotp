@@ -3,10 +3,11 @@ use std::fmt::Error;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use data_encoding::{BASE32_NOPAD, DecodeError};
-use totp_lite::{Sha1, Sha256, Sha512, totp_custom};
 use hmac::{Hmac, Mac, NewMac};
 use hmac::crypto_mac::Output;
 use hmac::digest::{BlockInput, FixedOutputDirty, Reset, Update};
+use sha1::Sha1;
+use sha2::{Sha256, Sha512};
 
 pub fn totp(secret: &str, algorithm: &str, digits: u32) -> Result<String,String>{
     let time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();

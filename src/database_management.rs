@@ -56,14 +56,20 @@ pub fn check_secret(secret: &str) -> Result<(), data_encoding::DecodeError> {
     };
 }
 
-pub fn add_element(secret: &str, issuer: &str, label: &str, algorithm: &str, digits: u64) -> Result<(), String> {
+pub fn add_element(secret: &str, issuer: &str, label: &str, algorithm: &str, digits: u64, counter: u64, hotp_type: bool) -> Result<(), String> {
     let upper_secret = secret.to_uppercase().replace("=", "");
     match check_secret(&upper_secret) {
         Ok(()) => {}
         Err(error) => return Err(error.to_string())
     }
     let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
-    let otp_element = OTPElement::new(upper_secret.to_string(), issuer.to_string(), label.to_string(), digits, String::from("TOTP"), String::from(algorithm).to_uppercase(), String::from("Default"), 0, 0, 30, vec![]);
+    let type_ = if hotp_type {
+        "HOTP"
+    }
+    else{
+        "TOTP"
+    };
+    let otp_element = OTPElement::new(upper_secret.to_string(), issuer.to_string(), label.to_string(), digits, type_.to_string(), String::from(algorithm).to_uppercase(), String::from("Default"), 0, 0, 30, counter,vec![]);
     let mut elements;
     match read_from_file(&pw) {
         Ok(result) => elements = result,
@@ -108,7 +114,7 @@ pub fn remove_element_from_db(mut index: usize) -> Result<(), String> {
     result
 }
 
-pub fn edit_element(mut id: usize, secret: &str, issuer: &str, label: &str, algorithm: &str, digits: u64) -> Result<(), String> {
+pub fn edit_element(mut id: usize, secret: &str, issuer: &str, label: &str, algorithm: &str, digits: u64, counter: u64) -> Result<(), String> {
     if id == 0 {
         return Err(String::from("Invalid index"));
     }
@@ -137,6 +143,9 @@ pub fn edit_element(mut id: usize, secret: &str, issuer: &str, label: &str, algo
             }
             if digits > 0 {
                 elements[id].set_digits(digits);
+            }
+            if counter > 0{
+                elements[id].set_counter(Some(counter));
             }
             match overwrite_database(elements, &pw) {
                 Ok(()) => Ok(()),

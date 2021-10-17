@@ -7,13 +7,19 @@ def get_accounts(filename):
     conn = sqlite3.connect(filename)
     c = conn.cursor()
     accounts = []
-    for row in c.execute("SELECT email,secret,issuer FROM accounts"):
+    for row in c.execute("SELECT email,secret,issuer,type,counter FROM accounts"):
+        if row[3] == 0:
+            type_ = "TOTP"
+        else:
+            type_ = "HOTP"
         accounts.append(
             {
                 'label': row[0],
                 'secret': row[1],
                 'issuer': row[2],
+                'type': type_,
                 'digits': 6,
+                'counter': row[4],
             }
         )
     c.close()

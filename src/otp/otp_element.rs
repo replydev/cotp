@@ -7,29 +7,31 @@ pub struct OTPElement {
     label: String,
     digits: u64,
     #[serde(rename = "type")]
-    _type: String,
+    type_: String,
     algorithm: String,
     thumbnail: String,
     last_used: u64,
     used_frequency: u64,
     period: u64,
+    counter: Option<u64>,
     tags: Vec<String>,
 }
 
 impl OTPElement {
-    pub fn new(secret: String, issuer: String, label: String, digits: u64, _type: String, algorithm: String, thumbnail: String, last_used: u64, used_frequency: u64, period: u64, tags: Vec<String>,
+    pub fn new(secret: String, issuer: String, label: String, digits: u64, type_: String, algorithm: String, thumbnail: String, last_used: u64, used_frequency: u64, period: u64, counter: u64, tags: Vec<String>,
     ) -> OTPElement {
         OTPElement {
             secret,
             issuer,
             label,
             digits,
-            _type,
+            type_,
             algorithm,
             thumbnail,
             last_used,
             used_frequency,
             period,
+            counter: Some(counter),
             tags,
         }
     }
@@ -48,6 +50,12 @@ impl OTPElement {
     pub fn algorithm(&self) -> String {
         self.algorithm.to_string()
     }
+    pub fn type_(&self) -> String { 
+        self.type_.to_string() 
+    }
+    pub fn counter(&self) -> Option<u64> { 
+        self.counter
+    }
 
     pub fn set_secret(&mut self, secret: String) {
         self.secret = secret;
@@ -63,5 +71,8 @@ impl OTPElement {
     }
     pub fn set_digits(&mut self, digits: u64) {
         self.digits = digits;
+    }
+    pub fn set_counter(&mut self, counter: Option<u64>) { 
+        self.counter = counter; 
     }
 }

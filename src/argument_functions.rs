@@ -46,7 +46,9 @@ pub fn add(matches: &ArgMatches) {
     let label = matches.value_of("label").unwrap();
     let algorithm = matches.value_of("algorithm").unwrap();
     let digits: u64 = matches.value_of_t("digits").unwrap_or(6);
-    match database_management::add_element(secret.as_str(), issuer, label, algorithm, digits) {
+    let counter: u64 = matches.value_of_t("counter").unwrap_or_default();
+    let hotp_type = matches.is_present("hotp");
+    match database_management::add_element(secret.as_str(), issuer, label, algorithm, digits,counter,hotp_type) {
         Ok(()) => println!("Success"),
         Err(e) => eprintln!("An error occurred: {}", e)
     }
@@ -67,11 +69,12 @@ pub fn edit(matches: &ArgMatches) {
     let label = matches.value_of("label").unwrap_or("");
     let algorithm = matches.value_of("algorithm").unwrap_or("");
     let digits: u64 = matches.value_of_t("digits").unwrap_or(0);
+    let counter: u64 = matches.value_of_t("counter").unwrap_or(0);
     let mut secret = match matches.is_present("change-secret") {
         true => prompt_for_passwords("Insert the secret (type ENTER to skip): ", 0, false),
         false => String::from(""),
     };
-    match database_management::edit_element(index, &secret, &issuer, &label, &algorithm, digits) {
+    match database_management::edit_element(index, &secret, &issuer, &label, &algorithm, digits, counter) {
         Ok(()) => println!("Success"),
         Err(e) => eprintln!("An error occurred: {}", e)
     }

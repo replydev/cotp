@@ -17,7 +17,9 @@ def object_to_cotp_json(d):
                 'label': element['name'],
                 'secret': element['decryptedSecret'],
                 'issuer': "",
-                'digits': int(element['digits'])
+                'type': "TOTP",
+                'digits': int(element['digits']),
+                'counter': 0,
             }
         )
     return final

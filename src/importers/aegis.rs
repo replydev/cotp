@@ -40,7 +40,8 @@ struct AegisInfo {
     secret: String,
     algo: String,
     digits: u64,
-    period: u64,
+    period: Option<u64>,
+    counter: Option<u64>,
 }
 
 pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
@@ -67,7 +68,8 @@ pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
             String::from(""),
             0,
             0,
-            aegis.db.entries[i].info.period,
+            aegis.db.entries[i].info.period.unwrap_or_default(),
+            aegis.db.entries[i].info.counter.unwrap_or_default(),
             vec![]))
     }
     Ok(elements)

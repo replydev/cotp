@@ -1,6 +1,6 @@
 use crate::{cryptography, database_management};
 use crate::otp::otp_element::OTPElement;
-use crate::otp::otp_maker::totp;
+use crate::otp::otp_maker::{hotp, totp};
 use crate::utils::check_elements;
 use zeroize::Zeroize;
 
@@ -16,11 +16,16 @@ pub fn read_codes() -> Result<Vec<OTPElement>, String> {
 }
 
 pub fn get_otp_code(element: &OTPElement) -> Result<String,String> {
-    totp(
-        &element.secret(), //we have replaced '=' in this method
-        &element.algorithm().to_uppercase(), element.digits() as u32)
-
-    //"0".repeat(otp.chars().count() - element.digits() as usize) + otp.as_str()
+    match element.type_().as_str() {
+        "TOTP" => totp(&element.secret(), &element.algorithm().to_uppercase(), element.digits() as u32),
+        "HOTP" => {
+            match element.counter() {
+                Some(counter) => hotp(&element.secret(), &element.algorithm().to_uppercase(), element.digits() as u32, counter),
+                None => return Err(String::from("The element is an HOTP code but the is no counter value.")),
+            }
+        },
+        _ => unreachable!()
+    }
 }
 
 pub fn print_element_info(mut index: usize) -> Result<(), String> {
@@ -29,12 +34,11 @@ pub fn print_element_info(mut index: usize) -> Result<(), String> {
     }
     index -= 1;
 
-    let elements: Vec<OTPElement>;
     let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
-    match database_management::read_from_file(&pw) {
-        Ok(result) => elements = result,
+    let elements = match database_management::read_from_file(&pw) {
+        Ok(result) => result,
         Err(e) => return Err(e),
-    }
+    };
     pw.zeroize();
 
     match check_elements(index, &elements) {
@@ -49,6 +53,7 @@ pub fn print_element_info(mut index: usize) -> Result<(), String> {
     println!("Issuer: {}", chosen_element.issuer());
     println!("Label: {}", chosen_element.label());
     println!("Algorithm: {}", chosen_element.algorithm());
+    println!("Type: {}",chosen_element.type_());
     println!("Digits: {}", chosen_element.digits());
     Ok(())
 }
