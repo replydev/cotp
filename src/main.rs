@@ -133,7 +133,7 @@ fn get_matches() -> ArgMatches{
                 .setting(AppSettings::ArgRequiredElseHelp)
                 .arg(
                     Arg::new("issuer")
-                    .short('i')
+                    .short('s')
                     .long("issuer")
                     .about("OTP Code issuer")
                     .takes_value(true)
@@ -174,7 +174,7 @@ fn get_matches() -> ArgMatches{
                 .setting(AppSettings::ArgRequiredElseHelp)
                 .arg(
                     Arg::new("index")
-                    .short('n')
+                    .short('i')
                     .long("index")
                     .about("OTP Code index")
                     .takes_value(true)
@@ -182,7 +182,7 @@ fn get_matches() -> ArgMatches{
                 )
                 .arg(
                     Arg::new("issuer")
-                    .short('i')
+                    .short('s')
                     .long("issuer")
                     .about("OTP Code issuer")
                     .takes_value(true)
@@ -227,7 +227,7 @@ fn get_matches() -> ArgMatches{
                 .setting(AppSettings::ArgRequiredElseHelp) // They can even have different settings
                 .arg(
                     Arg::new("index")
-                        .short('n')
+                        .short('i')
                         .long("index")
                         .about("OTP code index")
                         .takes_value(true)
@@ -243,7 +243,7 @@ fn get_matches() -> ArgMatches{
                         .short('a')
                         .long("appname")
                         .about("App from which you are importing the backup")
-                        .possible_values(&["cotp","andotp","aegis","gauth","authy"])
+                        .possible_values(&["cotp","andotp","aegis","gauth","authy","mauth"])
                         .takes_value(true)
                         .required(true),
                 )
@@ -267,7 +267,7 @@ fn get_matches() -> ArgMatches{
                 .setting(AppSettings::ArgRequiredElseHelp) // They can even have different settings
                 .arg(
                     Arg::new("index")
-                        .short('n')
+                        .short('i')
                         .long("index")
                         .about("OTP code index")
                         .takes_value(true)

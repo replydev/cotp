@@ -12,7 +12,7 @@ pub fn import(matches: &ArgMatches) {
     let result = match app_name {
         "cotp" | "andotp" => importers::and_otp::import(path),
         "aegis" => importers::aegis::import(path),
-        "gauth" | "authy" => importers::converted::import(path),
+        "gauth" | "authy" | "mauth" => importers::converted::import(path),
         _ => {
             println!("Invalid argument: {}", app_name);
             return;
