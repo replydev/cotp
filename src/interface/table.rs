@@ -1,7 +1,7 @@
 use tui::widgets::TableState;
 
 use crate::otp::otp_element::OTPElement;
-use crate::otp::otp_helper::get_good_otp_code;
+use crate::otp::otp_helper::get_otp_code;
 
 pub struct StatefulTable {
     pub(crate) state: TableState,
@@ -16,7 +16,8 @@ impl StatefulTable {
         };
         let mut i = 0;
         for element in elements {
-            table.items.push(vec![(i + 1).to_string(), element.label(), element.issuer(), get_good_otp_code(element)]);
+            // TODO remove unwrap and check exception
+            table.items.push(vec![(i + 1).to_string(), element.label(), element.issuer(), get_otp_code(element).unwrap()]);
             i += 1;
         }
         table

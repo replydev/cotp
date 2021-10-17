@@ -7,7 +7,7 @@ use tui::terminal::Frame;
 use tui::widgets::{Block, Borders, Cell, Gauge, Row, Table};
 
 use crate::otp::otp_element::OTPElement;
-use crate::otp::otp_helper::get_good_otp_code;
+use crate::otp::otp_helper::get_otp_code;
 use crate::interface::table::StatefulTable;
 use crate::utils::percentage;
 
@@ -43,7 +43,8 @@ impl App {
             self.table.items.clear();
             let mut i = 0;
             for element in &self.elements {
-                self.table.items.push(vec![(i + 1).to_string(), element.label(), element.issuer(), get_good_otp_code(element)]);
+                // TODO Remove unwrap and check exception
+                self.table.items.push(vec![(i + 1).to_string(), element.label(), element.issuer(), get_otp_code(element).unwrap()]);
                 i += 1;
             }
         }

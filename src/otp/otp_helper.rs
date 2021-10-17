@@ -1,6 +1,6 @@
 use crate::{cryptography, database_management};
 use crate::otp::otp_element::OTPElement;
-use crate::otp::otp_maker::make_totp;
+use crate::otp::otp_maker::totp;
 use crate::utils::check_elements;
 use zeroize::Zeroize;
 
@@ -15,12 +15,12 @@ pub fn read_codes() -> Result<Vec<OTPElement>, String> {
     result
 }
 
-pub fn get_good_otp_code(element: &OTPElement) -> String {
-    let otp = make_totp(
+pub fn get_otp_code(element: &OTPElement) -> Result<String,String> {
+    totp(
         &element.secret(), //we have replaced '=' in this method
-        &element.algorithm().to_uppercase(), element.digits());
+        &element.algorithm().to_uppercase(), element.digits() as u32)
 
-    "0".repeat(otp.chars().count() - element.digits() as usize) + otp.as_str()
+    //"0".repeat(otp.chars().count() - element.digits() as usize) + otp.as_str()
 }
 
 pub fn print_element_info(mut index: usize) -> Result<(), String> {
