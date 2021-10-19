@@ -12,6 +12,7 @@ struct ConvertedJson {
     issuer: Option<String>,
     #[serde(rename="type")]
     type_: String,
+    algorithm: String,
     digits: u64,
     counter: u64
 }
@@ -37,6 +38,7 @@ pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
         let label = vector[i].label.to_owned().unwrap_or_default();
         let digits = vector[i].digits;
         let counter = vector[i].counter;
+        let algorithm = vector[i].algorithm.to_owned();
         let type_ = vector[i].type_.to_owned();
         elements.push(OTPElement::new(
             secret,
@@ -44,7 +46,7 @@ pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
             label,
             digits,
             type_,
-            String::from("SHA1"),
+            algorithm,
             String::from(""),
             0,
             0,

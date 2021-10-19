@@ -20,6 +20,7 @@ def object_to_cotp_json(d):
                 'type': "TOTP",
                 'digits': int(element['digits']),
                 'counter': 0,
+                "algorithm": "SHA1",
             }
         )
     return final

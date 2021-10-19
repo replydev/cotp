@@ -25,6 +25,7 @@ def get_accounts(filename):
                 'digits': 6,
                 'type': 'TOTP',
                 'counter': 0,
+                'algorithm': "SHA1",
             }
         )
     c.close()

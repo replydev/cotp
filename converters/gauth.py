@@ -20,6 +20,7 @@ def get_accounts(filename):
                 'type': type_,
                 'digits': 6,
                 'counter': row[4],
+                'algorithm': 'SHA1',
             }
         )
     c.close()
