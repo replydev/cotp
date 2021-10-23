@@ -266,7 +266,7 @@ fn get_matches() -> ArgMatches{
                         .short('a')
                         .long("appname")
                         .about("App from which you are importing the backup")
-                        .possible_values(&["cotp","andotp","aegis","freeotp+","gauth","authy","mauth"])
+                        .possible_values(&["cotp","andotp","aegis","freeotp+","freeotp","gauth","authy","mauth"])
                         .takes_value(true)
                         .required(true),
                 )
