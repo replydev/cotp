@@ -8,7 +8,8 @@ use crate::otp::otp_element::OTPElement;
 
 #[derive(Deserialize)]
 struct FreeOTPPlusJson{
-    tokenOrder: Vec<String>,
+    #[serde(rename = "tokenOrder")]
+    token_order: Vec<String>,
     tokens: Vec<FreeOTPElement>,
 }
 
@@ -17,8 +18,10 @@ struct FreeOTPElement {
     algo: String,
     counter: u64,
     digits: u64,
-    issuerExt: String,
-    label: String,
+    #[serde(rename = "issuerExt")]
+    issuer_ext: String,
+    #[serde(rename = "label")]
+    _label: String,
     period: u64,
     secret: Vec<i16>,
     #[serde(rename = "type")]
@@ -39,11 +42,11 @@ pub fn import(file_path: &str) -> Result<Vec<OTPElement>,String>{
 
     let mut i = 0;
     let mut elements = Vec::<OTPElement>::new();
-    for label in freeotp.tokenOrder{
+    for label in freeotp.token_order {
         elements.push(
             OTPElement::new(
                 i16_secret_to_base32(&freeotp.tokens[i].secret),
-                freeotp.tokens[i].issuerExt.clone(),
+                freeotp.tokens[i].issuer_ext.clone(),
                 label,
                 freeotp.tokens[i].digits,
                 freeotp.tokens[i]._type.clone(),
