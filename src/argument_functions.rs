@@ -6,18 +6,27 @@ use clap::ArgMatches;
 use zeroize::Zeroize;
 
 pub fn import(matches: &ArgMatches) {
-    let app_name = matches.value_of("appname").unwrap();
     let path = matches.value_of("path").unwrap();
 
-    let result = match app_name {
-        "cotp" | "andotp" => importers::and_otp::import(path),
-        "aegis" => importers::aegis::import(path),
-        "freeotp+" => importers::freeotp_plus::import(path),
-        "gauth" | "authy" | "mauth" | "freeotp" => importers::converted::import(path),
-        _ => {
-            println!("Invalid argument: {}", app_name);
-            return;
-        }
+    let result = if matches.is_present("cotp") ||
+        matches.is_present("andotp") {
+        importers::and_otp::import(path)
+    }
+    else if matches.is_present("aegis") {
+        importers::aegis::import(path)
+    }
+    else if matches.is_present("freeotp-plus") {
+        importers::freeotp_plus::import(path)
+    }
+    else if matches.is_present("google-authenticator") ||
+        matches.is_present("authy") ||
+        matches.is_present("microsoft-authenticator") ||
+        matches.is_present("freeotp") {
+        importers::converted::import(path)
+    }
+    else {
+        eprintln!("Invalid arguments provided");
+        return;
     };
 
     let elements = match result {
