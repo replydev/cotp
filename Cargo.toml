@@ -2,7 +2,7 @@
 name = "cotp"
 version = "0.1.8"
 authors = ["replydev <commoncargo@tutanota.com>"]
-edition = "2018"
+edition = "2021"
 description = "Trustworthy encrypted command line authenticator app compatible with multiple backups."
 repository = "https://github.com/replydev/cotp"
 homepage = "https://github.com/replydev/cotp"
