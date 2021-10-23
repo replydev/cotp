@@ -65,8 +65,23 @@ pub fn import(file_path: &str) -> Result<Vec<OTPElement>,String>{
 fn i16_secret_to_base32(secret: &Vec<i16>) -> String {
     let mut converted_vec: Vec<u8> = Vec::with_capacity(secret.len());
     for i in secret {
-        // convert to u8 by adding 127
-        converted_vec.push(*i.to_ne_bytes().first().unwrap_or(&0u8));
+        converted_vec.push(*i.to_le_bytes().first().unwrap_or(&0u8));
     }
     BASE32_NOPAD.encode(&converted_vec.as_slice())
 }
+
+
+#[cfg(test)]
+mod tests{
+    use super::i16_secret_to_base32;
+
+    #[test]
+    fn test_secret_conversion(){
+        let secret: Vec<i16> = 
+        vec![-34,104,-37,-33,82,-89,-93,-105,-14,5,100,-73,-84,1,11,73,101,-92
+        ,106,122,-90,111,-119,30,87,-6,16,-57,-126,25,0,-65,-35,-76,-38];
+
+        assert_eq!(i16_secret_to_base32(&secret),String::from("3ZUNXX2SU6RZP4QFMS32YAILJFS2I2T2UZXYSHSX7IIMPAQZAC753NG2"));
+    }
+}
+
