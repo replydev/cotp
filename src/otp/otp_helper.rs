@@ -16,7 +16,7 @@ pub fn read_codes() -> Result<Vec<OTPElement>, String> {
 }
 
 pub fn get_otp_code(element: &OTPElement) -> Result<String,String> {
-    match element.type_().as_str() {
+    match element.type_().to_uppercase().as_str() {
         "TOTP" => totp(&element.secret(), &element.algorithm().to_uppercase(), element.digits() as u32),
         "HOTP" => {
             match element.counter() {
