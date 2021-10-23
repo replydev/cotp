@@ -1,4 +1,4 @@
-# cotp - command line totp authenticator
+# cotp - command line TOTP/HOTP authenticator
 [![Actions Status](https://github.com/replydev/cotp/workflows/Build/badge.svg)](https://github.com/replydev/cotp/actions) [![AUR package](https://img.shields.io/aur/version/cotp)](https://aur.archlinux.org/packages/cotp/) [![crates.io](https://img.shields.io/crates/v/cotp)](https://crates.io/crates/cotp) [![Downloads](https://img.shields.io/crates/d/cotp)](https://crates.io/crates/cotp)
 
 I believe that security is of paramount importance, especially in this digital world. I created cotp because I needed a minimalist, secure, desktop accessible software to manage my two-factor authentication codes.
@@ -15,13 +15,16 @@ This program relies on only one database file, encrypted with [XChaCha20Poly1305
 You can import backups (or [converted databases](#database-conversion)) from:
  - [Aegis](https://github.com/beemdevelopment/Aegis)
  - [andOTP](https://github.com/andOTP/andOTP)
+ - [FreeOTP](https://github.com/freeotp/freeotp-android)
+ - [FreeOTP+](https://github.com/helloworld1/FreeOTPPlus)
  - [Authy](https://authy.com/)
  - [Google Authenticator](https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2)
+ - [Microsoft Authenticator](https://play.google.com/store/apps/details?id=com.azure.authenticator)
 
 Backup compatibility is growing (check [planned features](#planned-features)).
-By typing `cotp -ex` you can export your database in unencrypted json format.
+By typing `cotp export` you can export your database in unencrypted json format.
 ### Compatibility
-cotp can generate two-factor authentication coded using HMAC-SHA1, HMAC-SHA256 and HMAC-SHA512, with any digits, to provide a good compatibility to most two-factor authentication systems.
+cotp can generate both **TOTP** and **HOTP** codes, compliant with **rfc6238** and **rfc4226** specifications. Also, it is possible to customize settings like **HMAC algorithm** and **digits**, to provide a good compatibility to other two-factor authentication systems.
 ### Cross Plaform
 #### So far, I have successfully tested the functionality of the software in the following systems:
 |System|Version|Rust Version|Rust Toolchain|Working|
@@ -31,7 +34,7 @@ cotp can generate two-factor authentication coded using HMAC-SHA1, HMAC-SHA256 a
 |Fedora|33|1.52.0|`x86_64-unknown-linux-gnu`|Yes|
 |Ubuntu|20.04 WSL|1.52.0|`x86_64-unknown-linux-gnu`|Yes|   
 |Windows 10 Pro|20H2|1.55.0|`x86_64-pc-windows-msvc`|Yes|
-|Windows 10 Pro|20H2|1.55.0|`x86_64-pc-windows-gnu`|Yes|
+|Windows 10 Pro|20H2|1.56.0|`x86_64-pc-windows-gnu`|Yes|
 |Windows 10 LTSC|1809|1.52.0|`x86_64-pc-windows-msvc`|Yes|
 
 #### In addition, cotp has been successfully tested by the community in the following systems:
@@ -76,34 +79,35 @@ You can build cotp using these commands:
     cargo install --path cotp/
 
 ## How to use
-If you are familiar with the command line interface using cotp will not be a problem.
+If you are familiar with the command line interface using cotp will not be a problem. Just type `cotp` to enter the TUI dashboard.
 In the first run you will be prompted to insert a password to initialize the database.
 Please note that the software requires at least an 8 chars length password.
 
-If you type `cotp -h` you get some instruction on how to use cotp utilities.
-### Coping
+If you type `cotp --help` you get some instruction on how to use cotp utilities.
+The interface is divided in subcommands, so if you type `cotp <subcommand> --help` you get options and flag relative to the subcommand you inserted.
+
+### Copy to clipboard
 You can copy the otp code of the element you selected by simply pressing enter.
-This is supported in Windows, Mac OS, X11 and Wayland.
+This is supported in Windows, macOS, X11 and Wayland.
+
+### Add
+Just type `cotp add -l <label>`, press Enter and insert the BASE32 Secret Key.
+cotp also support HOTP codes, just add the `--hotp` flag the the `--digits` value.
+Type `cotp add --help` to learn how to insert other settings.
+
 ### Edit
-Note that in the `--edit` command if you type . instead of argument you are specifying not to modify that specific argument.
-### Example:
-#### Before:
-|index|issuer|label|algorithm|digits|
-|--|--|--|--|--|
-| 3 | Email_Provider | mymail@example.com | SHA1 | 6 |
-#### Command:
+You can edit your codes with the edit subcommand. 
 
-    cotp -e 3 . myothermail@example.com . 8
-
-#### After:
-|index|issuer|label|algorithm|digits|    
-|--|--|--|--|--|    
-| 3 | Email_Provider | *mymailother@example.com* | SHA1 | *8* |
+You must indicate the index of the code to be edited with the **--index** argument and then indicate the fields to be edited. 
+If you want to modify also the secret of the code you must insert the flag **-c**.
 
 ## Database conversion
-To import Authy or Google Authenticator databases you need first to obtain the respective files in your phone in the paths:
+To import Authy, Google Authenticator, Microsoft Authenticator and FreeOTP databases you need first to obtain the respective files in your phone in the paths:
 - **Authy**: `/data/data/com.authy.authy/shared_prefs/com.authy.storage.tokens.authenticator.xml`
 - **Google Authenticator**: `/data/data/com.google.android.apps.authenticator2/databases/databases`    
+- **Microsoft Authenticator**: `/data/data/com.azure.authenticator/databases/PhoneFactor`.
+Take also `PhoneFactor-wal`, `PhoneFactor-shm` if they exist in the same folder.
+- **FreeOTP**: `/data/data/org.fedorahosted.freeotp/shared_prefs/tokens.xml`
 
 You may need root privileges to access these folders.    
 Once you got those files run the correct python script located in the converters/ folder in this source code:
@@ -113,7 +117,7 @@ Once you got those files run the correct python script located in the converters
 It will convert the database in a json format readable by cotp.
 To finish import the database: 
 
-`cotp -i authy path/to/database.json`
+`cotp import --authy --path path/to/converted_database.json`
 
 ## Planned features
 
@@ -124,12 +128,14 @@ To finish import the database:
 	- [x] SHA256
 	- [x] SHA512
 	- [x] Custom digit value
-- [ ] Backup compatibility with:
-	- [x] Aegis
-	- [x] andOTP
-	- [x] Authy
-	- [x] Google Authenticator
-	- [ ] FreeOTP
+- [x] Backup compatibility with:
+    - [x] Aegis
+    - [x] andOTP
+    - [x] Authy
+    - [x] Google Authenticator
+    - [x] Microsoft Authenticator
+    - [x] FreeOTP
+    - [x] FreeOTP+
 
 ## Contribution
 I created this project for my own needs, but I would be happy if this little program is useful to someone else, and I gratefully accept any contributions.
