@@ -14,21 +14,7 @@ impl StatefulTable {
             state: TableState::default(),
             items: vec![],
         };
-        let mut i = 0;
-        for element in elements {
-            // TODO remove unwrap and check exception
-            let label = match element.type_().as_str() {
-                "HOTP" => {
-                    match element.counter() {
-                        Some(result) => element.label() + (format!(" ({} counter)",result).as_str()),
-                        None => element.label(),
-                    }
-                },
-                _ => element.label(),
-            };
-            table.items.push(vec![(i + 1).to_string(), label, element.issuer(), get_otp_code(element).unwrap()]);
-            i += 1;
-        }
+        fill_table(&mut table,elements);
         table
     }
     pub fn next(&mut self) {
@@ -57,5 +43,22 @@ impl StatefulTable {
             None => 0,
         };
         self.state.select(Some(i));
+    }
+}
+
+pub fn fill_table(table: &mut StatefulTable, elements: &Vec<OTPElement>) {
+    let mut i = 0usize;
+    for element in elements {
+        let label = match element.type_().as_str() {
+            "HOTP" => {
+                match element.counter() {
+                    Some(result) => element.label() + (format!(" ({} counter)",result).as_str()),
+                    None => element.label(),
+                }
+            },
+            _ => element.label(),
+        };
+        table.items.push(vec![(i + 1).to_string(), label, element.issuer(), get_otp_code(element).unwrap()]);
+        i += 1;
     }
 }

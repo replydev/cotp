@@ -7,8 +7,7 @@ use tui::terminal::Frame;
 use tui::widgets::{Block, Borders, Cell, Gauge, Row, Table};
 
 use crate::otp::otp_element::OTPElement;
-use crate::otp::otp_helper::get_otp_code;
-use crate::interface::table::StatefulTable;
+use crate::interface::table::{fill_table, StatefulTable};
 use crate::utils::percentage;
 
 /// Application result type.
@@ -41,21 +40,7 @@ impl App {
         if new_progress < self.progress {
             // Update codes
             self.table.items.clear();
-            let mut i = 0;
-            for element in &self.elements {
-                // TODO Remove unwrap and check exception
-                let label = match element.type_().as_str() {
-                    "HOTP" => {
-                        match element.counter() {
-                            Some(result) => element.label() + (format!(" ({} counter)",result).as_str()),
-                            None => element.label(),
-                        }
-                    },
-                    _ => element.label(),
-                };
-                self.table.items.push(vec![(i + 1).to_string(), label, element.issuer(), get_otp_code(element).unwrap()]);
-                i += 1;
-            }
+            fill_table(&mut self.table, &self.elements);
         }
         self.progress = new_progress;
     }
