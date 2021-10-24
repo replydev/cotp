@@ -19,8 +19,10 @@ pub struct App {
     pub running: bool,
     title: String,
     pub(crate) table: StatefulTable,
-    elements: Vec<OTPElement>,
+    pub(crate) elements: Vec<OTPElement>,
     progress: u16,
+    pub(crate) label_text: String,
+    pub(crate) print_percentage: bool,
 }
 
 impl App {
@@ -29,7 +31,7 @@ impl App {
         let mut title = String::from(env!("CARGO_PKG_NAME"));
         title.push_str(" v");
         title.push_str(env!("CARGO_PKG_VERSION"));
-        Self { running: true, title, table: StatefulTable::new(&elements), elements, progress: percentage() }
+        Self { running: true, title, table: StatefulTable::new(&elements), elements, progress: percentage(),label_text: String::from(""), print_percentage: true, }
     }
 
     /// Handles the tick event of the terminal.
@@ -52,14 +54,15 @@ impl App {
             .constraints([Constraint::Percentage(95), Constraint::Percentage(5)].as_ref())
             .margin(2)
             .split(frame.size());
-
-        let selected_style = Style::default().add_modifier(Modifier::REVERSED);
-        let normal_style = Style::default().bg(Color::DarkGray);
         let header_cells = ["Id", "Label", "Issuer", "OTP"]
             .iter()
-            .map(|h| Cell::from(*h).style(Style::default().fg(Color::White)));
+            .map(|h| Cell::from(*h).style(Style::default().fg(Color::Black)));
         let header = Row::new(header_cells)
-            .style(normal_style)
+            .style(
+                Style::default()
+                    .bg(Color::White)
+                    .add_modifier(Modifier::BOLD)
+            )
             .height(1)
             .bottom_margin(1);
         let rows = self.table.items.iter().map(|item| {
@@ -75,7 +78,7 @@ impl App {
         let t = Table::new(rows)
             .header(header)
             .block(Block::default().borders(Borders::TOP | Borders::BOTTOM).title(self.title.as_str()))
-            .highlight_style(selected_style)
+            .highlight_style(Style::default().bg(Color::White).fg(Color::Black).add_modifier(Modifier::BOLD))
             .highlight_symbol("-> ")
             .widths(&[
                 Constraint::Percentage(5),
@@ -84,12 +87,18 @@ impl App {
                 Constraint::Percentage(25),
             ]);
 
-        let progress_label = format!("{}%", self.progress);
+        let progress_label = if self.print_percentage {
+            format!("{}%", self.progress)
+        }
+        else{
+            self.label_text.to_owned()
+        };
         let progress_bar = Gauge::default()
             .block(Block::default())
             .gauge_style(
                 Style::default()
-                    .fg(Color::DarkGray)
+                    .bg(Color::White)
+                    .fg(Color::Black)
                     .add_modifier(Modifier::BOLD),
             )
             .percent(self.progress as u16)

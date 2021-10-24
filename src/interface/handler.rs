@@ -24,10 +24,12 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
 
         // Move into the table
         KeyCode::Up => {
+            app.print_percentage = true;
             app.table.previous();
         }
 
         KeyCode::Down => {
+            app.print_percentage = true;
             app.table.next();
         }
 
@@ -37,7 +39,11 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
                     if let Some(otp_code) = element.get(3){
                         // in some occasions we can't copy contents to clipboard, so let's check for a good result
                         if let Ok(mut ctx) = ClipboardContext::new(){
-                            ctx.set_contents(otp_code.to_owned()).unwrap();
+                            match ctx.set_contents(otp_code.to_owned()) {
+                                Ok(_) => app.label_text = String::from("Copied!"),
+                                Err(_) => app.label_text = String::from("Cannot copy"),
+                            }
+                            app.print_percentage = false;
                         }
                     }
                 }
