@@ -51,14 +51,16 @@ pub fn import(matches: &ArgMatches) {
 
 pub fn add(matches: &ArgMatches) {   
     let mut secret = prompt_for_passwords("Insert the secret: ", 0, false);
-    // Safe to unwrap due to default values
-    let issuer = matches.value_of("issuer").unwrap();
-    let label = matches.value_of("label").unwrap();
-    let algorithm = matches.value_of("algorithm").unwrap();
-    let digits: u64 = matches.value_of_t("digits").unwrap_or(6);
-    let counter: u64 = matches.value_of_t("counter").unwrap_or_default();
-    let hotp_type = matches.is_present("hotp");
-    match database_management::add_element(secret.as_str(), issuer, label, algorithm, digits,counter,hotp_type) {
+    match database_management::add_element(
+        secret.as_str(),
+        // Safe to unwrap due to default values
+        matches.value_of("issuer").unwrap(),
+        matches.value_of("label").unwrap(),
+        matches.value_of("algorithm").unwrap(), 
+        matches.value_of_t("digits").unwrap_or(6),
+        matches.value_of_t("counter").unwrap_or_default(),
+        matches.is_present("hotp"),
+        ) {
         Ok(()) => println!("Success"),
         Err(e) => eprintln!("An error occurred: {}", e)
     }
@@ -66,25 +68,26 @@ pub fn add(matches: &ArgMatches) {
 }
 
 pub fn remove(matches: &ArgMatches) {
-    let index: usize = matches.value_of_t_or_exit("index");
-    match database_management::remove_element_from_db(index) {
+    match database_management::remove_element_from_db(matches.value_of_t_or_exit("index")) {
         Ok(()) => println!("Success"),
         Err(e) => eprintln!("An error has occurred: {}", e)
     }
 }
 
 pub fn edit(matches: &ArgMatches) {
-    let index: usize = matches.value_of_t_or_exit("index");
-    let issuer = matches.value_of("issuer").unwrap_or("");
-    let label = matches.value_of("label").unwrap_or("");
-    let algorithm = matches.value_of("algorithm").unwrap_or("");
-    let digits: u64 = matches.value_of_t("digits").unwrap_or(0);
-    let counter: u64 = matches.value_of_t("counter").unwrap_or(0);
     let mut secret = match matches.is_present("change-secret") {
         true => prompt_for_passwords("Insert the secret (type ENTER to skip): ", 0, false),
         false => String::from(""),
     };
-    match database_management::edit_element(index, &secret, &issuer, &label, &algorithm, digits, counter) {
+    match database_management::edit_element(
+        matches.value_of_t_or_exit("index"), 
+        secret.as_str(), 
+        matches.value_of("issuer").unwrap_or(""), 
+        matches.value_of("label").unwrap_or(""), 
+        matches.value_of("algorithm").unwrap_or(""), 
+        matches.value_of_t("digits").unwrap_or(0), 
+        matches.value_of_t("counter").unwrap_or(0)
+    ) {
         Ok(()) => println!("Success"),
         Err(e) => eprintln!("An error occurred: {}", e)
     }
@@ -92,8 +95,7 @@ pub fn edit(matches: &ArgMatches) {
 }
 
 pub fn export() {
-    let export_result = database_management::export_database();
-    match export_result {
+    match database_management::export_database() {
         Ok(export_result) => {
             println!("Database was successfully exported at {}", export_result.to_str().unwrap_or("**Invalid path**"));
         }
@@ -104,8 +106,7 @@ pub fn export() {
 }
 
 pub fn info(matches: &ArgMatches) {
-    let index = matches.value_of_t_or_exit("index");
-    match otp_helper::print_element_info(index) {
+    match otp_helper::print_element_info(matches.value_of_t_or_exit("index")) {
         Ok(()) => {}
         Err(e) => eprintln!("An error occurred: {}", e),
     }

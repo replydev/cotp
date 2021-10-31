@@ -61,9 +61,9 @@ pub fn decrypt_string(encrypted_text: &str, password: &str) -> Result<String, St
         return Err(String::from("Corrupted database file"));
     }
     let byte_salt = BASE64.decode(vec[1].as_bytes()).unwrap();
-    let salt = pwhash::argon2id13::Salt(byte_vec_to_byte_array(byte_salt));
+    let salt = pwhash::argon2id13::Salt(vec_to_arr(byte_salt));
     let byte_header = BASE64.decode(vec[2].as_bytes()).unwrap();
-    let header = Header(header_vec_to_header_array(byte_header));
+    let header = Header(vec_to_arr(byte_header));
     let cipher = BASE64.decode(vec[3].as_bytes()).unwrap();
 
     let mut key = [0u8; KEYBYTES];
@@ -84,14 +84,9 @@ pub fn decrypt_string(encrypted_text: &str, password: &str) -> Result<String, St
     Ok(String::from_utf8(decrypted).unwrap())
 }
 
-fn byte_vec_to_byte_array(byte_vec: Vec<u8>) -> [u8; 16] {
-    byte_vec.try_into()
-        .unwrap_or_else(|v: Vec<u8>| panic!("Expected a Vec of length {} but it was {}", 16, v.len()))
-}
-
-fn header_vec_to_header_array(byte_vec: Vec<u8>) -> [u8; 24] {
-    byte_vec.try_into()
-        .unwrap_or_else(|v: Vec<u8>| panic!("Expected a Vec of length {} but it was {}", 24, v.len()))
+fn vec_to_arr<T, const N: usize>(v: Vec<T>) -> [T; N] {
+    v.try_into()
+        .unwrap_or_else(|v: Vec<T>| panic!("Expected a Vec of length {} but it was {}", N, v.len()))
 }
 
 pub fn prompt_for_passwords(message: &str, minimum_password_length: usize, verify: bool) -> String {

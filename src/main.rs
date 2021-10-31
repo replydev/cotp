@@ -1,4 +1,4 @@
-use std::{env, io};
+use std::io;
 
 use sodiumoxide;
 use tui::backend::CrosstermBackend;
@@ -10,8 +10,6 @@ use interface::handler::handle_key_events;
 use otp::otp_helper;
 use interface::ui::Tui;
 use zeroize::Zeroize;
-use clap;
-use clap::{App, AppSettings, ArgMatches, Arg};
 
 mod utils;
 mod argument_functions;
@@ -20,6 +18,7 @@ mod importers;
 mod otp;
 mod interface;
 mod database_management;
+mod args;
 
 fn init() -> Result<bool, String> {
     match sodiumoxide::init() {
@@ -59,9 +58,14 @@ fn main() -> AppResult<()> {
             std::process::exit(-1);
         }
     }
-    match args_parser() {
-        Ok(_) => std::process::exit(0),
-        Err(_) => std::process::exit(-2),
+    match args::args_parser() {
+        // no args, show dashboard
+        true => match dashboard(){
+            Ok(()) =>std::process::exit(0),
+            Err(_) => std::process::exit(-2), 
+        },
+        // args parsed, can exit
+        false => std::process::exit(0),
     }
 }
 
@@ -104,265 +108,4 @@ fn dashboard() -> AppResult<()> {
         }
     }
     Ok(())
-}
-
-fn args_parser() -> AppResult<()> {
-    match get_matches().subcommand() {
-        Some(("add",add_matches)) => argument_functions::add(add_matches),
-        Some(("edit",edit_matches)) => argument_functions::edit(edit_matches),
-        Some(("remove",remove_matches)) => argument_functions::remove(remove_matches),
-        Some(("import",import_matches)) => argument_functions::import(import_matches),
-        Some(("info",info_matches)) => argument_functions::info(info_matches),
-        Some(("export",_)) => argument_functions::export(),
-        Some(("passwd",_)) => argument_functions::change_password(),
-        _ => return dashboard(),
-    }
-
-    AppResult::Ok(())
-}
-
-fn get_matches() -> ArgMatches{
-    App::new(env!("CARGO_PKG_NAME"))
-        .version(env!("CARGO_PKG_VERSION"))
-        .author(env!("CARGO_PKG_AUTHORS").split(',').next().unwrap_or("replydev <commoncargo@tutanota.com>"))
-        .about(env!("CARGO_PKG_DESCRIPTION"))
-        .license("GPL3")
-        .subcommand(
-            App::new("add")
-                .about("Add a new OTP Code")
-                .setting(AppSettings::ArgRequiredElseHelp)
-                .arg(
-                    Arg::new("hotp")
-                    .short('o')
-                    .long("hotp")
-                    .about("Specify this is an HOTP Code")
-                    .takes_value(false)
-                    .requires("counter")
-                )
-                .arg(
-                    Arg::new("issuer")
-                    .short('s')
-                    .long("issuer")
-                    .about("OTP Code issuer")
-                    .takes_value(true)
-                    .required(false)
-                    .default_value("")
-                )
-                .arg(
-                    Arg::new("label")
-                    .short('l')
-                    .long("label")
-                    .about("OTP Code label")
-                    .takes_value(true)
-                    .required(true)
-                )
-                .arg(
-                    Arg::new("algorithm")
-                    .short('a')
-                    .long("algoritmh")
-                    .about("OTP Code algorithm")
-                    .takes_value(true)
-                    .required(false)
-                    .possible_values(&["SHA1","SHA256","SHA512"])
-                    .default_value("SHA1")
-                )
-                .arg(
-                    Arg::new("digits")
-                    .short('d')
-                    .long("digits")
-                    .about("OTP Code digits")
-                    .takes_value(true)
-                    .required(false)
-                    .default_value("6")
-                )
-                .arg(
-                    Arg::new("counter")
-                    .short('c')
-                    .long("counter")
-                    .about("HOTP code counter")
-                    .takes_value(true)
-                )
-        )
-        .subcommand(
-            App::new("edit")
-                .about("Edit an OTP code")
-                .setting(AppSettings::ArgRequiredElseHelp)
-                .arg(
-                    Arg::new("index")
-                    .short('i')
-                    .long("index")
-                    .about("OTP Code index")
-                    .takes_value(true)
-                    .required(true)
-                )
-                .arg(
-                    Arg::new("issuer")
-                    .short('s')
-                    .long("issuer")
-                    .about("OTP Code issuer")
-                    .takes_value(true)
-                    .required_unless_present_any(["label","algorithm","digits","counter"])
-                )
-                .arg(
-                    Arg::new("label")
-                    .short('l')
-                    .long("label")
-                    .about("OTP Code label")
-                    .takes_value(true)
-                    .required_unless_present_any(["issuer","algorithm","digits","counter"])
-                )
-                .arg(
-                    Arg::new("algorithm")
-                    .short('a')
-                    .long("algoritmh")
-                    .about("OTP Code algorithm")
-                    .takes_value(true)
-                    .required_unless_present_any(["label","issuer","digits","counter"])
-                    .possible_values(&["SHA1","SHA256","SHA512"])
-                )
-                .arg(
-                    Arg::new("digits")
-                    .short('d')
-                    .long("digits")
-                    .about("OTP Code digits")
-                    .takes_value(true)
-                    .required_unless_present_any(["label","algorithm","issuer","counter"])
-                )
-                .arg(
-                    Arg::new("counter")
-                    .short('c')
-                    .long("counter")
-                    .about("HOTP code counter (only for HOTP codes)")
-                    .takes_value(true)
-                    .required_unless_present_any(["label","algorithm","issuer","digits"])
-                )
-                .arg(
-                    Arg::new("change-secret")
-                    .short('k')
-                    .long("change-secret")
-                    .about("Change the OTP code secret")
-                    .takes_value(false)
-                )
-        )
-        .subcommand(
-            App::new("remove")
-                .about("Remove an OTP code")
-                .setting(AppSettings::ArgRequiredElseHelp) // They can even have different settings
-                .arg(
-                    Arg::new("index")
-                        .short('i')
-                        .long("index")
-                        .about("OTP code index")
-                        .takes_value(true)
-                        .required(true),
-                ),
-        )
-        .subcommand(
-            App::new("import")
-                .about("Import from backups")
-                .setting(AppSettings::ArgRequiredElseHelp) // They can even have different settings
-                .arg(
-                    Arg::new("cotp")
-                        .short('c')
-                        .long("cotp")
-                        .about("Import from cotp exported database")
-                        .takes_value(false)
-                        .required_unless_present_any(&["andotp","aegis","freeotp-plus","freeotp","google-authenticator","authy","microsoft-authenticator"])
-                        .conflicts_with_all(&["andotp","aegis","freeotp-plus","freeotp","google-authenticator","authy","microsoft-authenticator"])
-                )
-                .arg(
-                    Arg::new("andotp")
-                        .short('e')
-                        .long("andotp")
-                        .about("Import from andOTP backup")
-                        .takes_value(false)
-                        .required_unless_present_any(&["cotp","aegis","freeotp-plus","freeotp","google-authenticator","authy","microsoft-authenticator"])
-                        .conflicts_with_all(&["cotp","aegis","freeotp-plus","freeotp","google-authenticator","authy","microsoft-authenticator"])
-                )
-                .arg(
-                    Arg::new("aegis")
-                        .short('a')
-                        .long("aegis")
-                        .about("Import from Aegis backup")
-                        .takes_value(false)
-                        .required_unless_present_any(&["andotp","cotp","freeotp-plus","freeotp","google-authenticator","authy","microsoft-authenticator"])
-                        .conflicts_with_all(&["andotp","cotp","freeotp-plus","freeotp","google-authenticator","authy","microsoft-authenticator"])
-                )
-                .arg(
-                    Arg::new("freeotp-plus")
-                        .short('f')
-                        .long("freeotp-plus")
-                        .about("Import from FreeOTP+ backup")
-                        .takes_value(false)
-                        .required_unless_present_any(&["andotp","aegis","cotp","freeotp","google-authenticator","authy","microsoft-authenticator"])
-                        .conflicts_with_all(&["andotp","aegis","cotp","freeotp","google-authenticator","authy","microsoft-authenticator"])
-                )
-                .arg(
-                    Arg::new("freeotp")
-                        .short('r')
-                        .long("freeotp")
-                        .about("Import from FreeOTP converted database")
-                        .takes_value(false)
-                        .required_unless_present_any(&["andotp","aegis","freeotp-plus","cotp","google-authenticator","authy","microsoft-authenticator"])
-                        .conflicts_with_all(&["andotp","aegis","freeotp-plus","cotp","google-authenticator","authy","microsoft-authenticator"])
-                )
-                .arg(
-                    Arg::new("google-authenticator")
-                        .short('g')
-                        .long("google-authenticator")
-                        .about("Import from Google Authenticator converted database")
-                        .takes_value(false)
-                        .required_unless_present_any(&["andotp","aegis","freeotp-plus","freeotp","cotp","authy","microsoft-authenticator"])
-                        .conflicts_with_all(&["andotp","aegis","freeotp-plus","freeotp","cotp","authy","microsoft-authenticator"])
-                )
-                .arg(
-                    Arg::new("authy")
-                        .short('t')
-                        .long("authy")
-                        .about("Import from Authy converted database")
-                        .takes_value(false)
-                        .required_unless_present_any(&["andotp","aegis","freeotp-plus","freeotp","google-authenticator","cotp","microsoft-authenticator"])
-                        .conflicts_with_all(&["andotp","aegis","freeotp-plus","freeotp","google-authenticator","cotp","microsoft-authenticator"])
-                )
-                .arg(
-                    Arg::new("microsoft-authenticator")
-                        .short('m')
-                        .long("microsoft-authenticator")
-                        .about("Import from Microsoft Authenticator converted database")
-                        .takes_value(false)
-                        .required_unless_present_any(&["andotp","aegis","freeotp-plus","freeotp","google-authenticator","authy","cotp"])
-                        .conflicts_with_all(&["andotp","aegis","freeotp-plus","freeotp","google-authenticator","authy","cotp"])
-                )
-                .arg(
-                    Arg::new("path")
-                        .short('p')
-                        .long("path")
-                        .about("Backup path")
-                        .takes_value(true)
-                        .required(true),
-                )
-                
-        )
-        .subcommand(
-            App::new("export")
-                .about("Export your database")
-        )
-        .subcommand(
-            App::new("info")
-                .about("Show OTP code information")
-                .setting(AppSettings::ArgRequiredElseHelp) // They can even have different settings
-                .arg(
-                    Arg::new("index")
-                        .short('i')
-                        .long("index")
-                        .about("OTP code index")
-                        .takes_value(true)
-                        .required(true),
-                ),
-        )
-        .subcommand(
-            App::new("passwd")
-            .about("Change your database password")
-        )
-        .get_matches()
 }

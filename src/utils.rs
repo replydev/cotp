@@ -14,8 +14,7 @@ pub fn get_db_path() -> PathBuf {
 
 #[cfg(not(debug_assertions))]
 pub fn get_db_path() -> PathBuf {
-    let cotp_folder = get_cotp_folder();
-    cotp_folder.join("db.cotp")
+    get_cotp_folder().join("db.cotp")
 }
 
 pub fn get_home_folder() -> PathBuf {
@@ -42,9 +41,7 @@ fn get_cotp_folder() -> PathBuf {
 // Pushing an absolute path to a PathBuf replaces the entire PathBuf: https://doc.rust-lang.org/std/path/struct.PathBuf.html#method.push
 #[cfg(not(debug_assertions))]
 fn get_cotp_folder() -> PathBuf {
-    let mut cotp_dir = PathBuf::new();
-    cotp_dir.push(get_home_folder());
-    cotp_dir.join(".cotp")
+    get_home_folder().join(".cotp")
 }
 
 pub fn create_db_if_needed() -> Result<bool, ()> {

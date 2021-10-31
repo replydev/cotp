@@ -32,26 +32,19 @@ pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
 
     let mut elements: Vec<OTPElement> = Vec::new();
 
-    for i in 0..vector.len() {
-        let secret = vector[i].secret.to_owned();
-        let issuer = vector[i].issuer.to_owned().unwrap_or_default();
-        let label = vector[i].label.to_owned().unwrap_or_default();
-        let digits = vector[i].digits;
-        let counter = vector[i].counter;
-        let algorithm = vector[i].algorithm.to_owned();
-        let type_ = vector[i].type_.to_owned();
+    for element in vector {
         elements.push(OTPElement::new(
-            secret,
-            issuer,
-            label,
-            digits,
-            type_,
-            algorithm,
+            element.secret,
+            element.issuer.unwrap_or_default(),
+            element.label.unwrap_or_default(),
+            element.digits,
+            element.type_,
+            element.algorithm,
             String::from(""),
             0,
             0,
             30,
-            counter,
+            element.counter,
             vec![]))
     }
     Ok(elements)

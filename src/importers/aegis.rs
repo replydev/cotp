@@ -57,20 +57,20 @@ pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
 
     let mut elements: Vec<OTPElement> = Vec::new();
 
-    for i in 0..aegis.db.entries.len() {
+    for element in aegis.db.entries {
         elements.push(OTPElement::new(
-            String::from(&aegis.db.entries[i].info.secret),
-            String::from(&aegis.db.entries[i].issuer),
-            String::from(&aegis.db.entries[i].name),
-            aegis.db.entries[i].info.digits,
-            String::from(&aegis.db.entries[i]._type),
-            String::from(&aegis.db.entries[i].info.algo),
+            element.info.secret,
+            element.issuer,
+            element.name,
+            element.info.digits,
+            element._type,
+            element.info.algo,
             String::from(""),
             0,
             0,
-            aegis.db.entries[i].info.period.unwrap_or_default(),
-            aegis.db.entries[i].info.counter.unwrap_or_default(),
-            vec![]))
+            element.info.period.unwrap_or_default(),
+            element.info.counter.unwrap_or_default(),
+            vec![]));
     }
     Ok(elements)
 }
