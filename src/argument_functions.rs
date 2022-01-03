@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::{cryptography, database_management};
 use crate::cryptography::prompt_for_passwords;
 use crate::importers;
@@ -98,8 +100,8 @@ pub fn edit(matches: &ArgMatches) {
     secret.zeroize();
 }
 
-pub fn export() {
-    match database_management::export_database() {
+pub fn export(matches: &ArgMatches) {
+    match database_management::export_database(PathBuf::from(matches.value_of("path").unwrap())) {
         Ok(export_result) => {
             println!("Database was successfully exported at {}", export_result.to_str().unwrap_or("**Invalid path**"));
         }

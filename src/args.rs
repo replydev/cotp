@@ -9,7 +9,7 @@ pub fn args_parser() -> bool {
         Some(("remove",remove_matches)) => argument_functions::remove(remove_matches),
         Some(("import",import_matches)) => argument_functions::import(import_matches),
         Some(("info",info_matches)) => argument_functions::info(info_matches),
-        Some(("export",_)) => argument_functions::export(),
+        Some(("export",export_matches)) => argument_functions::export(export_matches),
         Some(("passwd",_)) => argument_functions::change_password(),
         _ => return true,
     }
@@ -242,6 +242,15 @@ fn get_matches() -> ArgMatches{
         .subcommand(
             App::new("export")
                 .about("Export your database")
+                .arg(
+                    Arg::new("path")
+                    .short('p')
+                    .long("path")
+                    .help("Export file path")
+                    .takes_value(true)
+                    .required(false)
+                    .default_value(".")
+                )
         )
         .subcommand(
             App::new("info")

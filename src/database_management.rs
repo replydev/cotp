@@ -172,8 +172,14 @@ pub fn edit_element(mut id: usize, secret: &str, issuer: &str, label: &str, algo
     result
 }
 
-pub fn export_database() -> Result<PathBuf, String> {
-    let exported_path = utils::get_home_folder().join("exported.cotp");
+pub fn export_database(path: PathBuf) -> Result<PathBuf, String> {
+    let exported_path = if path.is_dir() {
+        path.join("exported.cotp")
+    }
+    else{
+        path
+    };
+    
     let mut file = File::create(&exported_path).expect("Cannot create file");
     let encrypted_contents = match read_to_string(&get_db_path()){
         Ok(result) => result,
