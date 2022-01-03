@@ -1,6 +1,6 @@
 [package]
 name = "cotp"
-version = "0.1.8"
+version = "0.1.9"
 authors = ["replydev <commoncargo@tutanota.com>"]
 edition = "2018"
 description = "Trustworthy, encrypted, command-line TOTP/HOTP authenticator app with import functionality."
@@ -23,7 +23,7 @@ crossterm = "0.22.1"
 tui = { version = "0.16.0", features = ["crossterm"], default-features = false }
 copypasta-ext = "0.3.7"
 zeroize = "1.4.2"
-clap = "3.0.0-beta.5"
-hmac = "0.11.0"
-sha-1 = "0.9.8"
-sha2 = "0.9.8"
+clap = "3.0.0"
+hmac = "0.12.0"
+sha-1 = "0.10.0"
+sha2 = "0.10.0"

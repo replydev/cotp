@@ -2,8 +2,11 @@ use std::convert::TryInto;
 use std::time::SystemTime;
 
 use data_encoding::BASE32_NOPAD;
-use hmac::{Hmac, Mac, NewMac};
-use hmac::digest::{BlockInput, FixedOutputDirty, Reset, Update};
+use hmac::digest::core_api::{UpdateCore, FixedOutputCore, BufferKindUser, CoreProxy, BlockSizeUser};
+use hmac::{Hmac, Mac};
+use hmac::digest::HashMarker;
+use hmac::digest::block_buffer::Eager;
+use hmac::digest::generic_array::typenum::{IsLess, Le, NonZero,U256};
 use sha1::Sha1;
 use sha2::{Sha256, Sha512};
 
@@ -24,15 +27,23 @@ pub fn hotp(secret: &str, algorithm: &str, digits: u32, counter: u64) -> Result<
     }
 }
 
-fn generate_hotp<A>(secret: &str, digits: u32, counter: u64) -> Result<String,String>
-where A: Update + BlockInput + Reset + FixedOutputDirty + Clone + Default {
+fn generate_hotp<D>(secret: &str, digits: u32, counter: u64) -> Result<String,String>
+where D: CoreProxy,
+D::Core: HashMarker
+    + UpdateCore
+    + FixedOutputCore
+    + BufferKindUser<BufferKind = Eager>
+    + Default
+    + Clone,
+<D::Core as BlockSizeUser>::BlockSize: IsLess<U256>,
+Le<<D::Core as BlockSizeUser>::BlockSize, U256>: NonZero {
     // decode the base32 secret
     let secret_decoded = match BASE32_NOPAD.decode(secret.as_bytes()) {
         Ok(result) => result,
         Err(e) => return Err(format!("{:?}",e)),
     };
     // calculate HMAC from secret bytes and counter
-    let mut hmac: Hmac<A> = Hmac::new_from_slice(secret_decoded.as_slice()).expect("Failed to derive HMAC");
+    let mut hmac: Hmac<D> = Hmac::new_from_slice(secret_decoded.as_slice()).expect("Failed to derive HMAC");
     hmac.update(&counter.to_be_bytes());
     let hash = hmac.finalize().into_bytes();
 
