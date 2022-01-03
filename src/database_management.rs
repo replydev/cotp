@@ -33,7 +33,7 @@ pub fn read_decrypted_text(password: &str) -> Result<String, String> {
 pub fn read_from_file(password: &str) -> Result<Vec<OTPElement>, String> {
     return match read_decrypted_text(password) {
         Ok(mut contents) => {
-            let vector: Vec<OTPElement> = match serde_json::from_str(&contents){
+            let mut vector: Vec<OTPElement> = match serde_json::from_str(&contents){
                 Ok(results) => results,
                 Err(e) => {
                     contents.zeroize();
@@ -41,6 +41,7 @@ pub fn read_from_file(password: &str) -> Result<Vec<OTPElement>, String> {
                 },
             };
             contents.zeroize();
+            vector.sort_by(|a,b| a.issuer().cmp(&b.issuer()));
             Ok(vector)
         }
         Err(e) => {
