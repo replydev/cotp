@@ -149,7 +149,8 @@ fn get_matches() -> ArgMatches{
                         .long("index")
                         .help("OTP code index")
                         .takes_value(true)
-                        .required(true),
+                        .required(true)
+                        .multiple_values(true),
                 ),
         )
         .subcommand(

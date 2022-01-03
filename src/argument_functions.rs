@@ -68,7 +68,11 @@ pub fn add(matches: &ArgMatches) {
 }
 
 pub fn remove(matches: &ArgMatches) {
-    match database_management::remove_element_from_db(matches.value_of_t_or_exit("index")) {
+    match database_management::remove_element_from_db(
+        matches.values_of("index").unwrap()
+        .map(|s| s.parse::<usize>().unwrap())
+        .collect())
+     {
         Ok(()) => println!("Success"),
         Err(e) => eprintln!("An error has occurred: {}", e)
     }

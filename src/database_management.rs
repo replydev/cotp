@@ -84,31 +84,44 @@ pub fn add_element(secret: &str, issuer: &str, label: &str, algorithm: &str, dig
     result
 }
 
-pub fn remove_element_from_db(mut index: usize) -> Result<(), String> {
-    if index == 0 {
-        return Err(String::from("0 is a bad index"));
+pub fn remove_element_from_db(indexes: Vec<usize>) -> Result<(), String> {
+    if indexes.is_empty(){
+        return Err(String::from("Bad args"));
     }
-    //user inserts numbers starting from 1, so we will decrement the value because we use array indexes instead
-    index -= 1;
 
-    let mut elements: Vec<OTPElement>;
     let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
-    match read_from_file(&pw) {
-        Ok(result) => elements = result,
+    let mut elements: Vec<OTPElement> = match read_from_file(&pw) {
+        Ok(result) => result,
         Err(e) => {
             return Err(e);
         }
+    };
+
+    if indexes.iter().max().unwrap_or(&0) > &elements.len() {
+        return Err(format!("Index {} is out of bounds",indexes.iter().max().unwrap_or(&0)));
+    }
+    
+    let mut c = 0;
+
+    for mut index in indexes{
+        if index == 0 {
+            return Err(String::from("0 is a bad index"));
+        }
+        //user inserts numbers starting from 1, so we will decrement the value because we use array indexes instead
+        index -= 1;
+
+        match check_elements(index - c, &elements){
+            Ok(()) => {
+                elements.remove(index - c);
+                c += 1;
+            }
+            Err(e) => return Err(e),
+        }
     }
 
-    let result = match check_elements(index, &elements) {
-        Ok(()) => {
-            elements.remove(index);
-            match overwrite_database(elements, &pw) {
-                Ok(()) => Ok(()),
-                Err(e) => Err(format!("{}", e)),
-            }
-        }
-        Err(e) => Err(e)
+    let result = match overwrite_database(elements, &pw) {
+        Ok(()) => Ok(()),
+        Err(e) => Err(format!("{}", e)),
     };
     pw.zeroize();
     result
