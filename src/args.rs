@@ -36,12 +36,11 @@ fn get_matches() -> ArgMatches{
                 )
                 .arg(
                     Arg::new("issuer")
-                    .short('s')
+                    .short('i')
                     .long("issuer")
                     .help("OTP Code issuer")
                     .takes_value(true)
-                    .required(false)
-                    .default_value("")
+                    .required(true)
                 )
                 .arg(
                     Arg::new("label")
@@ -49,7 +48,8 @@ fn get_matches() -> ArgMatches{
                     .long("label")
                     .help("OTP Code label")
                     .takes_value(true)
-                    .required(true)
+                    .required(false)
+                    .default_value("")
                 )
                 .arg(
                     Arg::new("algorithm")

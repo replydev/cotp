@@ -58,7 +58,7 @@ pub fn fill_table(table: &mut StatefulTable, elements: &Vec<OTPElement>) {
             },
             _ => element.label(),
         };
-        table.items.push(vec![(i + 1).to_string(), label, element.issuer(), get_otp_code(element).unwrap()]);
+        table.items.push(vec![(i + 1).to_string(), element.issuer(), label , get_otp_code(element).unwrap()]);
         i += 1;
     }
 }

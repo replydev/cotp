@@ -54,7 +54,7 @@ impl App {
             .constraints([Constraint::Percentage(95), Constraint::Percentage(5)].as_ref())
             .margin(2)
             .split(frame.size());
-        let header_cells = ["Id", "Label", "Issuer", "OTP"]
+        let header_cells = ["Id", "Issuer", "Label", "OTP"]
             .iter()
             .map(|h| Cell::from(*h).style(Style::default().fg(Color::Black)));
         let header = Row::new(header_cells)
