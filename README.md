@@ -27,15 +27,14 @@ By typing `cotp export` you can export your database in unencrypted json format.
 cotp can generate both **TOTP** and **HOTP** codes, compliant with **rfc6238** and **rfc4226** specifications. Also, it is possible to customize settings like **HMAC algorithm** and **digits**, to provide a good compatibility to other two-factor authentication systems.
 ### Cross Plaform
 #### So far, I have successfully tested the functionality of the software in the following systems:
-|System|Version|Rust Version|Rust Toolchain|Working|
-|--|--|--|--|--|
-|Arch Linux|N/A|1.55.0|`x86_64-unknown-linux-gnu`|Yes|  
-|Alpine Linux|3.12.3|1.54.0|`x86_64-unknown-linux-gnu`|Yes|
-|Fedora|33|1.52.0|`x86_64-unknown-linux-gnu`|Yes|
-|Ubuntu|20.04 WSL|1.52.0|`x86_64-unknown-linux-gnu`|Yes|   
-|Windows 10 Pro|20H2|1.55.0|`x86_64-pc-windows-msvc`|Yes|
-|Windows 10 Pro|20H2|1.56.0|`x86_64-pc-windows-gnu`|Yes|
-|Windows 10 LTSC|1809|1.52.0|`x86_64-pc-windows-msvc`|Yes|
+
+- Arch Linux
+- Alpine Linux
+- Fedora 33
+- Ubuntu 20.04 WSL
+- Windows 10 Pro
+- Windows 10 LTSC
+- Windows 11
 
 #### In addition, cotp has been successfully tested by the community in the following systems:
 - NixOS
