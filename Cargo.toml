@@ -2,7 +2,7 @@
 name = "cotp"
 version = "0.1.9"
 authors = ["replydev <commoncargo@tutanota.com>"]
-edition = "2018"
+edition = "2021"
 description = "Trustworthy, encrypted, command-line TOTP/HOTP authenticator app with import functionality."
 repository = "https://github.com/replydev/cotp"
 homepage = "https://github.com/replydev/cotp"
@@ -13,8 +13,8 @@ categories = ["command-line-utilities","authentication"]
 keywords = ["cotp","totp","authenticator","google-authenticator","argon2"]
 
 [dependencies]
-serde_json = "1.0.68"
-serde = { version = "1.0.130", features = ["derive"] }
+serde_json = "1.0.74"
+serde = { version = "1.0.133", features = ["derive"] }
 dirs = "4.0.0"
 rpassword = "5.0.1"
 sodiumoxide = "0.2.7"
@@ -22,7 +22,7 @@ data-encoding = "2.3.2"
 crossterm = "0.22.1"
 tui = { version = "0.16.0", features = ["crossterm"], default-features = false }
 copypasta-ext = "0.3.7"
-zeroize = "1.4.2"
+zeroize = "1.4.3"
 clap = "3.0.0"
 hmac = "0.12.0"
 sha-1 = "0.10.0"
