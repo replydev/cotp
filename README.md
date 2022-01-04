@@ -9,6 +9,13 @@ cotp is written with simplicity in mind, the interface is quite minimalist and i
 
 [![asciicast](https://asciinema.org/a/459912.svg)](https://asciinema.org/a/459912)
 
+If you are familiar with the command line interface using cotp will not be a problem. Just type `cotp` to enter the TUI dashboard.
+In the first run you will be prompted to insert a password to initialize the database.
+Please note that the software requires at least an 8 chars length password.
+
+If you type `cotp --help` you get some instruction on how to use cotp utilities.
+The interface is divided in subcommands, so if you type `cotp <subcommand> --help` you get options and flag relative to the subcommand you inserted.
+
 ### Encryption
 This program relies on only one database file, encrypted with [XChaCha20Poly1305](https://doc.libsodium.org/advanced/stream_ciphers/xchacha20) authenticated encryption and [Argon2id](https://en.wikipedia.org/wiki/Argon2) for key derivation.
 ### Import/Export
@@ -38,6 +45,21 @@ cotp can generate both **TOTP** and **HOTP** codes, compliant with **rfc6238** a
 
 #### In addition, cotp has been successfully tested by the community in the following systems:
 - NixOS
+
+### Copy to clipboard
+You can copy the otp code of the element you selected by simply pressing enter.
+This is supported in Windows, macOS, X11 and Wayland.
+
+### Add OTP Code
+Just type `cotp add -i <issuer>`, press Enter and insert the BASE32 Secret Key.
+cotp also support HOTP codes, just add the `--hotp` flag the the `--digits` value.
+Type `cotp add --help` to learn how to insert other settings.
+
+### Edit OTP Code
+You can edit your codes with the edit subcommand. 
+
+You must indicate the index of the code to be edited with the **--index** argument and then indicate the fields to be edited. 
+If you want to modify also the secret of the code you must insert the flag **-c**.
 
 ## Installation
 
@@ -76,29 +98,6 @@ You can build cotp using these commands:
 
     git clone https://github.com/replydev/cotp.git
     cargo install --path cotp/
-
-## How to use
-If you are familiar with the command line interface using cotp will not be a problem. Just type `cotp` to enter the TUI dashboard.
-In the first run you will be prompted to insert a password to initialize the database.
-Please note that the software requires at least an 8 chars length password.
-
-If you type `cotp --help` you get some instruction on how to use cotp utilities.
-The interface is divided in subcommands, so if you type `cotp <subcommand> --help` you get options and flag relative to the subcommand you inserted.
-
-### Copy to clipboard
-You can copy the otp code of the element you selected by simply pressing enter.
-This is supported in Windows, macOS, X11 and Wayland.
-
-### Add
-Just type `cotp add -l <label>`, press Enter and insert the BASE32 Secret Key.
-cotp also support HOTP codes, just add the `--hotp` flag the the `--digits` value.
-Type `cotp add --help` to learn how to insert other settings.
-
-### Edit
-You can edit your codes with the edit subcommand. 
-
-You must indicate the index of the code to be edited with the **--index** argument and then indicate the fields to be edited. 
-If you want to modify also the secret of the code you must insert the flag **-c**.
 
 ## Database conversion
 To import Authy, Google Authenticator, Microsoft Authenticator and FreeOTP databases you need first to obtain the respective files in your phone in the paths:
