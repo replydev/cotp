@@ -180,7 +180,6 @@ pub fn export_database(path: PathBuf) -> Result<PathBuf, String> {
         path
     };
     
-    let mut file = File::create(&exported_path).expect("Cannot create file");
     let encrypted_contents = match read_to_string(&get_db_path()){
         Ok(result) => result,
         Err(e) => return Err(format!("Error during file reading: {:?}",e)),
@@ -193,6 +192,7 @@ pub fn export_database(path: PathBuf) -> Result<PathBuf, String> {
             if contents == "[]" {
                 return Err(String::from("there are no elements in your database, type \"cotp -h\" to get help"));
             }
+            let mut file = File::create(&exported_path).expect("Cannot create file");
             let contents_bytes = contents.as_bytes();
             file.write_all(contents_bytes).expect("Failed to write contents");
             contents.zeroize();
