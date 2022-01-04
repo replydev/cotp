@@ -7,7 +7,7 @@ I believe that security is of paramount importance, especially in this digital w
 ### Interface
 cotp is written with simplicity in mind, the interface is quite minimalist and intuitive as command line apps should be.
 
-![GIF demo](img/demo.gif)
+[![asciicast](https://asciinema.org/a/459912.svg)](https://asciinema.org/a/459912)
 
 ### Encryption
 This program relies on only one database file, encrypted with [XChaCha20Poly1305](https://doc.libsodium.org/advanced/stream_ciphers/xchacha20) authenticated encryption and [Argon2id](https://en.wikipedia.org/wiki/Argon2) for key derivation.
