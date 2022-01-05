@@ -21,12 +21,9 @@ mod database_management;
 mod args;
 
 fn init() -> Result<bool, String> {
-    match sodiumoxide::init() {
-        Err(()) => {
-            return Err(String::from("Error during sodiumoxide initialization"));
-        }
-        _ => {}
-    };
+    if let Err(()) = sodiumoxide::init(){
+        return Err(String::from("Error during sodiumoxide initialization"));
+    }
     match utils::create_db_if_needed() {
         Ok(value) => {
             if value {

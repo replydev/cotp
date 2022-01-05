@@ -121,7 +121,7 @@ mod tests {
         assert_eq!(
             String::from("Secret data@#[]ò"),
             decrypt_string(
-                &mut encrypt_string(String::from("Secret data@#[]ò"), "pa$$w0rd"),
+                &encrypt_string(String::from("Secret data@#[]ò"), "pa$$w0rd"),
                 "pa$$w0rd",
             ).unwrap()
         );

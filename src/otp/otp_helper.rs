@@ -41,7 +41,7 @@ pub fn print_element_info(mut index: usize) -> Result<(), String> {
     };
     pw.zeroize();
 
-    match check_elements(index, &elements) {
+    match check_elements(index, elements.as_slice()) {
         Ok(()) => {}
         Err(e) => {
             return Err(e);

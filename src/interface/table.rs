@@ -9,7 +9,7 @@ pub struct StatefulTable {
 }
 
 impl StatefulTable {
-    pub fn new(elements: &Vec<OTPElement>) -> StatefulTable {
+    pub fn new(elements: &[OTPElement]) -> StatefulTable {
         let mut table = StatefulTable {
             state: TableState::default(),
             items: vec![],
@@ -46,9 +46,8 @@ impl StatefulTable {
     }
 }
 
-pub fn fill_table(table: &mut StatefulTable, elements: &Vec<OTPElement>) {
-    let mut i = 0usize;
-    for element in elements {
+pub fn fill_table(table: &mut StatefulTable, elements: &[OTPElement]) {
+    for (i, element) in elements.iter().enumerate() {
         let label = match element.type_().as_str() {
             "HOTP" => {
                 match element.counter() {
@@ -59,6 +58,5 @@ pub fn fill_table(table: &mut StatefulTable, elements: &Vec<OTPElement>) {
             _ => element.label(),
         };
         table.items.push(vec![(i + 1).to_string(), element.issuer(), label , get_otp_code(element).unwrap()]);
-        i += 1;
     }
 }
