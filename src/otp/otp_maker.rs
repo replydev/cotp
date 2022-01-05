@@ -20,7 +20,7 @@ fn generate_totp(secret: &str, algorithm: &str, digits: u32, time: u64,time_step
 }
 
 pub fn hotp(secret: &str, algorithm: &str, digits: u32, counter: u64) -> Result<String,String>{
-    return match algorithm {
+    match algorithm {
         "SHA256" => generate_hotp::<Sha256>(secret,digits,counter),
         "SHA512" => generate_hotp::<Sha512>(secret,digits,counter),
         _ => generate_hotp::<Sha1>(secret,digits,counter),

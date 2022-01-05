@@ -1,6 +1,6 @@
 use std::io;
 
-use sodiumoxide;
+
 use tui::backend::CrosstermBackend;
 use tui::Terminal;
 
@@ -41,7 +41,7 @@ fn init() -> Result<bool, String> {
             Ok(false)
         }
         Err(()) => {
-            return Err(String::from("An error occurred during database creation"));
+            Err(String::from("An error occurred during database creation"))
         }
     }
 }
@@ -72,7 +72,7 @@ fn main() -> AppResult<()> {
 fn dashboard() -> AppResult<()> {
     match otp_helper::read_codes() {
         Ok(elements) => {
-            if elements.len() == 0 {
+            if elements.is_empty() {
                 println!("No codes, type \"cotp -h\" to get help");
             } else {
                 // Create an application.

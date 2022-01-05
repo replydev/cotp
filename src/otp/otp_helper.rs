@@ -21,7 +21,7 @@ pub fn get_otp_code(element: &OTPElement) -> Result<String,String> {
         "HOTP" => {
             match element.counter() {
                 Some(counter) => hotp(&element.secret(), &element.algorithm().to_uppercase(), element.digits() as u32, counter),
-                None => return Err(String::from("The element is an HOTP code but the is no counter value.")),
+                None => Err(String::from("The element is an HOTP code but the is no counter value.")),
             }
         },
         _ => unreachable!()

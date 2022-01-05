@@ -72,7 +72,7 @@ pub fn write_to_file(content: &str, file: &mut File) -> Result<(), std::io::Erro
 }
 
 pub fn check_elements(id: usize, elements: &Vec<OTPElement>) -> Result<(), String> {
-    if elements.len() == 0 {
+    if elements.is_empty() {
         return Err(String::from("there are no elements in your database. Type \"cotp -h\" to get help."));
     }
 

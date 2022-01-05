@@ -12,6 +12,6 @@ pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
     let result: Result<Vec<OTPElement>, serde_json::Error> = serde_json::from_str(&file_to_import_contents);
     return match result {
         Ok(element) => Ok(element),
-        Err(e) => Err(String::from(format!("Failed to serialize file: {}", e)))
+        Err(e) => Err(format!("Failed to serialize file: {}", e))
     };
 }

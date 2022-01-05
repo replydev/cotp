@@ -3,7 +3,7 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 
 use data_encoding::BASE32_NOPAD;
-use serde_json;
+
 
 use utils::{check_elements, get_db_path};
 
@@ -20,7 +20,7 @@ pub fn read_decrypted_text(password: &str) -> Result<String, String> {
             return Err(format!("Error during file reading: {:?}",e));
         },
     };
-    if encrypted_contents.len() == 0 {
+    if encrypted_contents.is_empty() {
         return match utils::delete_db() {
             Ok(_) => Err(String::from("Your database file was empty, please restart to create a new one.")),
             Err(_) => Err(String::from("Your database file is empty, please remove it manually and restart."))
@@ -41,7 +41,7 @@ pub fn read_from_file(password: &str) -> Result<Vec<OTPElement>, String> {
                 },
             };
             contents.zeroize();
-            vector.sort_by(|a,b| a.issuer().cmp(&b.issuer()));
+            vector.sort_by_key(|a| a.issuer());
             Ok(vector)
         }
         Err(e) => {
@@ -70,7 +70,7 @@ pub fn add_element(secret: &str, issuer: &str, label: &str, algorithm: &str, dig
     else{
         "TOTP"
     };
-    let otp_element = OTPElement::new(upper_secret.to_string(), issuer.to_string(), label.to_string(), digits, type_.to_string(), String::from(algorithm).to_uppercase(), String::from("Default"), 0, 0, 30, counter,vec![]);
+    let otp_element = OTPElement::new(upper_secret, issuer.to_string(), label.to_string(), digits, type_.to_string(), String::from(algorithm).to_uppercase(), String::from("Default"), 0, 0, 30, counter,vec![]);
     let mut elements;
     match read_from_file(&pw) {
         Ok(result) => elements = result,
@@ -199,7 +199,7 @@ pub fn export_database(path: PathBuf) -> Result<PathBuf, String> {
             Ok(exported_path)
         }
         Err(e) => {
-            Err(format!("{}", e))
+            Err(e)
         }
     };
 }
