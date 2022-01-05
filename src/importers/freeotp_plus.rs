@@ -40,8 +40,7 @@ pub fn import(file_path: &str) -> Result<Vec<OTPElement>,String>{
     };
 
     let mut converted_elements: Vec<OTPElement> = vec![];
-    let mut i = 0;
-    for token in freeotp.tokens {
+    for (i, token) in freeotp.tokens.into_iter().enumerate() {
         converted_elements.push(
             OTPElement::new(
                 encode_secret(&token.secret),
@@ -57,13 +56,12 @@ pub fn import(file_path: &str) -> Result<Vec<OTPElement>,String>{
                 token.counter,
                 vec![])
         );
-        i += 1;
     }
 
     Ok(converted_elements)
 }
 
-fn encode_secret(secret: &Vec<i8>) -> String {
+fn encode_secret(secret: &[i8]) -> String {
     BASE32_NOPAD.encode(secret
         .iter()
         .map(|n| *n as u8)

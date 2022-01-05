@@ -111,7 +111,7 @@ pub fn remove_element_from_db(indexes: Vec<usize>) -> Result<(), String> {
         //user inserts numbers starting from 1, so we will decrement the value because we use array indexes instead
         index -= 1;
 
-        match check_elements(index - c, &elements){
+        match check_elements(index - c, elements.as_slice()){
             Ok(()) => {
                 elements.remove(index - c);
                 c += 1;
@@ -134,14 +134,13 @@ pub fn edit_element(mut id: usize, secret: &str, issuer: &str, label: &str, algo
     }
     id -= 1;
 
-    let mut elements: Vec<OTPElement>;
     let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
-    match read_from_file(&pw) {
-        Ok(result) => elements = result,
+    let mut elements: Vec<OTPElement> = match read_from_file(&pw) {
+        Ok(result) => result,
         Err(_e) => return Err(String::from("Cannot decrypt existing database"))
-    }
+    };
 
-    let result = match check_elements(id, &elements) {
+    let result = match check_elements(id, elements.as_slice()) {
         Ok(()) => {
             if !secret.trim().is_empty(){
                 elements[id].set_secret(secret.to_string());
