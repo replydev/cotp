@@ -23,7 +23,7 @@ crossterm = "0.22.1"
 tui = { version = "0.16.0", features = ["crossterm"], default-features = false }
 copypasta-ext = "0.3.7"
 zeroize = "1.4.3"
-clap = "3.0.4"
+clap = "3.0.5"
 hmac = "0.12.0"
 sha-1 = "0.10.0"
 sha2 = "0.10.0"
