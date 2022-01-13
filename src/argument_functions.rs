@@ -118,6 +118,30 @@ pub fn info(matches: &ArgMatches) {
     }
 }
 
+pub fn search(matches: &ArgMatches) {
+    let result: Result<(), String>;
+    if matches.is_present("issuer") && matches.is_present("label") {
+        let issuer = matches.value_of_t_or_exit("issuer");
+        let label = matches.value_of_t_or_exit("label");
+        result = otp_helper::print_elements_matching_issuer_and_label(issuer, label);
+    }
+    else if matches.is_present("issuer") {
+        let issuer = matches.value_of_t_or_exit("issuer");
+        result = otp_helper::print_elements_matching_issuer(issuer);
+    }
+    else if matches.is_present("label") {
+        let label = matches.value_of_t_or_exit("label");
+        result = otp_helper::print_elements_matching_label(label);
+    }
+    else {
+        result = Ok(());
+    }
+    match result {
+        Ok(()) => {}
+        Err(e) => eprintln!("An error occurred: {}", e),
+    }
+}
+
 pub fn change_password() {
     let mut old_password = cryptography::prompt_for_passwords("Old password: ", 8, false);
     let decrypted_text = database_management::read_decrypted_text(&old_password);

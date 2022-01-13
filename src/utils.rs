@@ -75,12 +75,15 @@ pub fn check_elements(id: usize, elements: &[OTPElement]) -> Result<(), String> 
     Ok(())
 }
 
-pub fn percentage() -> u16 {
+pub fn millis_before_next_step() -> u64 {
     let now = SystemTime::now();
     let since_the_epoch = now.duration_since(UNIX_EPOCH).unwrap();
     let in_ms = since_the_epoch.as_secs() * 1000 + since_the_epoch.subsec_nanos() as u64 / 1000000;
-    let step = in_ms % 30000;
-    (step * 100 / 30000) as u16
+    in_ms % 30000
+}
+
+pub fn percentage() -> u16 {
+    (millis_before_next_step() * 100 / 30000) as u16
 }
 
 #[cfg(test)]
