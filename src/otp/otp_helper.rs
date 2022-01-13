@@ -1,7 +1,7 @@
 use crate::{cryptography, database_management};
 use crate::otp::otp_element::OTPElement;
 use crate::otp::otp_maker::{hotp, totp};
-use crate::utils::check_elements;
+use crate::utils::{check_elements, millis_before_next_step};
 use zeroize::Zeroize;
 
 
@@ -26,6 +26,41 @@ pub fn get_otp_code(element: &OTPElement) -> Result<String,String> {
         },
         _ => unreachable!()
     }
+}
+
+pub fn print_elements_matching_issuer(issuer: String) -> Result<(), String> {
+    print_elements_matching(|element| { issuer == element.issuer() })
+}
+
+pub fn print_elements_matching_label(label: String) -> Result<(), String> {
+    print_elements_matching(|element| { label == element.label() })
+}
+
+pub fn print_elements_matching_issuer_and_label(issuer: String, label: String) -> Result<(), String> {
+    print_elements_matching(|element| { issuer == element.issuer() && label == element.label() })
+}
+
+pub fn print_elements_matching(match_fn: impl Fn(&OTPElement) -> bool) -> Result<(), String> {
+    let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
+    let elements = match database_management::read_from_file(&pw) {
+        Ok(result) => result,
+        Err(e) => return Err(e),
+    };
+    pw.zeroize();
+
+    for element in &elements {
+        if match_fn(element) {
+            let otp_code = match get_otp_code(&element) {
+                Ok(otp_code) => otp_code,
+                Err(err) => err,
+            };
+            println!("");
+            println!("Issuer: {}", element.issuer());
+            println!("Label: {}", element.label());
+            println!("OTP Code: {} ({} seconds remaining)", otp_code, millis_before_next_step()/1000);
+        }
+    }
+    Ok(())
 }
 
 pub fn print_element_info(mut index: usize) -> Result<(), String> {

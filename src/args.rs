@@ -11,6 +11,7 @@ pub fn args_parser() -> bool {
         Some(("info",info_matches)) => argument_functions::info(info_matches),
         Some(("export",export_matches)) => argument_functions::export(export_matches),
         Some(("passwd",_)) => argument_functions::change_password(),
+        Some(("search",search_matches)) => argument_functions::search(search_matches),
         _ => return true,
     }
     false
@@ -263,6 +264,27 @@ fn get_matches() -> ArgMatches{
                         .help("OTP code index")
                         .takes_value(true)
                         .required(true),
+                ),
+        )
+        .subcommand(
+            App::new("search")
+                .about("Show OTP code for matching database entries")
+                .setting(AppSettings::ArgRequiredElseHelp)
+                .arg(
+                    Arg::new("issuer")
+                        .short('i')
+                        .long("issuer")
+                        .help("Search database by issuer")
+                        .takes_value(true)
+                        .required_unless_present("label"),
+                )
+                .arg(
+                    Arg::new("label")
+                        .short('l')
+                        .long("label")
+                        .help("Search database by label")
+                        .takes_value(true)
+                        .required_unless_present("issuer"),
                 ),
         )
         .subcommand(
