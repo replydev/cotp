@@ -29,15 +29,15 @@ pub fn get_otp_code(element: &OTPElement) -> Result<String,String> {
 }
 
 pub fn print_elements_matching_issuer(issuer: String) -> Result<(), String> {
-    print_elements_matching(|element| { issuer == element.issuer() })
+    print_elements_matching(|element| { issuer.to_lowercase() == element.issuer().to_lowercase() })
 }
 
 pub fn print_elements_matching_label(label: String) -> Result<(), String> {
-    print_elements_matching(|element| { label == element.label() })
+    print_elements_matching(|element| { label.to_lowercase() == element.label().to_lowercase() })
 }
 
 pub fn print_elements_matching_issuer_and_label(issuer: String, label: String) -> Result<(), String> {
-    print_elements_matching(|element| { issuer == element.issuer() && label == element.label() })
+    print_elements_matching(|element| { issuer.to_lowercase() == element.issuer().to_lowercase() && label.to_lowercase() == element.label().to_lowercase() })
 }
 
 pub fn print_elements_matching(match_fn: impl Fn(&OTPElement) -> bool) -> Result<(), String> {
