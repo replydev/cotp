@@ -2,8 +2,9 @@ use crate::{cryptography, database_management};
 use crate::otp::otp_element::OTPElement;
 use crate::otp::otp_maker::{hotp, totp};
 use crate::utils::{check_elements, millis_before_next_step};
+use copypasta_ext::prelude::ClipboardProvider;
+use copypasta_ext::x11_fork::ClipboardContext;
 use zeroize::Zeroize;
-
 
 pub fn read_codes() -> Result<Vec<OTPElement>, String> {
     let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
@@ -28,19 +29,7 @@ pub fn get_otp_code(element: &OTPElement) -> Result<String,String> {
     }
 }
 
-pub fn print_elements_matching_issuer(issuer: String) -> Result<(), String> {
-    print_elements_matching(|element| { issuer.to_lowercase() == element.issuer().to_lowercase() })
-}
-
-pub fn print_elements_matching_label(label: String) -> Result<(), String> {
-    print_elements_matching(|element| { label.to_lowercase() == element.label().to_lowercase() })
-}
-
-pub fn print_elements_matching_issuer_and_label(issuer: String, label: String) -> Result<(), String> {
-    print_elements_matching(|element| { issuer.to_lowercase() == element.issuer().to_lowercase() && label.to_lowercase() == element.label().to_lowercase() })
-}
-
-pub fn print_elements_matching(match_fn: impl Fn(&OTPElement) -> bool) -> Result<(), String> {
+pub fn print_elements_matching(issuer: Option<&str>, label: Option<&str>) -> Result<(), String> {
     let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
     let elements = match database_management::read_from_file(&pw) {
         Ok(result) => result,
@@ -48,18 +37,36 @@ pub fn print_elements_matching(match_fn: impl Fn(&OTPElement) -> bool) -> Result
     };
     pw.zeroize();
 
-    for element in &elements {
-        if match_fn(element) {
-            let otp_code = match get_otp_code(&element) {
-                Ok(otp_code) => otp_code,
-                Err(err) => err,
-            };
-            println!("");
-            println!("Issuer: {}", element.issuer());
-            println!("Label: {}", element.label());
-            println!("OTP Code: {} ({} seconds remaining)", otp_code, millis_before_next_step()/1000);
+    elements.iter().filter(|element| {
+        (if let Some(i) = issuer {
+            i.to_lowercase() == element.issuer().to_lowercase()
         }
-    }
+        else {
+            true
+        }) && 
+        (if let Some(l) = label {
+            l.to_lowercase() == element.label().to_lowercase()
+        }
+        else {
+            true
+        })
+    }).for_each(|element| {
+        let otp_code = match get_otp_code(element) {
+            Ok(code) => code,
+            Err(e) => e,
+        };
+        println!("");
+        println!("Issuer: {}", element.issuer());
+        println!("Label: {}", element.label());
+        println!("OTP Code: {} ({} seconds remaining)", otp_code, millis_before_next_step()/1000);
+        if let Ok(mut ctx) = ClipboardContext::new(){
+            match ctx.set_contents(otp_code.to_owned()) {
+                Ok(_) => println!("Copied to clipboard"),
+                Err(_) => println!("Cannot copy OTP Code to clipboard"),
+            };
+        }
+        println!("");
+    });
     Ok(())
 }
 
