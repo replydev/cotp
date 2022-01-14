@@ -35,11 +35,11 @@ impl App {
     }
 
     /// Handles the tick event of the terminal.
-    pub fn tick(&mut self) {
+    pub fn tick(&mut self,force_update: bool) {
         // Update progress bar
         let new_progress = percentage();
         // Check for new cycle
-        if new_progress < self.progress {
+        if new_progress < self.progress || force_update {
             // Update codes
             self.table.items.clear();
             fill_table(&mut self.table, &self.elements);

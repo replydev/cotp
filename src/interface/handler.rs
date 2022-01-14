@@ -33,6 +33,14 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
             app.table.next();
         }
 
+        KeyCode::Char('+') => {
+            handle_counter_switch(app,true);
+        }
+
+        KeyCode::Char('-') => {
+            handle_counter_switch(app, false);
+        }
+
         KeyCode::Enter => {
             if let Some(selected) = app.table.state.selected(){
                 if let Some(element) = app.table.items.get(selected){
@@ -52,4 +60,24 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
         _ => {}
     }
     Ok(())
+}
+
+fn handle_counter_switch(app: &mut App, increment: bool) {
+    if let Some(selected) = app.table.state.selected() {
+        if let Some(element) = app.elements.get_mut(selected) {
+            if element.type_().to_uppercase() == "HOTP" {
+                // safe to unwrap becouse the element type is HOTP
+                let counter = element.counter().unwrap();
+                element.set_counter(
+                    if increment {
+                        Some(counter.checked_add(1).unwrap_or(u64::MAX))
+                    }
+                    else {
+                        Some(counter.checked_sub(1).unwrap_or(0))
+                    }
+                );
+                app.tick(true);
+            }
+        }
+    }
 }

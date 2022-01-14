@@ -88,7 +88,7 @@ fn dashboard() -> AppResult<()> {
                     tui.draw(&mut app)?;
                     // Handle events.
                     match tui.events.next()? {
-                        Event::Tick => app.tick(),
+                        Event::Tick => app.tick(false),
                         Event::Key(key_event) => handle_key_events(key_event, &mut app)?,
                         Event::Mouse(_) => {}
                         Event::Resize(_, _) => {}
