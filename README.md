@@ -17,7 +17,7 @@ If you type `cotp --help` you get some instruction on how to use cotp utilities.
 The interface is divided in subcommands, so if you type `cotp <subcommand> --help` you get options and flag relative to the subcommand you inserted.
 
 ### Encryption
-This program relies on only one database file, encrypted with [XChaCha20Poly1305](https://doc.libsodium.org/advanced/stream_ciphers/xchacha20) authenticated encryption and [Argon2id](https://en.wikipedia.org/wiki/Argon2) for key derivation.
+This program relies on only one database file encrypted with libsodium [XChaCha20Poly1305](https://doc.libsodium.org/advanced/stream_ciphers/xchacha20) authenticated encryption and [Argon2id](https://en.wikipedia.org/wiki/Argon2) for key derivation.
 ### Import/Export
 You can import backups (or [converted databases](#database-conversion)) from:
  - [Aegis](https://github.com/beemdevelopment/Aegis)
@@ -49,6 +49,9 @@ cotp can generate both **TOTP** and **HOTP** codes, compliant with **rfc6238** a
 ### Copy to clipboard
 You can copy the otp code of the element you selected by simply pressing enter.
 This is supported in Windows, macOS, X11 and Wayland.
+
+### Increment HOTP counter
+To increment or decrement the HOTP counter just press '+' or '-'
 
 ### Add OTP Code
 Just type `cotp add -i <issuer>`, press Enter and insert the BASE32 Secret Key.
