@@ -1,4 +1,3 @@
-use data_encoding::BASE64;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -19,9 +18,11 @@ impl EncryptedDatabase {
         }
     }
 
+    /*
     pub fn version(&self) -> u16 {
         self.version
     }
+    */
 
     pub fn nonce(&self) -> &str {
         &self.nonce

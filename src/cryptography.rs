@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 
-use argon2::{ThreadMode, Variant, Config, Version};
+use argon2::Config;
 use chacha20poly1305::{Key, XChaCha20Poly1305, XNonce};
 use chacha20poly1305::aead::{NewAead, Aead};
 use data_encoding::BASE64;
@@ -18,15 +18,21 @@ fn argon_derive_key(key: &mut [u8;XCHACHA20_POLY1305_KEY_LENGTH], password_bytes
             key.clone_from(&vec_to_arr(vec));
             Ok(())
         },
-        Err(e) => Err(String::from("Failed to derive encryption key")),
+        Err(_e) => Err(String::from("Failed to derive encryption key")),
     }
 }
 
 pub fn encrypt_string(plaintext: String, password: &str) -> String {
     let mut salt: [u8;ARGON2ID_SALT_LENGTH] = [0;ARGON2ID_SALT_LENGTH];
     let mut nonce_bytes: [u8;XCHACHA20_POLY1305_NONCE_LENGTH] = [0;XCHACHA20_POLY1305_NONCE_LENGTH];
-    getrandom::getrandom(&mut salt);
-    getrandom::getrandom(&mut nonce_bytes);
+    match getrandom::getrandom(&mut salt) {
+        Err(_e) => panic!("Error during salt generation"),
+        _ => {}
+    }
+    match getrandom::getrandom(&mut nonce_bytes) {
+        Err(_e) => panic!("Error during nonce generation"),
+        _ => {}
+    }
 
     let mut key: [u8;XCHACHA20_POLY1305_KEY_LENGTH] = [0;XCHACHA20_POLY1305_KEY_LENGTH];
     match argon_derive_key(&mut key, password.as_bytes(), &salt) {
