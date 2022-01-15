@@ -1,87 +1,76 @@
-use std::{error, fmt};
 use std::convert::TryInto;
 
+use argon2::{ThreadMode, Variant, Config, Version};
+use chacha20poly1305::{Key, XChaCha20Poly1305, XNonce};
+use chacha20poly1305::aead::{NewAead, Aead};
 use data_encoding::BASE64;
-use sodiumoxide::crypto::pwhash;
-use sodiumoxide::crypto::secretstream::{KEYBYTES, Stream, Tag};
-use sodiumoxide::crypto::secretstream::xchacha20poly1305::{Header, Key};
+use crate::encrypted_database::EncryptedDatabase;
 
-const SIGNATURE: [u8; 4] = [0xC1, 0x0A, 0x4B, 0xED];
+pub const ARGON2ID_SALT_LENGTH: usize = 16;
+pub const XCHACHA20_POLY1305_NONCE_LENGTH: usize = 24;
+pub const XCHACHA20_POLY1305_KEY_LENGTH: usize = 32;
 
-#[derive(Debug)]
-struct CoreError {
-    message: String,
-}
-
-impl CoreError {
-    fn new(msg: &str) -> Self { CoreError { message: msg.to_string() } }
-}
-
-impl fmt::Display for CoreError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Error: {}", self.message)
-    }
-}
-
-impl error::Error for CoreError {}
-
-fn argon_derive_key(key: &mut [u8; 32], password_bytes: &[u8], salt: &pwhash::argon2id13::Salt) -> Result<Key, String> {
-    let result = pwhash::argon2id13::derive_key(key, password_bytes, salt,
-                                                pwhash::argon2id13::OPSLIMIT_INTERACTIVE,
-                                                pwhash::argon2id13::MEMLIMIT_INTERACTIVE);
-    match result {
-        Err(()) => Err(String::from("Failed to derive encryption key")),
-        _ => Ok(Key(*key)),
+fn argon_derive_key(key: &mut [u8;XCHACHA20_POLY1305_KEY_LENGTH], password_bytes: &[u8], salt: &[u8]) -> Result<(), String> {
+    let config = Config::default();
+    let hash = argon2::hash_raw(password_bytes, salt, &config);
+    match hash {
+        Ok(vec) => {
+            key.clone_from(&vec_to_arr(vec));
+            Ok(())
+        },
+        Err(e) => Err(String::from("Failed to derive encryption key")),
     }
 }
 
 pub fn encrypt_string(plaintext: String, password: &str) -> String {
-    let mut encrypted = String::new();
-    encrypted.push_str(&BASE64.encode(&SIGNATURE));
-    encrypted.push('|');
-    let salt = pwhash::argon2id13::gen_salt();
-    encrypted.push_str(&BASE64.encode(&salt.0));
-    encrypted.push('|');
-    let key = argon_derive_key(&mut [0u8; KEYBYTES], password.as_bytes(), &salt).unwrap();
-    let (mut enc_stream, header) = Stream::init_push(&key).unwrap();
+    let mut salt: [u8;ARGON2ID_SALT_LENGTH] = [0;ARGON2ID_SALT_LENGTH];
+    let mut nonce_bytes: [u8;XCHACHA20_POLY1305_NONCE_LENGTH] = [0;XCHACHA20_POLY1305_NONCE_LENGTH];
+    getrandom::getrandom(&mut salt);
+    getrandom::getrandom(&mut nonce_bytes);
 
-    encrypted.push_str(&BASE64.encode(&header.0));
-    encrypted.push('|');
+    let mut key: [u8;XCHACHA20_POLY1305_KEY_LENGTH] = [0;XCHACHA20_POLY1305_KEY_LENGTH];
+    match argon_derive_key(&mut key, password.as_bytes(), &salt) {
+        Err(e) => panic!("{}",e),
+        _ => {}
+    }
+    let wrapped_key = Key::from_slice(&key);
 
-    let encrypted_string = enc_stream.push(plaintext.as_bytes(), None, Tag::Message).expect("Cannot encrypt");
+    let aead = XChaCha20Poly1305::new(wrapped_key);
+    let nonce = XNonce::from_slice(&nonce_bytes);
+    let cipher_text = aead.encrypt(nonce, plaintext.as_bytes()).expect("Failed to encrypt");
+    let encrypted_database = EncryptedDatabase::new(1,BASE64.encode(&nonce_bytes),BASE64.encode(&salt),BASE64.encode(&cipher_text));
 
-    encrypted.push_str(&BASE64.encode(&encrypted_string));
-    encrypted
+    match serde_json::to_string(&encrypted_database) {
+        Ok(result) => result,
+        Err(e) => panic!("Failed to serialize encrypted database: {}",e),
+    }
 }
 
 pub fn decrypt_string(encrypted_text: &str, password: &str) -> Result<String, String> {
-    let split = encrypted_text.split('|');
-    let vec: Vec<&str> = split.collect();
-    if vec.len() != 4 {
-        return Err(String::from("Corrupted database file"));
+    //encrypted text is an encrypted database json serialized object
+    let encrypted_database: EncryptedDatabase = match serde_json::from_str(encrypted_text) {
+        Ok(result) => result,
+        Err(e) => return Err(format!("Error during encrypted database deserialization: {}",e)),
+    };
+    let nonce = BASE64.decode(encrypted_database.nonce().as_bytes()).unwrap();
+    let cipher_text = BASE64.decode(encrypted_database.cipher().as_bytes()).unwrap();
+    let salt = BASE64.decode(encrypted_database.salt().as_bytes()).unwrap();
+
+    let mut key: [u8;XCHACHA20_POLY1305_KEY_LENGTH] = [0;XCHACHA20_POLY1305_KEY_LENGTH];
+    match argon_derive_key(&mut key, password.as_bytes(), salt.as_slice()) {
+        Err(e) => panic!("{}",e),
+        _ => {}
     }
-    let byte_salt = BASE64.decode(vec[1].as_bytes()).unwrap();
-    let salt = pwhash::argon2id13::Salt(vec_to_arr(byte_salt));
-    let byte_header = BASE64.decode(vec[2].as_bytes()).unwrap();
-    let header = Header(vec_to_arr(byte_header));
-    let cipher = BASE64.decode(vec[3].as_bytes()).unwrap();
 
-    let mut key = [0u8; KEYBYTES];
-    pwhash::argon2id13::derive_key(&mut key, password.as_bytes(), &salt,
-                                   pwhash::argon2id13::OPSLIMIT_INTERACTIVE,
-                                   pwhash::argon2id13::MEMLIMIT_INTERACTIVE)
-        .map_err(|_| CoreError::new("Deriving key failed")).unwrap();
-    let key = Key(key);
+    let wrapped_key = Key::from_slice(&key);
 
-    let mut stream = Stream::init_pull(&header, &key)
-        .map_err(|_| CoreError::new("init_pull failed")).unwrap();
-
-    let (decrypted, _tag) = stream.pull(&cipher, None).unwrap_or((vec![0], Tag::Message));
-
-    if decrypted == vec![0] {
-        return Err(String::from("Wrong password"));
+    let aead = XChaCha20Poly1305::new(wrapped_key);
+    let nonce = XNonce::from_slice(nonce.as_slice());
+    let decrypted = aead.decrypt(nonce, cipher_text.as_slice()).expect("Failed to decrypt");
+    match String::from_utf8(decrypted) {
+        Ok(result) => Ok(result),
+        Err(e) => Err(format!("Error during UTF-8 string conversion: {}",e))
     }
-    Ok(String::from_utf8(decrypted).unwrap())
 }
 
 fn vec_to_arr<T, const N: usize>(v: Vec<T>) -> [T; N] {
@@ -117,13 +106,12 @@ mod tests {
 
     #[test]
     fn test_encryption() {
-        assert_eq!(Ok(()), sodiumoxide::init());
         assert_eq!(
-            String::from("Secret data@#[]ò"),
+            Ok(String::from("Secret data@#[]ò")),
             decrypt_string(
                 &encrypt_string(String::from("Secret data@#[]ò"), "pa$$w0rd"),
                 "pa$$w0rd",
-            ).unwrap()
+            )
         );
     }
 }

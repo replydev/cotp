@@ -17,11 +17,9 @@ mod otp;
 mod interface;
 mod database_management;
 mod args;
+mod encrypted_database;
 
 fn init() -> Result<bool, String> {
-    if let Err(()) = sodiumoxide::init(){
-        return Err(String::from("Error during sodiumoxide initialization"));
-    }
     match utils::create_db_if_needed() {
         Ok(value) => {
             if value {
