@@ -25,19 +25,16 @@ fn argon_derive_key(key: &mut [u8;XCHACHA20_POLY1305_KEY_LENGTH], password_bytes
 pub fn encrypt_string(plaintext: String, password: &str) -> String {
     let mut salt: [u8;ARGON2ID_SALT_LENGTH] = [0;ARGON2ID_SALT_LENGTH];
     let mut nonce_bytes: [u8;XCHACHA20_POLY1305_NONCE_LENGTH] = [0;XCHACHA20_POLY1305_NONCE_LENGTH];
-    match getrandom::getrandom(&mut salt) {
-        Err(_e) => panic!("Error during salt generation"),
-        _ => {}
+    if let Err(_e) = getrandom::getrandom(&mut salt) {
+        panic!("Error during salt generation")
     }
-    match getrandom::getrandom(&mut nonce_bytes) {
-        Err(_e) => panic!("Error during nonce generation"),
-        _ => {}
+    if let Err(_e) = getrandom::getrandom(&mut nonce_bytes) {
+        panic!("Error during nonce generation")
     }
 
     let mut key: [u8;XCHACHA20_POLY1305_KEY_LENGTH] = [0;XCHACHA20_POLY1305_KEY_LENGTH];
-    match argon_derive_key(&mut key, password.as_bytes(), &salt) {
-        Err(e) => panic!("{}",e),
-        _ => {}
+    if let Err(e) = argon_derive_key(&mut key, password.as_bytes(), &salt) {
+        panic!("{}", e)
     }
     let wrapped_key = Key::from_slice(&key);
 
@@ -63,9 +60,8 @@ pub fn decrypt_string(encrypted_text: &str, password: &str) -> Result<String, St
     let salt = BASE64.decode(encrypted_database.salt().as_bytes()).unwrap();
 
     let mut key: [u8;XCHACHA20_POLY1305_KEY_LENGTH] = [0;XCHACHA20_POLY1305_KEY_LENGTH];
-    match argon_derive_key(&mut key, password.as_bytes(), salt.as_slice()) {
-        Err(e) => panic!("{}",e),
-        _ => {}
+    if let Err(e) = argon_derive_key(&mut key, password.as_bytes(), salt.as_slice()) {
+        panic!("{}", e)
     }
 
     let wrapped_key = Key::from_slice(&key);
