@@ -1,9 +1,7 @@
+#![forbid(unsafe_code)]
 use std::io;
-
-
 use tui::backend::CrosstermBackend;
 use tui::Terminal;
-
 use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
 use interface::handler::handle_key_events;
