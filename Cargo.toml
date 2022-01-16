@@ -29,3 +29,5 @@ sha2 = "0.10.1"
 chacha20poly1305 = "0.9.0"
 rust-argon2 = "1.0"
 getrandom = "0.2.4"
+#TODO Remove these dependencies in the next version
+sodiumoxide = "0.2.7"

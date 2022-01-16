@@ -40,7 +40,7 @@ pub fn import(matches: &ArgMatches) {
     };
 
     let mut pw = cryptography::prompt_for_passwords("Choose a password: ", 8, true);
-    match database_management::overwrite_database(elements, &pw) {
+    match database_management::overwrite_database(&elements, &pw) {
         Ok(()) => {
             println!("Successfully imported database");
         }
