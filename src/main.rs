@@ -100,7 +100,7 @@ fn dashboard() -> AppResult<()> {
                     // Overwrite the legacy database with the new format
                     let elements = &app.elements;
                     println!("Please insert a new password to overwrite the database with the new format, ");
-                    if let Err(_) = overwrite_database(elements,&cryptography::prompt_for_passwords("Password: ",8,true)) {
+                    if overwrite_database(elements,&cryptography::prompt_for_passwords("Password: ",8,true)).is_err() {
                         eprintln!("Error during database overwriting");
                     }
                 }

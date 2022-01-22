@@ -203,7 +203,7 @@ pub fn export_database(path: PathBuf) -> Result<PathBuf, String> {
     };
 }
 
-pub fn overwrite_database(elements: &Vec<OTPElement>, password: &str) -> Result<(), std::io::Error> {
+pub fn overwrite_database(elements: &[OTPElement], password: &str) -> Result<(), std::io::Error> {
     let json_string: &str = &serde_json::to_string(&elements)?;
     overwrite_database_json(json_string, password)
 }

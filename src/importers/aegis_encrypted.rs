@@ -13,7 +13,7 @@ use crate::importers::aegis;
 
 #[derive(Deserialize)]
 struct AegisEncryptedDatabase {
-    version: u32,
+    //version: u32,
     header: AegisEncryptedHeader,
     db: String,
 }
@@ -34,14 +34,14 @@ struct AegisEncryptedParams{
 struct AegisEncryptedSlot {
     #[serde(rename = "type")]
     _type: u32,
-    uuid: String,
+    //uuid: String,
     key: String,
     key_params: AegisEncryptedParams,
     n: Option<u32>,
     r: Option<u32>,
     p: Option<u32>,
     salt: Option<String>,
-    repaired: Option<bool>,
+    //repaired: Option<bool>,
 }
 
 pub fn import(filepath: &str,password: &str) -> Result<Vec<OTPElement>, String> {
@@ -90,7 +90,7 @@ pub fn import(filepath: &str,password: &str) -> Result<Vec<OTPElement>, String> 
 
             aegis::import_from_string(json.as_str())
         },
-        None => Err(format!("Failed to derive master key")),
+        None => Err("Failed to derive master key".to_string()),
     }
 }
 

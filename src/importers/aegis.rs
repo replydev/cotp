@@ -55,7 +55,7 @@ pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
 pub fn import_from_string(file_to_import_contents: &str) -> Result<Vec<OTPElement>, String> {
     match serde_json::from_str::<AegisJson>(file_to_import_contents) {
         Ok(element) => Ok(do_import(element.db.entries)),
-        Err(e) => {
+        Err(_) => {
             let aegis_db: AegisDb = match serde_json::from_str(file_to_import_contents) {
                 Ok(element) => element,
                 Err(e) => return Err(format!("{:?}",e)),
