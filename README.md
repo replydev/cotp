@@ -17,10 +17,11 @@ If you type `cotp --help` you get some instruction on how to use cotp utilities.
 The interface is divided in subcommands, so if you type `cotp <subcommand> --help` you get options and flag relative to the subcommand you inserted.
 
 ### Encryption
-This program relies on only one database file encrypted with libsodium [XChaCha20Poly1305](https://doc.libsodium.org/advanced/stream_ciphers/xchacha20) authenticated encryption and [Argon2id](https://en.wikipedia.org/wiki/Argon2) for key derivation.
+This program relies on only one database file encrypted with [XChaCha20Poly1305](https://docs.rs/chacha20poly1305/latest/chacha20poly1305/) authenticated encryption and [Argon2id](https://en.wikipedia.org/wiki/Argon2) for key derivation.
+It also uses [AES-GCM](https://docs.rs/aes-gcm/latest/aes_gcm/) to import from encrypted Aegis backups.
 ### Import/Export
 You can import backups (or [converted databases](#database-conversion)) from:
- - [Aegis](https://github.com/beemdevelopment/Aegis)
+ - [Aegis](https://github.com/beemdevelopment/Aegis) (Both encrypted and plain database types)
  - [andOTP](https://github.com/andOTP/andOTP)
  - [FreeOTP](https://github.com/freeotp/freeotp-android)
  - [FreeOTP+](https://github.com/helloworld1/FreeOTPPlus)
