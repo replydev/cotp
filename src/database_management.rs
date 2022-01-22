@@ -77,7 +77,7 @@ pub fn add_element(secret: &str, issuer: &str, label: &str, algorithm: &str, dig
         Err(e) => return Err(e)
     }
     elements.push(otp_element);
-    let result = match overwrite_database(elements, &pw) {
+    let result = match overwrite_database(&elements, &pw) {
         Ok(()) => Ok(()),
         Err(e) => Err(format!("{}", e))
     };
@@ -120,7 +120,7 @@ pub fn remove_element_from_db(indexes: Vec<usize>) -> Result<(), String> {
         }
     }
 
-    let result = match overwrite_database(elements, &pw) {
+    let result = match overwrite_database(&elements, &pw) {
         Ok(()) => Ok(()),
         Err(e) => Err(format!("{}", e)),
     };
@@ -160,7 +160,7 @@ pub fn edit_element(mut id: usize, secret: &str, issuer: &str, label: &str, algo
             if counter > 0{
                 elements[id].set_counter(Some(counter));
             }
-            match overwrite_database(elements, &pw) {
+            match overwrite_database(&elements, &pw) {
                 Ok(()) => Ok(()),
                 Err(e) => Err(format!("{}", e)),
             }
@@ -203,14 +203,23 @@ pub fn export_database(path: PathBuf) -> Result<PathBuf, String> {
     };
 }
 
-pub fn overwrite_database(elements: Vec<OTPElement>, password: &str) -> Result<(), std::io::Error> {
+pub fn overwrite_database(elements: &[OTPElement], password: &str) -> Result<(), std::io::Error> {
     let json_string: &str = &serde_json::to_string(&elements)?;
     overwrite_database_json(json_string, password)
 }
 
 pub fn overwrite_database_json(json: &str, password: &str) -> Result<(), std::io::Error> {
-    let encrypted = cryptography::encrypt_string(json.to_string(), password);
+    let encrypted = cryptography::encrypt_string(json.to_string(), password).unwrap();
     let mut file = File::create(utils::get_db_path())?;
     utils::write_to_file(&encrypted, &mut file)
 }
 
+//TODO Remove this function in the next version
+pub fn is_legacy_database() -> bool {
+    match read_to_string(&get_db_path()) {
+        Ok(result) => result.starts_with("wQpL7Q=="),
+        Err(_) => {
+            false
+        },
+    }
+}

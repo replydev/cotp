@@ -55,17 +55,17 @@ pub fn print_elements_matching(issuer: Option<&str>, label: Option<&str>) -> Res
             Ok(code) => code,
             Err(e) => e,
         };
-        println!("");
+        println!();
         println!("Issuer: {}", element.issuer());
         println!("Label: {}", element.label());
         println!("OTP Code: {} ({} seconds remaining)", otp_code, millis_before_next_step()/1000);
         if let Ok(mut ctx) = ClipboardContext::new(){
-            match ctx.set_contents(otp_code.to_owned()) {
+            match ctx.set_contents(otp_code) {
                 Ok(_) => println!("Copied to clipboard"),
                 Err(_) => println!("Cannot copy OTP Code to clipboard"),
             };
         }
-        println!("");
+        println!();
     });
     Ok(())
 }

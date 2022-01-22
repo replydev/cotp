@@ -49,15 +49,27 @@ pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
         Ok(result) => result,
         Err(e) => return Err(format!("Error during file reading: {:?}",e)),
     };
-    let result: Result<AegisJson, serde_json::Error> = serde_json::from_str(&file_to_import_contents);
-    let aegis = match result {
-        Ok(element) => element,
-        Err(e) => return Err(format!("{}", e)),
-    };
+    import_from_string(file_to_import_contents.as_str())
+}
 
-    let mut elements: Vec<OTPElement> = Vec::new();
+pub fn import_from_string(file_to_import_contents: &str) -> Result<Vec<OTPElement>, String> {
+    match serde_json::from_str::<AegisJson>(file_to_import_contents) {
+        Ok(element) => Ok(do_import(element.db.entries)),
+        Err(_) => {
+            let aegis_db: AegisDb = match serde_json::from_str(file_to_import_contents) {
+                Ok(element) => element,
+                Err(e) => return Err(format!("{:?}",e)),
+            };
+            // maybe we are importing from an encrypted aegis database, so we don
+            Ok(do_import(aegis_db.entries))
+        },
+    }
+}
 
-    for element in aegis.db.entries {
+fn do_import(entries: Vec<AegisElement>) -> Vec<OTPElement>{
+    let mut elements: Vec<OTPElement> = Vec::with_capacity(entries.len());
+
+    for element in entries {
         elements.push(OTPElement::new(
             element.info.secret,
             element.issuer,
@@ -72,5 +84,5 @@ pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
             element.info.counter.unwrap_or_default(),
             vec![]));
     }
-    Ok(elements)
+    elements
 }

@@ -17,6 +17,12 @@ pub fn import(matches: &ArgMatches) {
     else if matches.is_present("aegis") {
         importers::aegis::import(path)
     }
+    else if matches.is_present("aegis-encrypted") {
+        let mut password = cryptography::prompt_for_passwords("Insert password for DB decryption: ", 0, false);
+        let result = importers::aegis_encrypted::import(path,password.as_str());
+        password.zeroize();
+        result
+    }
     else if matches.is_present("freeotp-plus") {
         importers::freeotp_plus::import(path)
     }
@@ -40,7 +46,7 @@ pub fn import(matches: &ArgMatches) {
     };
 
     let mut pw = cryptography::prompt_for_passwords("Choose a password: ", 8, true);
-    match database_management::overwrite_database(elements, &pw) {
+    match database_management::overwrite_database(&elements, &pw) {
         Ok(()) => {
             println!("Successfully imported database");
         }

@@ -73,7 +73,7 @@ fn handle_counter_switch(app: &mut App, increment: bool) {
                         Some(counter.checked_add(1).unwrap_or(u64::MAX))
                     }
                     else {
-                        Some(counter.checked_sub(1).unwrap_or(0))
+                        Some(counter.saturating_sub(1))
                     }
                 );
                 app.tick(true);

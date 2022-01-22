@@ -1,92 +1,93 @@
-use std::{error, fmt};
-use std::convert::TryInto;
-
+use argon2::{Config, ThreadMode, Variant, Version};
+use chacha20poly1305::{Key, XChaCha20Poly1305, XNonce};
+use chacha20poly1305::aead::{NewAead, Aead};
 use data_encoding::BASE64;
-use sodiumoxide::crypto::pwhash;
-use sodiumoxide::crypto::secretstream::{KEYBYTES, Stream, Tag};
-use sodiumoxide::crypto::secretstream::xchacha20poly1305::{Header, Key};
+use crate::encrypted_database::EncryptedDatabase;
 
-const SIGNATURE: [u8; 4] = [0xC1, 0x0A, 0x4B, 0xED];
+use crate::legacy_crypto;
 
-#[derive(Debug)]
-struct CoreError {
-    message: String,
-}
+const ARGON2ID_SALT_LENGTH: usize = 16;
+const XCHACHA20_POLY1305_NONCE_LENGTH: usize = 24;
+const XCHACHA20_POLY1305_KEY_LENGTH: usize = 32;
+const KEY_DERIVATION_CONFIG: Config = Config {
+    variant: Variant::Argon2id,
+    version: Version::Version13,
+    mem_cost: 32768,
+    time_cost: 4,
+    lanes: 4,
+    thread_mode: ThreadMode::Parallel,
+    secret: &[],
+    ad: &[],
+    hash_length: XCHACHA20_POLY1305_KEY_LENGTH as u32
+};
 
-impl CoreError {
-    fn new(msg: &str) -> Self { CoreError { message: msg.to_string() } }
-}
-
-impl fmt::Display for CoreError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Error: {}", self.message)
+fn argon_derive_key(password_bytes: &[u8], salt: &[u8]) -> Result<Vec<u8>, String> {
+    let config = KEY_DERIVATION_CONFIG;
+    let hash = argon2::hash_raw(password_bytes, salt, &config);
+    match hash {
+        Ok(vec) => Ok(vec),
+        Err(_e) => Err(String::from("Failed to derive encryption key")),
     }
 }
 
-impl error::Error for CoreError {}
-
-fn argon_derive_key(key: &mut [u8; 32], password_bytes: &[u8], salt: &pwhash::argon2id13::Salt) -> Result<Key, String> {
-    let result = pwhash::argon2id13::derive_key(key, password_bytes, salt,
-                                                pwhash::argon2id13::OPSLIMIT_INTERACTIVE,
-                                                pwhash::argon2id13::MEMLIMIT_INTERACTIVE);
-    match result {
-        Err(()) => Err(String::from("Failed to derive encryption key")),
-        _ => Ok(Key(*key)),
+pub fn encrypt_string(plaintext: String, password: &str) -> Result<String,String> {
+    let mut salt: [u8;ARGON2ID_SALT_LENGTH] = [0;ARGON2ID_SALT_LENGTH];
+    let mut nonce_bytes: [u8;XCHACHA20_POLY1305_NONCE_LENGTH] = [0;XCHACHA20_POLY1305_NONCE_LENGTH];
+    if let Err(e) = getrandom::getrandom(&mut salt) {
+        return Err(format!("Error during salt generation: {}",e));
     }
-}
+    if let Err(e) = getrandom::getrandom(&mut nonce_bytes) {
+        return Err(format!("Error during nonce generation: {}",e));
+    }
 
-pub fn encrypt_string(plaintext: String, password: &str) -> String {
-    let mut encrypted = String::new();
-    encrypted.push_str(&BASE64.encode(&SIGNATURE));
-    encrypted.push('|');
-    let salt = pwhash::argon2id13::gen_salt();
-    encrypted.push_str(&BASE64.encode(&salt.0));
-    encrypted.push('|');
-    let key = argon_derive_key(&mut [0u8; KEYBYTES], password.as_bytes(), &salt).unwrap();
-    let (mut enc_stream, header) = Stream::init_push(&key).unwrap();
+    let key: Vec<u8> = match argon_derive_key(password.as_bytes(),salt.as_slice()) {
+        Ok(result) => result,
+        Err(e) => return Err(e),
+    };
+    let wrapped_key = Key::from_slice(key.as_slice());
 
-    encrypted.push_str(&BASE64.encode(&header.0));
-    encrypted.push('|');
+    let aead = XChaCha20Poly1305::new(wrapped_key);
+    let nonce = XNonce::from_slice(&nonce_bytes);
+    let cipher_text = aead.encrypt(nonce, plaintext.as_bytes()).expect("Failed to encrypt");
+    let encrypted_database = EncryptedDatabase::new(1,BASE64.encode(&nonce_bytes),BASE64.encode(&salt),BASE64.encode(&cipher_text));
 
-    let encrypted_string = enc_stream.push(plaintext.as_bytes(), None, Tag::Message).expect("Cannot encrypt");
-
-    encrypted.push_str(&BASE64.encode(&encrypted_string));
-    encrypted
+    match serde_json::to_string(&encrypted_database) {
+        Ok(result) => Ok(result),
+        Err(e) => return Err(format!("Failed to serialize encrypted database: {}",e)),
+    }
 }
 
 pub fn decrypt_string(encrypted_text: &str, password: &str) -> Result<String, String> {
-    let split = encrypted_text.split('|');
-    let vec: Vec<&str> = split.collect();
-    if vec.len() != 4 {
-        return Err(String::from("Corrupted database file"));
+    //encrypted text is an encrypted database json serialized object
+    let encrypted_database: EncryptedDatabase = match serde_json::from_str(encrypted_text) {
+        Ok(result) => result,
+        Err(_e) => {
+            //return Err(format!("Error during encrypted database deserialization: {}",e))
+            // the user could have the old database format, let's fallback on the legacy decryption
+            return legacy_crypto::decrypt_string(encrypted_text,password)
+        },
+    };
+    let nonce = BASE64.decode(encrypted_database.nonce().as_bytes()).unwrap();
+    let cipher_text = BASE64.decode(encrypted_database.cipher().as_bytes()).unwrap();
+    let salt = BASE64.decode(encrypted_database.salt().as_bytes()).unwrap();
+
+    let key: Vec<u8> = match argon_derive_key(password.as_bytes(),salt.as_slice()) {
+        Ok(result) => result,
+        Err(e) => return Err(e),
+    };
+
+    let wrapped_key = Key::from_slice(&key);
+
+    let aead = XChaCha20Poly1305::new(wrapped_key);
+    let nonce = XNonce::from_slice(nonce.as_slice());
+    let decrypted = match aead.decrypt(nonce, cipher_text.as_slice()) {
+        Ok(result) => result,
+        Err(_e) => return Err(String::from("Wrong password")),
+    };
+    match String::from_utf8(decrypted) {
+        Ok(result) => Ok(result),
+        Err(e) => Err(format!("Error during UTF-8 string conversion: {}",e))
     }
-    let byte_salt = BASE64.decode(vec[1].as_bytes()).unwrap();
-    let salt = pwhash::argon2id13::Salt(vec_to_arr(byte_salt));
-    let byte_header = BASE64.decode(vec[2].as_bytes()).unwrap();
-    let header = Header(vec_to_arr(byte_header));
-    let cipher = BASE64.decode(vec[3].as_bytes()).unwrap();
-
-    let mut key = [0u8; KEYBYTES];
-    pwhash::argon2id13::derive_key(&mut key, password.as_bytes(), &salt,
-                                   pwhash::argon2id13::OPSLIMIT_INTERACTIVE,
-                                   pwhash::argon2id13::MEMLIMIT_INTERACTIVE)
-        .map_err(|_| CoreError::new("Deriving key failed")).unwrap();
-    let key = Key(key);
-
-    let mut stream = Stream::init_pull(&header, &key)
-        .map_err(|_| CoreError::new("init_pull failed")).unwrap();
-
-    let (decrypted, _tag) = stream.pull(&cipher, None).unwrap_or((vec![0], Tag::Message));
-
-    if decrypted == vec![0] {
-        return Err(String::from("Wrong password"));
-    }
-    Ok(String::from_utf8(decrypted).unwrap())
-}
-
-fn vec_to_arr<T, const N: usize>(v: Vec<T>) -> [T; N] {
-    v.try_into()
-        .unwrap_or_else(|v: Vec<T>| panic!("Expected a Vec of length {} but it was {}", N, v.len()))
 }
 
 pub fn prompt_for_passwords(message: &str, minimum_password_length: usize, verify: bool) -> String {
@@ -117,13 +118,12 @@ mod tests {
 
     #[test]
     fn test_encryption() {
-        assert_eq!(Ok(()), sodiumoxide::init());
         assert_eq!(
-            String::from("Secret data@#[]ò"),
+            Ok(String::from("Secret data@#[]ò")),
             decrypt_string(
-                &encrypt_string(String::from("Secret data@#[]ò"), "pa$$w0rd"),
+                &encrypt_string(String::from("Secret data@#[]ò"), "pa$$w0rd").unwrap(),
                 "pa$$w0rd",
-            ).unwrap()
+            )
         );
     }
 }
