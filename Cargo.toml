@@ -12,6 +12,12 @@ license-file = "LICENSE"
 categories = ["command-line-utilities","authentication"]
 keywords = ["cotp","totp","authenticator","google-authenticator","argon2"]
 
+#Optimize release binary size
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+
 [dependencies]
 serde_json = "1.0.75"
 serde = { version = "1.0.134", features = ["derive"] }
