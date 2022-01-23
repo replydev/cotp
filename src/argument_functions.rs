@@ -149,4 +149,11 @@ pub fn change_password() {
             eprintln!("An error has occurred: {}", e);
         }
     }
-} 
+}
+
+pub fn qrcode(p0: &ArgMatches) {
+    let index: usize = p0.value_of_t_or_exit("index");
+    if let Err(e) =  database_management::show_qr_code(index) {
+        eprintln!("An error has occurred: {}",e);
+    }
+}

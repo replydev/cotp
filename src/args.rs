@@ -10,6 +10,7 @@ pub fn args_parser() -> bool {
         Some(("import",import_matches)) => argument_functions::import(import_matches),
         Some(("info",info_matches)) => argument_functions::info(info_matches),
         Some(("export",export_matches)) => argument_functions::export(export_matches),
+        Some(("qrcode",qrcode_matches)) => argument_functions::qrcode(qrcode_matches),
         Some(("passwd",_)) => argument_functions::change_password(),
         Some(("search",search_matches)) => argument_functions::search(search_matches),
         _ => return true,
@@ -298,7 +299,21 @@ fn get_matches() -> ArgMatches{
         )
         .subcommand(
             App::new("passwd")
+                .setting(AppSettings::ArgRequiredElseHelp)
             .about("Change your database password")
+        )
+        .subcommand(
+            App::new("qrcode")
+                .setting(AppSettings::ArgRequiredElseHelp)
+                .about("Show otpauth QRCode")
+                .arg(
+                    Arg::new("index")
+                        .short('i')
+                        .long("index")
+                        .help("OTP Code index")
+                        .takes_value(true)
+                        .required(true)
+                )
         )
         .get_matches()
 }

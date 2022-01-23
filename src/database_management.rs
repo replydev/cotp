@@ -203,6 +203,22 @@ pub fn export_database(path: PathBuf) -> Result<PathBuf, String> {
     };
 }
 
+pub fn show_qr_code(index: usize) -> Result<(),String> {
+    let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
+    let elements: Vec<OTPElement> = match read_from_file(&pw) {
+        Ok(result) => result,
+        Err(_e) => return Err(String::from("Cannot decrypt existing database"))
+    };
+    pw.zeroize();
+    if let Some(element) = elements.get(index - 1) {
+        println!("{}",element.get_otp_code());
+        Ok(())
+    }
+    else {
+        Err(format!("{} is an invalid index",index))
+    }
+}
+
 pub fn overwrite_database(elements: &[OTPElement], password: &str) -> Result<(), std::io::Error> {
     let json_string: &str = &serde_json::to_string(&elements)?;
     overwrite_database_json(json_string, password)

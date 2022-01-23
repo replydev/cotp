@@ -1,3 +1,5 @@
+use qrcode::QrCode;
+use qrcode::render::unicode;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -74,5 +76,63 @@ impl OTPElement {
     }
     pub fn set_counter(&mut self, counter: Option<u64>) { 
         self.counter = counter; 
+    }
+
+    pub fn get_otpauth_uri(&self) -> String {
+        let mut uri: String = String::from("otpauth://");
+        uri.push_str(self.type_.to_lowercase().as_str());
+        uri.push('/');
+        //self.type_.to_lowercase() + String::from("/");
+        if self.issuer.chars().count() > 0 {
+            uri.push_str(&urlencoding::encode(self.issuer.as_str()));
+            uri.push(':');
+        }
+        uri.push_str(&urlencoding::encode(self.label.as_str()));
+
+        uri.push_str("?secret=");
+        uri.push_str(self.secret().as_str());
+        uri.push_str("&algorithm=");
+        uri.push_str(self.algorithm.to_uppercase().as_str());
+        uri.push_str("&digits=");
+        uri.push_str(self.digits().to_string().as_str());
+        uri.push_str("&period=");
+        uri.push_str(self.period.to_string().as_str());
+        uri.push_str("&lock=false");
+        //uri.push_str("?secret=" + self.secret());
+        if self.type_.to_lowercase().as_str() == "hotp" {
+            uri.push_str("&counter=");
+            uri.push_str(self.counter.unwrap_or(0).to_string().as_str());
+        }
+        uri
+    }
+
+    pub fn get_otp_code(&self) -> String {
+        QrCode::new(&self.get_otpauth_uri()).unwrap().render::<unicode::Dense1x2>()
+            .dark_color(unicode::Dense1x2::Light)
+            .light_color(unicode::Dense1x2::Dark)
+            .build()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::otp::otp_element::OTPElement;
+
+    #[test]
+    fn test_otpauth_uri(){
+        let otp_element = OTPElement::new(
+            String::from("xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g"),
+            String::from("IssuerText"), String::from("LabelText"),
+            6,
+            String::from("TOTP"),
+            String::from("SHA1"),
+            String::from(""),
+            0,
+            0,
+            30,
+            0,
+            vec![]
+        );
+        assert_eq!(otp_element.get_otpauth_uri().as_str(), "otpauth://totp/IssuerText:LabelText?secret=xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g&algorithm=SHA1&digits=6&period=30&lock=false");
     }
 }
