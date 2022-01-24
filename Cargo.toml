@@ -25,7 +25,7 @@ dirs = "4.0.0"
 rpassword = "5.0.1"
 data-encoding = "2.3.2"
 crossterm = "0.22.1"
-tui = { version = "0.16.0", features = ["crossterm"], default-features = false }
+tui = { version = "0.17.0", features = ["crossterm"], default-features = false }
 copypasta-ext = "0.3.7"
 zeroize = "1.4.3"
 clap = "3.0.10"
