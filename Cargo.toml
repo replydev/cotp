@@ -20,7 +20,7 @@ codegen-units = 1
 
 [dependencies]
 serde_json = "1.0.75"
-serde = { version = "1.0.134", features = ["derive"] }
+serde = { version = "1.0.135", features = ["derive"] }
 dirs = "4.0.0"
 rpassword = "5.0.1"
 data-encoding = "2.3.2"
