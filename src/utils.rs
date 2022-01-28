@@ -1,3 +1,4 @@
+use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
@@ -9,11 +10,14 @@ use dirs::home_dir;
 use crate::otp::otp_element::OTPElement;
 
 pub fn get_db_path() -> PathBuf {
-    get_cotp_folder().join("db.cotp")
+    match env::var("COTP_DB_PATH") {
+        Ok(value) => PathBuf::from(value),
+        Err(_e) => get_default_db_path(),
+    }
 }
 
 // Pushing an absolute path to a PathBuf replaces the entire PathBuf: https://doc.rust-lang.org/std/path/struct.PathBuf.html#method.push
-pub fn get_cotp_folder() -> PathBuf {
+pub fn get_default_db_path() -> PathBuf {
     let result: Option<PathBuf> = {
         #[cfg(not(debug_assertions))]{
             home_dir()
@@ -33,18 +37,18 @@ pub fn get_cotp_folder() -> PathBuf {
             }
             current_dir
         },
-    }.join(".cotp")
+    }.join(".cotp/db.cotp")
 }
 
 pub fn create_db_if_needed() -> Result<bool, ()> {
-    let cotp_folder = get_cotp_folder();
-    if !cotp_folder.exists() {
-        match std::fs::create_dir(cotp_folder) {
+    let db_path = get_db_path();
+    let db_dir = db_path.parent().unwrap();
+    if !db_dir.exists() {
+        match std::fs::create_dir(db_dir) {
             Ok(()) => {}
             Err(_e) => {}
         }
     }
-    let db_path = get_db_path();
     if !db_path.exists() {
         return match std::fs::File::create(db_path) {
             Ok(_f) => Ok(true),
