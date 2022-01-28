@@ -20,7 +20,7 @@ codegen-units = 1
 
 [dependencies]
 serde_json = "1.0.78"
-serde = { version = "1.0.135", features = ["derive"] }
+serde = { version = "1.0.136", features = ["derive"] }
 dirs = "4.0.0"
 rpassword = "5.0.1"
 data-encoding = "2.3.2"
@@ -28,7 +28,7 @@ crossterm = "0.22.1"
 tui = "0.17.0"
 copypasta-ext = "0.3.7"
 zeroize = "1.4.3"
-clap = "3.0.11"
+clap = "3.0.13"
 hmac = "0.12.0"
 sha-1 = "0.10.0"
 sha2 = "0.10.1"
