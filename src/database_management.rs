@@ -211,7 +211,7 @@ pub fn show_qr_code(index: usize) -> Result<(),String> {
     };
     pw.zeroize();
     if let Some(element) = elements.get(index - 1) {
-        println!("{}",element.get_otp_code());
+        println!("{}",element.get_qrcode());
         Ok(())
     }
     else {
