@@ -299,7 +299,6 @@ fn get_matches() -> ArgMatches{
         )
         .subcommand(
             App::new("passwd")
-                .setting(AppSettings::ArgRequiredElseHelp)
             .about("Change your database password")
         )
         .subcommand(
