@@ -8,7 +8,6 @@ use interface::handler::handle_key_events;
 use otp::otp_helper;
 use interface::ui::Tui;
 use zeroize::Zeroize;
-use crate::database_management::{is_legacy_database, overwrite_database};
 
 mod utils;
 mod argument_functions;
@@ -20,7 +19,6 @@ mod database_management;
 mod args;
 mod encrypted_database;
 //TODO Remove this in the next version
-mod legacy_crypto;
 
 fn init() -> Result<bool, String> {
     match utils::create_db_if_needed() {
@@ -96,14 +94,6 @@ fn dashboard() -> AppResult<()> {
 
                 // Exit the user interface.
                 tui.exit()?;
-                if is_legacy_database() {
-                    // Overwrite the legacy database with the new format
-                    let elements = &app.elements;
-                    println!("Please insert a new password to overwrite the database with the new format, ");
-                    if overwrite_database(elements,&cryptography::prompt_for_passwords("Password: ",8,true)).is_err() {
-                        eprintln!("Error during database overwriting");
-                    }
-                }
             }
         }
         Err(e) => {

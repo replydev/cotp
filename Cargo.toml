@@ -40,5 +40,3 @@ aes-gcm = "0.9.4"
 hex = "0.4.3"
 qrcode = "0.12.0"
 urlencoding = "2.1.0"
-#TODO Remove these dependencies in the next version
-sodiumoxide = "0.2.7"

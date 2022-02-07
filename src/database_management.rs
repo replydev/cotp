@@ -229,13 +229,3 @@ pub fn overwrite_database_json(json: &str, password: &str) -> Result<(), std::io
     let mut file = File::create(utils::get_db_path())?;
     utils::write_to_file(&encrypted, &mut file)
 }
-
-//TODO Remove this function in the next version
-pub fn is_legacy_database() -> bool {
-    match read_to_string(&get_db_path()) {
-        Ok(result) => result.starts_with("wQpL7Q=="),
-        Err(_) => {
-            false
-        },
-    }
-}

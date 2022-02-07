@@ -4,8 +4,6 @@ use chacha20poly1305::aead::{NewAead, Aead};
 use data_encoding::BASE64;
 use crate::encrypted_database::EncryptedDatabase;
 
-use crate::legacy_crypto;
-
 const ARGON2ID_SALT_LENGTH: usize = 16;
 const XCHACHA20_POLY1305_NONCE_LENGTH: usize = 24;
 const XCHACHA20_POLY1305_KEY_LENGTH: usize = 32;
@@ -61,10 +59,8 @@ pub fn decrypt_string(encrypted_text: &str, password: &str) -> Result<String, St
     //encrypted text is an encrypted database json serialized object
     let encrypted_database: EncryptedDatabase = match serde_json::from_str(encrypted_text) {
         Ok(result) => result,
-        Err(_e) => {
-            //return Err(format!("Error during encrypted database deserialization: {}",e))
-            // the user could have the old database format, let's fallback on the legacy decryption
-            return legacy_crypto::decrypt_string(encrypted_text,password)
+        Err(e) => {
+            return Err(format!("Error during encrypted database deserialization: {}",e))
         },
     };
     let nonce = BASE64.decode(encrypted_database.nonce().as_bytes()).unwrap();
