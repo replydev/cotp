@@ -1,8 +1,8 @@
-use argon2::{Config, ThreadMode, Variant, Version};
-use chacha20poly1305::{Key, XChaCha20Poly1305, XNonce};
-use chacha20poly1305::aead::{NewAead, Aead};
-use data_encoding::BASE64;
 use crate::encrypted_database::EncryptedDatabase;
+use argon2::{Config, ThreadMode, Variant, Version};
+use chacha20poly1305::aead::{Aead, NewAead};
+use chacha20poly1305::{Key, XChaCha20Poly1305, XNonce};
+use data_encoding::BASE64;
 
 const ARGON2ID_SALT_LENGTH: usize = 16;
 const XCHACHA20_POLY1305_NONCE_LENGTH: usize = 24;
@@ -16,7 +16,7 @@ const KEY_DERIVATION_CONFIG: Config = Config {
     thread_mode: ThreadMode::Parallel,
     secret: &[],
     ad: &[],
-    hash_length: XCHACHA20_POLY1305_KEY_LENGTH as u32
+    hash_length: XCHACHA20_POLY1305_KEY_LENGTH as u32,
 };
 
 fn argon_derive_key(password_bytes: &[u8], salt: &[u8]) -> Result<Vec<u8>, String> {
@@ -28,17 +28,18 @@ fn argon_derive_key(password_bytes: &[u8], salt: &[u8]) -> Result<Vec<u8>, Strin
     }
 }
 
-pub fn encrypt_string(plaintext: String, password: &str) -> Result<String,String> {
-    let mut salt: [u8;ARGON2ID_SALT_LENGTH] = [0;ARGON2ID_SALT_LENGTH];
-    let mut nonce_bytes: [u8;XCHACHA20_POLY1305_NONCE_LENGTH] = [0;XCHACHA20_POLY1305_NONCE_LENGTH];
+pub fn encrypt_string(plaintext: String, password: &str) -> Result<String, String> {
+    let mut salt: [u8; ARGON2ID_SALT_LENGTH] = [0; ARGON2ID_SALT_LENGTH];
+    let mut nonce_bytes: [u8; XCHACHA20_POLY1305_NONCE_LENGTH] =
+        [0; XCHACHA20_POLY1305_NONCE_LENGTH];
     if let Err(e) = getrandom::getrandom(&mut salt) {
-        return Err(format!("Error during salt generation: {}",e));
+        return Err(format!("Error during salt generation: {}", e));
     }
     if let Err(e) = getrandom::getrandom(&mut nonce_bytes) {
-        return Err(format!("Error during nonce generation: {}",e));
+        return Err(format!("Error during nonce generation: {}", e));
     }
 
-    let key: Vec<u8> = match argon_derive_key(password.as_bytes(),salt.as_slice()) {
+    let key: Vec<u8> = match argon_derive_key(password.as_bytes(), salt.as_slice()) {
         Ok(result) => result,
         Err(e) => return Err(e),
     };
@@ -46,12 +47,19 @@ pub fn encrypt_string(plaintext: String, password: &str) -> Result<String,String
 
     let aead = XChaCha20Poly1305::new(wrapped_key);
     let nonce = XNonce::from_slice(&nonce_bytes);
-    let cipher_text = aead.encrypt(nonce, plaintext.as_bytes()).expect("Failed to encrypt");
-    let encrypted_database = EncryptedDatabase::new(1,BASE64.encode(&nonce_bytes),BASE64.encode(&salt),BASE64.encode(&cipher_text));
+    let cipher_text = aead
+        .encrypt(nonce, plaintext.as_bytes())
+        .expect("Failed to encrypt");
+    let encrypted_database = EncryptedDatabase::new(
+        1,
+        BASE64.encode(&nonce_bytes),
+        BASE64.encode(&salt),
+        BASE64.encode(&cipher_text),
+    );
 
     match serde_json::to_string(&encrypted_database) {
         Ok(result) => Ok(result),
-        Err(e) => return Err(format!("Failed to serialize encrypted database: {}",e)),
+        Err(e) => return Err(format!("Failed to serialize encrypted database: {}", e)),
     }
 }
 
@@ -60,14 +68,21 @@ pub fn decrypt_string(encrypted_text: &str, password: &str) -> Result<String, St
     let encrypted_database: EncryptedDatabase = match serde_json::from_str(encrypted_text) {
         Ok(result) => result,
         Err(e) => {
-            return Err(format!("Error during encrypted database deserialization: {}",e))
-        },
+            return Err(format!(
+                "Error during encrypted database deserialization: {}",
+                e
+            ))
+        }
     };
-    let nonce = BASE64.decode(encrypted_database.nonce().as_bytes()).unwrap();
-    let cipher_text = BASE64.decode(encrypted_database.cipher().as_bytes()).unwrap();
+    let nonce = BASE64
+        .decode(encrypted_database.nonce().as_bytes())
+        .unwrap();
+    let cipher_text = BASE64
+        .decode(encrypted_database.cipher().as_bytes())
+        .unwrap();
     let salt = BASE64.decode(encrypted_database.salt().as_bytes()).unwrap();
 
-    let key: Vec<u8> = match argon_derive_key(password.as_bytes(),salt.as_slice()) {
+    let key: Vec<u8> = match argon_derive_key(password.as_bytes(), salt.as_slice()) {
         Ok(result) => result,
         Err(e) => return Err(e),
     };
@@ -82,16 +97,16 @@ pub fn decrypt_string(encrypted_text: &str, password: &str) -> Result<String, St
     };
     match String::from_utf8(decrypted) {
         Ok(result) => Ok(result),
-        Err(e) => Err(format!("Error during UTF-8 string conversion: {}",e))
+        Err(e) => Err(format!("Error during UTF-8 string conversion: {}", e)),
     }
 }
 
 pub fn prompt_for_passwords(message: &str, minimum_password_length: usize, verify: bool) -> String {
     let mut password;
     loop {
-        password = rpassword::prompt_password_stdout(message).unwrap();
+        password = rpassword::prompt_password(message).unwrap();
         if verify {
-            let verify_password = rpassword::prompt_password_stdout("Retype the same password: ").unwrap();
+            let verify_password = rpassword::prompt_password("Retype the same password: ").unwrap();
             if password != verify_password {
                 println!("Passwords do not match");
                 continue;
@@ -102,11 +117,13 @@ pub fn prompt_for_passwords(message: &str, minimum_password_length: usize, verif
         } else if password.chars().count() >= minimum_password_length {
             break;
         }
-        println!("Please insert a password with at least {} digits.", minimum_password_length);
+        println!(
+            "Please insert a password with at least {} digits.",
+            minimum_password_length
+        );
     }
     password
 }
-
 
 #[cfg(test)]
 mod tests {
