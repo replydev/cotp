@@ -1,23 +1,23 @@
 #![forbid(unsafe_code)]
-use std::io;
-use tui::backend::CrosstermBackend;
-use tui::Terminal;
 use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
 use interface::handler::handle_key_events;
-use otp::otp_helper;
 use interface::ui::Tui;
+use otp::otp_helper;
+use std::io;
+use tui::backend::CrosstermBackend;
+use tui::Terminal;
 use zeroize::Zeroize;
 
-mod utils;
+mod args;
 mod argument_functions;
 mod cryptography;
-mod importers;
-mod otp;
-mod interface;
 mod database_management;
-mod args;
 mod encrypted_database;
+mod importers;
+mod interface;
+mod otp;
+mod utils;
 //TODO Remove this in the next version
 
 fn init() -> Result<bool, String> {
@@ -27,16 +27,16 @@ fn init() -> Result<bool, String> {
                 let mut pw = cryptography::prompt_for_passwords("Choose a password: ", 8, true);
                 let result = match database_management::overwrite_database_json("[]", &pw) {
                     Ok(()) => Ok(true),
-                    Err(_e) => Err(String::from("An error occurred during database overwriting")),
+                    Err(_e) => Err(String::from(
+                        "An error occurred during database overwriting",
+                    )),
                 };
                 pw.zeroize();
                 return result;
             }
             Ok(false)
         }
-        Err(()) => {
-            Err(String::from("An error occurred during database creation"))
-        }
+        Err(()) => Err(String::from("An error occurred during database creation")),
     }
 }
 
@@ -54,9 +54,9 @@ fn main() -> AppResult<()> {
     }
     match args::args_parser() {
         // no args, show dashboard
-        true => match dashboard(){
-            Ok(()) =>std::process::exit(0),
-            Err(_) => std::process::exit(-2), 
+        true => match dashboard() {
+            Ok(()) => std::process::exit(0),
+            Err(_) => std::process::exit(-2),
         },
         // args parsed, can exit
         false => std::process::exit(0),

@@ -19,7 +19,8 @@ pub fn get_db_path() -> PathBuf {
 // Pushing an absolute path to a PathBuf replaces the entire PathBuf: https://doc.rust-lang.org/std/path/struct.PathBuf.html#method.push
 pub fn get_default_db_path() -> PathBuf {
     let result: Option<PathBuf> = {
-        #[cfg(not(debug_assertions))]{
+        #[cfg(not(debug_assertions))]
+        {
             home_dir()
         }
         #[cfg(debug_assertions)]
@@ -29,15 +30,15 @@ pub fn get_default_db_path() -> PathBuf {
         Some(home) => home,
         None => {
             let current_dir = PathBuf::from(".");
-            if let Some(str_dir) = current_dir.to_str(){
-                eprintln!("Cannot get home folder, using: {}",str_dir);
-            }
-            else{
+            if let Some(str_dir) = current_dir.to_str() {
+                eprintln!("Cannot get home folder, using: {}", str_dir);
+            } else {
                 eprintln!("Cannot get home folder, using");
             }
             current_dir
-        },
-    }.join(".cotp/db.cotp")
+        }
+    }
+    .join(".cotp/db.cotp")
 }
 
 pub fn create_db_if_needed() -> Result<bool, ()> {
@@ -53,7 +54,7 @@ pub fn create_db_if_needed() -> Result<bool, ()> {
         return match std::fs::File::create(db_path) {
             Ok(_f) => Ok(true),
             Err(_e) => Err(()),
-        }
+        };
     }
     Ok(false)
 }
@@ -69,7 +70,9 @@ pub fn write_to_file(content: &str, file: &mut File) -> Result<(), std::io::Erro
 
 pub fn check_elements(id: usize, elements: &[OTPElement]) -> Result<(), String> {
     if elements.is_empty() {
-        return Err(String::from("there are no elements in your database. Type \"cotp -h\" to get help."));
+        return Err(String::from(
+            "there are no elements in your database. Type \"cotp -h\" to get help.",
+        ));
     }
 
     if id >= elements.len() {

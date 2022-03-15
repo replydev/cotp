@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-pub struct EncryptedDatabase{
+pub struct EncryptedDatabase {
     version: u16,
     nonce: String,
     salt: String,

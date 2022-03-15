@@ -48,7 +48,7 @@ impl EventHandler {
                         CrosstermEvent::Mouse(e) => sender.send(Event::Mouse(e)),
                         CrosstermEvent::Resize(w, h) => sender.send(Event::Resize(w, h)),
                     }
-                        .expect("failed to send terminal event")
+                    .expect("failed to send terminal event")
                 }
 
                 if last_tick.elapsed() >= tick_rate {
@@ -58,9 +58,7 @@ impl EventHandler {
             }
         });
 
-        Self {
-            receiver,
-        }
+        Self { receiver }
     }
 
     /// Receive the next event from the handler thread.

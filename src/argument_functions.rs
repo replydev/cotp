@@ -1,38 +1,34 @@
 use std::path::PathBuf;
 
-use crate::{cryptography, database_management};
 use crate::cryptography::prompt_for_passwords;
 use crate::importers;
 use crate::otp::otp_helper;
+use crate::{cryptography, database_management};
 use clap::ArgMatches;
 use zeroize::Zeroize;
 
 pub fn import(matches: &ArgMatches) {
     let path = matches.value_of("path").unwrap();
 
-    let result = if matches.is_present("cotp") ||
-        matches.is_present("andotp") {
+    let result = if matches.is_present("cotp") || matches.is_present("andotp") {
         importers::and_otp::import(path)
-    }
-    else if matches.is_present("aegis") {
+    } else if matches.is_present("aegis") {
         importers::aegis::import(path)
-    }
-    else if matches.is_present("aegis-encrypted") {
-        let mut password = cryptography::prompt_for_passwords("Insert password for DB decryption: ", 0, false);
-        let result = importers::aegis_encrypted::import(path,password.as_str());
+    } else if matches.is_present("aegis-encrypted") {
+        let mut password =
+            cryptography::prompt_for_passwords("Insert password for DB decryption: ", 0, false);
+        let result = importers::aegis_encrypted::import(path, password.as_str());
         password.zeroize();
         result
-    }
-    else if matches.is_present("freeotp-plus") {
+    } else if matches.is_present("freeotp-plus") {
         importers::freeotp_plus::import(path)
-    }
-    else if matches.is_present("google-authenticator") ||
-        matches.is_present("authy") ||
-        matches.is_present("microsoft-authenticator") ||
-        matches.is_present("freeotp") {
+    } else if matches.is_present("google-authenticator")
+        || matches.is_present("authy")
+        || matches.is_present("microsoft-authenticator")
+        || matches.is_present("freeotp")
+    {
         importers::converted::import(path)
-    }
-    else {
+    } else {
         eprintln!("Invalid arguments provided");
         return;
     };
@@ -57,32 +53,34 @@ pub fn import(matches: &ArgMatches) {
     pw.zeroize();
 }
 
-pub fn add(matches: &ArgMatches) {   
+pub fn add(matches: &ArgMatches) {
     let mut secret = prompt_for_passwords("Insert the secret: ", 0, false);
     match database_management::add_element(
         secret.as_str(),
         // Safe to unwrap due to default values
         matches.value_of("issuer").unwrap(),
         matches.value_of("label").unwrap(),
-        matches.value_of("algorithm").unwrap(), 
+        matches.value_of("algorithm").unwrap(),
         matches.value_of_t("digits").unwrap_or(6),
         matches.value_of_t("counter").unwrap_or_default(),
         matches.is_present("hotp"),
-        ) {
+    ) {
         Ok(()) => println!("Success"),
-        Err(e) => eprintln!("An error occurred: {}", e)
+        Err(e) => eprintln!("An error occurred: {}", e),
     }
     secret.zeroize();
 }
 
 pub fn remove(matches: &ArgMatches) {
     match database_management::remove_element_from_db(
-        matches.values_of("index").unwrap()
-        .map(|s| s.parse::<usize>().unwrap())
-        .collect())
-     {
+        matches
+            .values_of("index")
+            .unwrap()
+            .map(|s| s.parse::<usize>().unwrap())
+            .collect(),
+    ) {
         Ok(()) => println!("Success"),
-        Err(e) => eprintln!("An error has occurred: {}", e)
+        Err(e) => eprintln!("An error has occurred: {}", e),
     }
 }
 
@@ -92,16 +90,16 @@ pub fn edit(matches: &ArgMatches) {
         false => String::from(""),
     };
     match database_management::edit_element(
-        matches.value_of_t_or_exit("index"), 
-        secret.as_str(), 
-        matches.value_of("issuer").unwrap_or(""), 
-        matches.value_of("label").unwrap_or(""), 
-        matches.value_of("algorithm").unwrap_or(""), 
-        matches.value_of_t("digits").unwrap_or(0), 
-        matches.value_of_t("counter").unwrap_or(0)
+        matches.value_of_t_or_exit("index"),
+        secret.as_str(),
+        matches.value_of("issuer").unwrap_or(""),
+        matches.value_of("label").unwrap_or(""),
+        matches.value_of("algorithm").unwrap_or(""),
+        matches.value_of_t("digits").unwrap_or(0),
+        matches.value_of_t("counter").unwrap_or(0),
     ) {
         Ok(()) => println!("Success"),
-        Err(e) => eprintln!("An error occurred: {}", e)
+        Err(e) => eprintln!("An error occurred: {}", e),
     }
     secret.zeroize();
 }
@@ -109,7 +107,10 @@ pub fn edit(matches: &ArgMatches) {
 pub fn export(matches: &ArgMatches) {
     match database_management::export_database(PathBuf::from(matches.value_of("path").unwrap())) {
         Ok(export_result) => {
-            println!("Database was successfully exported at {}", export_result.to_str().unwrap_or("**Invalid path**"));
+            println!(
+                "Database was successfully exported at {}",
+                export_result.to_str().unwrap_or("**Invalid path**")
+            );
         }
         Err(e) => {
             eprintln!("An error occurred while exporting database: {}", e);
@@ -125,7 +126,8 @@ pub fn info(matches: &ArgMatches) {
 }
 
 pub fn search(matches: &ArgMatches) {
-    match otp_helper::print_elements_matching(matches.value_of("issuer"), matches.value_of("label")) {
+    match otp_helper::print_elements_matching(matches.value_of("issuer"), matches.value_of("label"))
+    {
         Ok(()) => {}
         Err(e) => eprintln!("An error occurred: {}", e),
     }
@@ -153,7 +155,7 @@ pub fn change_password() {
 
 pub fn qrcode(p0: &ArgMatches) {
     let index: usize = p0.value_of_t_or_exit("index");
-    if let Err(e) =  database_management::show_qr_code(index) {
-        eprintln!("An error has occurred: {}",e);
+    if let Err(e) = database_management::show_qr_code(index) {
+        eprintln!("An error has occurred: {}", e);
     }
 }

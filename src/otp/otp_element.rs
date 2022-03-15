@@ -1,5 +1,5 @@
-use qrcode::QrCode;
 use qrcode::render::unicode;
+use qrcode::QrCode;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -20,7 +20,19 @@ pub struct OTPElement {
 }
 
 impl OTPElement {
-    pub fn new(secret: String, issuer: String, label: String, digits: u64, type_: String, algorithm: String, thumbnail: String, last_used: u64, used_frequency: u64, period: u64, counter: u64, tags: Vec<String>,
+    pub fn new(
+        secret: String,
+        issuer: String,
+        label: String,
+        digits: u64,
+        type_: String,
+        algorithm: String,
+        thumbnail: String,
+        last_used: u64,
+        used_frequency: u64,
+        period: u64,
+        counter: u64,
+        tags: Vec<String>,
     ) -> OTPElement {
         OTPElement {
             secret,
@@ -52,10 +64,10 @@ impl OTPElement {
     pub fn algorithm(&self) -> String {
         self.algorithm.to_string()
     }
-    pub fn type_(&self) -> String { 
-        self.type_.to_string() 
+    pub fn type_(&self) -> String {
+        self.type_.to_string()
     }
-    pub fn counter(&self) -> Option<u64> { 
+    pub fn counter(&self) -> Option<u64> {
         self.counter
     }
 
@@ -74,8 +86,8 @@ impl OTPElement {
     pub fn set_digits(&mut self, digits: u64) {
         self.digits = digits;
     }
-    pub fn set_counter(&mut self, counter: Option<u64>) { 
-        self.counter = counter; 
+    pub fn set_counter(&mut self, counter: Option<u64>) {
+        self.counter = counter;
     }
 
     pub fn get_otpauth_uri(&self) -> String {
@@ -107,7 +119,9 @@ impl OTPElement {
     }
 
     pub fn get_qrcode(&self) -> String {
-        QrCode::new(&self.get_otpauth_uri()).unwrap().render::<unicode::Dense1x2>()
+        QrCode::new(&self.get_otpauth_uri())
+            .unwrap()
+            .render::<unicode::Dense1x2>()
             .dark_color(unicode::Dense1x2::Light)
             .light_color(unicode::Dense1x2::Dark)
             .build()
@@ -119,10 +133,11 @@ mod test {
     use crate::otp::otp_element::OTPElement;
 
     #[test]
-    fn test_otpauth_uri(){
+    fn test_otpauth_uri() {
         let otp_element = OTPElement::new(
             String::from("xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g"),
-            String::from("IssuerText"), String::from("LabelText"),
+            String::from("IssuerText"),
+            String::from("LabelText"),
             6,
             String::from("TOTP"),
             String::from("SHA1"),
@@ -131,7 +146,7 @@ mod test {
             0,
             30,
             0,
-            vec![]
+            vec![],
         );
         assert_eq!(otp_element.get_otpauth_uri().as_str(), "otpauth://totp/IssuerText:LabelText?secret=xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g&algorithm=SHA1&digits=6&period=30&lock=false");
     }

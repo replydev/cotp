@@ -1,7 +1,7 @@
-use crate::{cryptography, database_management};
 use crate::otp::otp_element::OTPElement;
 use crate::otp::otp_maker::{hotp, totp};
 use crate::utils::{check_elements, millis_before_next_step};
+use crate::{cryptography, database_management};
 use copypasta_ext::prelude::ClipboardProvider;
 use copypasta_ext::x11_fork::ClipboardContext;
 use zeroize::Zeroize;
@@ -16,16 +16,25 @@ pub fn read_codes() -> Result<Vec<OTPElement>, String> {
     result
 }
 
-pub fn get_otp_code(element: &OTPElement) -> Result<String,String> {
+pub fn get_otp_code(element: &OTPElement) -> Result<String, String> {
     match element.type_().to_uppercase().as_str() {
-        "TOTP" => totp(&element.secret(), &element.algorithm().to_uppercase(), element.digits() as u32),
-        "HOTP" => {
-            match element.counter() {
-                Some(counter) => hotp(&element.secret(), &element.algorithm().to_uppercase(), element.digits() as u32, counter),
-                None => Err(String::from("The element is an HOTP code but the is no counter value.")),
-            }
+        "TOTP" => totp(
+            &element.secret(),
+            &element.algorithm().to_uppercase(),
+            element.digits() as u32,
+        ),
+        "HOTP" => match element.counter() {
+            Some(counter) => hotp(
+                &element.secret(),
+                &element.algorithm().to_uppercase(),
+                element.digits() as u32,
+                counter,
+            ),
+            None => Err(String::from(
+                "The element is an HOTP code but the is no counter value.",
+            )),
         },
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 }
 
@@ -37,36 +46,40 @@ pub fn print_elements_matching(issuer: Option<&str>, label: Option<&str>) -> Res
     };
     pw.zeroize();
 
-    elements.iter().filter(|element| {
-        (if let Some(i) = issuer {
-            i.to_lowercase() == element.issuer().to_lowercase()
-        }
-        else {
-            true
-        }) && 
-        (if let Some(l) = label {
-            l.to_lowercase() == element.label().to_lowercase()
-        }
-        else {
-            true
+    elements
+        .iter()
+        .filter(|element| {
+            (if let Some(i) = issuer {
+                i.to_lowercase() == element.issuer().to_lowercase()
+            } else {
+                true
+            }) && (if let Some(l) = label {
+                l.to_lowercase() == element.label().to_lowercase()
+            } else {
+                true
+            })
         })
-    }).for_each(|element| {
-        let otp_code = match get_otp_code(element) {
-            Ok(code) => code,
-            Err(e) => e,
-        };
-        println!();
-        println!("Issuer: {}", element.issuer());
-        println!("Label: {}", element.label());
-        println!("OTP Code: {} ({} seconds remaining)", otp_code, millis_before_next_step()/1000);
-        if let Ok(mut ctx) = ClipboardContext::new(){
-            match ctx.set_contents(otp_code) {
-                Ok(_) => println!("Copied to clipboard"),
-                Err(_) => println!("Cannot copy OTP Code to clipboard"),
+        .for_each(|element| {
+            let otp_code = match get_otp_code(element) {
+                Ok(code) => code,
+                Err(e) => e,
             };
-        }
-        println!();
-    });
+            println!();
+            println!("Issuer: {}", element.issuer());
+            println!("Label: {}", element.label());
+            println!(
+                "OTP Code: {} ({} seconds remaining)",
+                otp_code,
+                millis_before_next_step() / 1000
+            );
+            if let Ok(mut ctx) = ClipboardContext::new() {
+                match ctx.set_contents(otp_code) {
+                    Ok(_) => println!("Copied to clipboard"),
+                    Err(_) => println!("Cannot copy OTP Code to clipboard"),
+                };
+            }
+            println!();
+        });
     Ok(())
 }
 
@@ -95,7 +108,7 @@ pub fn print_element_info(mut index: usize) -> Result<(), String> {
     println!("Issuer: {}", chosen_element.issuer());
     println!("Label: {}", chosen_element.label());
     println!("Algorithm: {}", chosen_element.algorithm());
-    println!("Type: {}",chosen_element.type_());
+    println!("Type: {}", chosen_element.type_());
     println!("Digits: {}", chosen_element.digits());
     Ok(())
 }

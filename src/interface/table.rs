@@ -14,7 +14,7 @@ impl StatefulTable {
             state: TableState::default(),
             items: vec![],
         };
-        fill_table(&mut table,elements);
+        fill_table(&mut table, elements);
         table
     }
     pub fn next(&mut self) {
@@ -49,14 +49,17 @@ impl StatefulTable {
 pub fn fill_table(table: &mut StatefulTable, elements: &[OTPElement]) {
     for (i, element) in elements.iter().enumerate() {
         let label = match element.type_().as_str() {
-            "HOTP" => {
-                match element.counter() {
-                    Some(result) => element.label() + (format!(" ({} counter)",result).as_str()),
-                    None => element.label(),
-                }
+            "HOTP" => match element.counter() {
+                Some(result) => element.label() + (format!(" ({} counter)", result).as_str()),
+                None => element.label(),
             },
             _ => element.label(),
         };
-        table.items.push(vec![(i + 1).to_string(), element.issuer(), label , get_otp_code(element).unwrap()]);
+        table.items.push(vec![
+            (i + 1).to_string(),
+            element.issuer(),
+            label,
+            get_otp_code(element).unwrap(),
+        ]);
     }
 }

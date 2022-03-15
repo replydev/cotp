@@ -7,11 +7,12 @@ use crate::otp::otp_element::OTPElement;
 pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
     let file_to_import_contents = match read_to_string(filepath) {
         Ok(result) => result,
-        Err(e) => return Err(format!("Error during file reading: {:?}",e)),
+        Err(e) => return Err(format!("Error during file reading: {:?}", e)),
     };
-    let result: Result<Vec<OTPElement>, serde_json::Error> = serde_json::from_str(&file_to_import_contents);
+    let result: Result<Vec<OTPElement>, serde_json::Error> =
+        serde_json::from_str(&file_to_import_contents);
     return match result {
         Ok(element) => Ok(element),
-        Err(e) => Err(format!("Failed to serialize file: {}", e))
+        Err(e) => Err(format!("Failed to serialize file: {}", e)),
     };
 }

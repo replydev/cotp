@@ -1,9 +1,9 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::interface::app::{App, AppResult};
+use crate::interface::page::Page::{InfoPage, MainPage, QrcodePage};
 use copypasta_ext::prelude::*;
 use copypasta_ext::x11_fork::ClipboardContext;
-use crate::interface::page::Page::{InfoPage, MainPage, QrcodePage};
 
 /// Handles the key events and updates the state of [`App`].
 pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
@@ -38,7 +38,7 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
 
         KeyCode::Char('+') => {
             app.current_page = MainPage;
-            handle_counter_switch(app,true);
+            handle_counter_switch(app, true);
         }
 
         KeyCode::Char('-') => {
@@ -49,8 +49,7 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
         KeyCode::Char('k') | KeyCode::Char('K') => {
             if app.current_page == QrcodePage {
                 app.current_page = MainPage
-            }
-            else {
+            } else {
                 app.current_page = QrcodePage;
             }
         }
@@ -58,18 +57,17 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
         KeyCode::Char('i') | KeyCode::Char('I') => {
             if app.current_page == InfoPage {
                 app.current_page = MainPage
-            }
-            else {
+            } else {
                 app.current_page = InfoPage;
             }
         }
 
         KeyCode::Enter => {
-            if let Some(selected) = app.table.state.selected(){
-                if let Some(element) = app.table.items.get(selected){
-                    if let Some(otp_code) = element.get(3){
+            if let Some(selected) = app.table.state.selected() {
+                if let Some(element) = app.table.items.get(selected) {
+                    if let Some(otp_code) = element.get(3) {
                         // in some occasions we can't copy contents to clipboard, so let's check for a good result
-                        if let Ok(mut ctx) = ClipboardContext::new(){
+                        if let Ok(mut ctx) = ClipboardContext::new() {
                             match ctx.set_contents(otp_code.to_owned()) {
                                 Ok(_) => app.label_text = String::from("Copied!"),
                                 Err(_) => app.label_text = String::from("Cannot copy"),
@@ -92,14 +90,11 @@ fn handle_counter_switch(app: &mut App, increment: bool) {
             if element.type_().to_uppercase() == "HOTP" {
                 // safe to unwrap becouse the element type is HOTP
                 let counter = element.counter().unwrap();
-                element.set_counter(
-                    if increment {
-                        Some(counter.checked_add(1).unwrap_or(u64::MAX))
-                    }
-                    else {
-                        Some(counter.saturating_sub(1))
-                    }
-                );
+                element.set_counter(if increment {
+                    Some(counter.checked_add(1).unwrap_or(u64::MAX))
+                } else {
+                    Some(counter.saturating_sub(1))
+                });
                 app.tick(true);
             }
         }

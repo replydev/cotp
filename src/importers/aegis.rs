@@ -15,7 +15,7 @@ struct AegisJson {
 #[derive(Deserialize)]
 struct AegisHeader {
     //slots: Option<String>,
-    //params: Option<String>,
+//params: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -45,9 +45,9 @@ struct AegisInfo {
 }
 
 pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
-    let file_to_import_contents = match read_to_string(filepath){
+    let file_to_import_contents = match read_to_string(filepath) {
         Ok(result) => result,
-        Err(e) => return Err(format!("Error during file reading: {:?}",e)),
+        Err(e) => return Err(format!("Error during file reading: {:?}", e)),
     };
     import_from_string(file_to_import_contents.as_str())
 }
@@ -58,15 +58,15 @@ pub fn import_from_string(file_to_import_contents: &str) -> Result<Vec<OTPElemen
         Err(_) => {
             let aegis_db: AegisDb = match serde_json::from_str(file_to_import_contents) {
                 Ok(element) => element,
-                Err(e) => return Err(format!("{:?}",e)),
+                Err(e) => return Err(format!("{:?}", e)),
             };
             // maybe we are importing from an encrypted aegis database, so we don
             Ok(do_import(aegis_db.entries))
-        },
+        }
     }
 }
 
-fn do_import(entries: Vec<AegisElement>) -> Vec<OTPElement>{
+fn do_import(entries: Vec<AegisElement>) -> Vec<OTPElement> {
     let mut elements: Vec<OTPElement> = Vec::with_capacity(entries.len());
 
     for element in entries {
@@ -82,7 +82,8 @@ fn do_import(entries: Vec<AegisElement>) -> Vec<OTPElement>{
             0,
             element.info.period.unwrap_or_default(),
             element.info.counter.unwrap_or_default(),
-            vec![]));
+            vec![],
+        ));
     }
     elements
 }
