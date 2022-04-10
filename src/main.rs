@@ -18,7 +18,6 @@ mod importers;
 mod interface;
 mod otp;
 mod utils;
-//TODO Remove this in the next version
 
 fn init() -> Result<bool, String> {
     match utils::create_db_if_needed() {
