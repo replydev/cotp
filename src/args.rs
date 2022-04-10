@@ -177,6 +177,7 @@ fn get_matches() -> ArgMatches {
                             "freeotp",
                             "google-authenticator",
                             "authy",
+                            "authy-exported",
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ])
@@ -187,6 +188,7 @@ fn get_matches() -> ArgMatches {
                             "freeotp",
                             "google-authenticator",
                             "authy",
+                            "authy-exported",
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ]),
@@ -204,6 +206,7 @@ fn get_matches() -> ArgMatches {
                             "freeotp",
                             "google-authenticator",
                             "authy",
+                            "authy-exported",
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ])
@@ -214,6 +217,7 @@ fn get_matches() -> ArgMatches {
                             "freeotp",
                             "google-authenticator",
                             "authy",
+                            "authy-exported",
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ]),
@@ -231,6 +235,7 @@ fn get_matches() -> ArgMatches {
                             "freeotp",
                             "google-authenticator",
                             "authy",
+                            "authy-exported",
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ])
@@ -241,6 +246,7 @@ fn get_matches() -> ArgMatches {
                             "freeotp",
                             "google-authenticator",
                             "authy",
+                            "authy-exported",
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ]),
@@ -258,6 +264,7 @@ fn get_matches() -> ArgMatches {
                             "freeotp",
                             "google-authenticator",
                             "authy",
+                            "authy-exported",
                             "microsoft-authenticator",
                             "aegis",
                         ])
@@ -268,6 +275,7 @@ fn get_matches() -> ArgMatches {
                             "freeotp",
                             "google-authenticator",
                             "authy",
+                            "authy-exported",
                             "microsoft-authenticator",
                             "aegis",
                         ]),
@@ -285,6 +293,7 @@ fn get_matches() -> ArgMatches {
                             "freeotp",
                             "google-authenticator",
                             "authy",
+                            "authy-exported",
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ])
@@ -295,6 +304,7 @@ fn get_matches() -> ArgMatches {
                             "freeotp",
                             "google-authenticator",
                             "authy",
+                            "authy-exported",
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ]),
@@ -312,6 +322,7 @@ fn get_matches() -> ArgMatches {
                             "cotp",
                             "google-authenticator",
                             "authy",
+                            "authy-exported",
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ])
@@ -322,6 +333,7 @@ fn get_matches() -> ArgMatches {
                             "cotp",
                             "google-authenticator",
                             "authy",
+                            "authy-exported",
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ]),
@@ -339,6 +351,7 @@ fn get_matches() -> ArgMatches {
                             "freeotp",
                             "cotp",
                             "authy",
+                            "authy-exported",
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ])
@@ -349,6 +362,7 @@ fn get_matches() -> ArgMatches {
                             "freeotp",
                             "cotp",
                             "authy",
+                            "authy-exported",
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ]),
@@ -366,6 +380,7 @@ fn get_matches() -> ArgMatches {
                             "freeotp",
                             "google-authenticator",
                             "cotp",
+                            "authy-exported",
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ])
@@ -376,6 +391,7 @@ fn get_matches() -> ArgMatches {
                             "freeotp",
                             "google-authenticator",
                             "cotp",
+                            "authy-exported",
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ]),
@@ -393,6 +409,7 @@ fn get_matches() -> ArgMatches {
                             "freeotp",
                             "google-authenticator",
                             "authy",
+                            "authy-exported",
                             "cotp",
                             "aegis-encrypted",
                         ])
@@ -403,6 +420,36 @@ fn get_matches() -> ArgMatches {
                             "freeotp",
                             "google-authenticator",
                             "authy",
+                            "authy-exported",
+                            "cotp",
+                            "aegis-encrypted",
+                        ]),
+                )
+                .arg(
+                    Arg::new("authy-exported")
+                        .short('u')
+                        .long("authy-exported")
+                        .help("Import from Authy Database exported following https://gist.github.com/gboudreau/94bb0c11a6209c82418d01a59d958c93")
+                        .takes_value(false)
+                        .required_unless_present_any(&[
+                            "andotp",
+                            "aegis",
+                            "freeotp-plus",
+                            "freeotp",
+                            "google-authenticator",
+                            "authy",
+                            "microsoft-authenticator",
+                            "cotp",
+                            "aegis-encrypted",
+                        ])
+                        .conflicts_with_all(&[
+                            "andotp",
+                            "aegis",
+                            "freeotp-plus",
+                            "freeotp",
+                            "google-authenticator",
+                            "authy",
+                            "microsoft-authenticator",
                             "cotp",
                             "aegis-encrypted",
                         ]),

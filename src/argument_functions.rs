@@ -22,6 +22,8 @@ pub fn import(matches: &ArgMatches) {
         result
     } else if matches.is_present("freeotp-plus") {
         importers::freeotp_plus::import(path)
+    } else if matches.is_present("authy-exported") {
+        importers::authy_remote_debug::import(path)
     } else if matches.is_present("google-authenticator")
         || matches.is_present("authy")
         || matches.is_present("microsoft-authenticator")
