@@ -1,7 +1,7 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::interface::app::{App, AppResult};
-use crate::interface::page::Page::{InfoPage, MainPage, QrcodePage};
+use crate::interface::page::Page::{Info, Main, Qrcode};
 use copypasta_ext::prelude::*;
 use copypasta_ext::x11_fork::ClipboardContext;
 
@@ -26,39 +26,39 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
         // Move into the table
         KeyCode::Up => {
             app.print_percentage = true;
-            app.current_page = MainPage;
+            app.current_page = Main;
             app.table.previous();
         }
 
         KeyCode::Down => {
             app.print_percentage = true;
-            app.current_page = MainPage;
+            app.current_page = Main;
             app.table.next();
         }
 
         KeyCode::Char('+') => {
-            app.current_page = MainPage;
+            app.current_page = Main;
             handle_counter_switch(app, true);
         }
 
         KeyCode::Char('-') => {
-            app.current_page = MainPage;
+            app.current_page = Main;
             handle_counter_switch(app, false);
         }
 
         KeyCode::Char('k') | KeyCode::Char('K') => {
-            if app.current_page == QrcodePage {
-                app.current_page = MainPage
+            if app.current_page == Qrcode {
+                app.current_page = Main
             } else {
-                app.current_page = QrcodePage;
+                app.current_page = Qrcode;
             }
         }
 
         KeyCode::Char('i') | KeyCode::Char('I') => {
-            if app.current_page == InfoPage {
-                app.current_page = MainPage
+            if app.current_page == Info {
+                app.current_page = Main
             } else {
-                app.current_page = InfoPage;
+                app.current_page = Info;
             }
         }
 
@@ -73,7 +73,7 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
                                 Err(_) => app.label_text = String::from("Cannot copy"),
                             }
                             app.print_percentage = false;
-                            app.current_page = MainPage;
+                            app.current_page = Main;
                         }
                     }
                 }

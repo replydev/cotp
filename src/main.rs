@@ -23,7 +23,7 @@ fn init() -> Result<bool, String> {
     match utils::create_db_if_needed() {
         Ok(value) => {
             if value {
-                let mut pw = cryptography::prompt_for_passwords("Choose a password: ", 8, true);
+                let mut pw = utils::prompt_for_passwords("Choose a password: ", 8, true);
                 let result = match database_management::overwrite_database_json("[]", &pw) {
                     Ok(()) => Ok(true),
                     Err(_e) => Err(String::from(

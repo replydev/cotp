@@ -67,12 +67,12 @@ pub fn add_element(
     counter: u64,
     hotp_type: bool,
 ) -> Result<(), String> {
-    let upper_secret = secret.to_uppercase().replace("=", "");
+    let upper_secret = secret.to_uppercase().replace('=', "");
     match check_secret(&upper_secret) {
         Ok(()) => {}
         Err(error) => return Err(error.to_string()),
     }
-    let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
+    let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
     let type_ = if hotp_type { "HOTP" } else { "TOTP" };
     let otp_element = OTPElement::new(
         upper_secret,
@@ -88,11 +88,10 @@ pub fn add_element(
         counter,
         vec![],
     );
-    let mut elements;
-    match read_from_file(&pw) {
-        Ok(result) => elements = result,
+    let mut elements = match read_from_file(&pw) {
+        Ok(result) => result,
         Err(e) => return Err(e),
-    }
+    };
     elements.push(otp_element);
     let result = match overwrite_database(&elements, &pw) {
         Ok(()) => Ok(()),
@@ -107,7 +106,7 @@ pub fn remove_element_from_db(indexes: Vec<usize>) -> Result<(), String> {
         return Err(String::from("Bad args"));
     }
 
-    let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
+    let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
     let mut elements: Vec<OTPElement> = match read_from_file(&pw) {
         Ok(result) => result,
         Err(e) => {
@@ -161,7 +160,7 @@ pub fn edit_element(
     }
     id -= 1;
 
-    let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
+    let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
     let mut elements: Vec<OTPElement> = match read_from_file(&pw) {
         Ok(result) => result,
         Err(_e) => return Err(String::from("Cannot decrypt existing database")),
@@ -209,7 +208,7 @@ pub fn export_database(path: PathBuf) -> Result<PathBuf, String> {
         Ok(result) => result,
         Err(e) => return Err(format!("Error during file reading: {:?}", e)),
     };
-    let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
+    let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
     let contents = cryptography::decrypt_string(&encrypted_contents, &pw);
     pw.zeroize();
     return match contents {
@@ -231,7 +230,7 @@ pub fn export_database(path: PathBuf) -> Result<PathBuf, String> {
 }
 
 pub fn show_qr_code(index: usize) -> Result<(), String> {
-    let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
+    let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
     let elements: Vec<OTPElement> = match read_from_file(&pw) {
         Ok(result) => result,
         Err(_e) => return Err(String::from("Cannot decrypt existing database")),

@@ -1,13 +1,13 @@
+use crate::database_management;
 use crate::otp::otp_element::OTPElement;
 use crate::otp::otp_maker::{hotp, totp};
-use crate::utils::{check_elements, millis_before_next_step};
-use crate::{cryptography, database_management};
+use crate::utils::{self, check_elements, millis_before_next_step};
 use copypasta_ext::prelude::ClipboardProvider;
 use copypasta_ext::x11_fork::ClipboardContext;
 use zeroize::Zeroize;
 
 pub fn read_codes() -> Result<Vec<OTPElement>, String> {
-    let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
+    let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
     let result = match database_management::read_from_file(&pw) {
         Ok(result) => Ok(result),
         Err(e) => Err(e),
@@ -39,7 +39,7 @@ pub fn get_otp_code(element: &OTPElement) -> Result<String, String> {
 }
 
 pub fn print_elements_matching(issuer: Option<&str>, label: Option<&str>) -> Result<(), String> {
-    let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
+    let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
     let elements = match database_management::read_from_file(&pw) {
         Ok(result) => result,
         Err(e) => return Err(e),
@@ -89,7 +89,7 @@ pub fn print_element_info(mut index: usize) -> Result<(), String> {
     }
     index -= 1;
 
-    let mut pw = cryptography::prompt_for_passwords("Password: ", 8, false);
+    let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
     let elements = match database_management::read_from_file(&pw) {
         Ok(result) => result,
         Err(e) => return Err(e),

@@ -1,9 +1,8 @@
 use std::path::PathBuf;
 
-use crate::cryptography::prompt_for_passwords;
-use crate::importers;
+use crate::database_management;
 use crate::otp::otp_helper;
-use crate::{cryptography, database_management};
+use crate::{importers, utils};
 use clap::ArgMatches;
 use zeroize::Zeroize;
 
@@ -16,7 +15,7 @@ pub fn import(matches: &ArgMatches) {
         importers::aegis::import(path)
     } else if matches.is_present("aegis-encrypted") {
         let mut password =
-            cryptography::prompt_for_passwords("Insert password for DB decryption: ", 0, false);
+            utils::prompt_for_passwords("Insert password for DB decryption: ", 0, false);
         let result = importers::aegis_encrypted::import(path, password.as_str());
         password.zeroize();
         result
@@ -43,7 +42,7 @@ pub fn import(matches: &ArgMatches) {
         }
     };
 
-    let mut pw = cryptography::prompt_for_passwords("Choose a password: ", 8, true);
+    let mut pw = utils::prompt_for_passwords("Choose a password: ", 8, true);
     match database_management::overwrite_database(&elements, &pw) {
         Ok(()) => {
             println!("Successfully imported database");
@@ -56,7 +55,7 @@ pub fn import(matches: &ArgMatches) {
 }
 
 pub fn add(matches: &ArgMatches) {
-    let mut secret = prompt_for_passwords("Insert the secret: ", 0, false);
+    let mut secret = utils::prompt_for_passwords("Insert the secret: ", 0, false);
     match database_management::add_element(
         secret.as_str(),
         // Safe to unwrap due to default values
@@ -88,7 +87,7 @@ pub fn remove(matches: &ArgMatches) {
 
 pub fn edit(matches: &ArgMatches) {
     let mut secret = match matches.is_present("change-secret") {
-        true => prompt_for_passwords("Insert the secret (type ENTER to skip): ", 0, false),
+        true => utils::prompt_for_passwords("Insert the secret (type ENTER to skip): ", 0, false),
         false => String::from(""),
     };
     match database_management::edit_element(
@@ -136,12 +135,12 @@ pub fn search(matches: &ArgMatches) {
 }
 
 pub fn change_password() {
-    let mut old_password = cryptography::prompt_for_passwords("Old password: ", 8, false);
+    let mut old_password = utils::prompt_for_passwords("Old password: ", 8, false);
     let decrypted_text = database_management::read_decrypted_text(&old_password);
     old_password.zeroize();
     match decrypted_text {
         Ok(mut s) => {
-            let mut new_password = cryptography::prompt_for_passwords("New password: ", 8, true);
+            let mut new_password = utils::prompt_for_passwords("New password: ", 8, true);
             match database_management::overwrite_database_json(&s, &new_password) {
                 Ok(()) => println!("Password changed"),
                 Err(e) => eprintln!("An error has occurred: {}", e),

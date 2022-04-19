@@ -93,6 +93,28 @@ pub fn percentage() -> u16 {
     (millis_before_next_step() * 100 / 30000) as u16
 }
 
+pub fn prompt_for_passwords(message: &str, minimum_password_length: usize, verify: bool) -> String {
+    let mut password;
+    loop {
+        password = rpassword::prompt_password(message).unwrap();
+        if verify {
+            let verify_password = rpassword::prompt_password("Retype the same password: ").unwrap();
+            if password != verify_password {
+                println!("Passwords do not match");
+                continue;
+            }
+        }
+        if password.chars().count() >= minimum_password_length {
+            break;
+        }
+        println!(
+            "Please insert a password with at least {} digits.",
+            minimum_password_length
+        );
+    }
+    password
+}
+
 #[cfg(test)]
 mod tests {
     use super::create_db_if_needed;

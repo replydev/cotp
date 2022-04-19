@@ -1,7 +1,7 @@
 use std::error;
 
 use crate::interface::page::Page;
-use crate::interface::page::Page::{InfoPage, MainPage, QrcodePage};
+use crate::interface::page::Page::{Info, Main, Qrcode};
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
@@ -43,7 +43,7 @@ impl App {
             progress: percentage(),
             label_text: String::from(""),
             print_percentage: true,
-            current_page: MainPage,
+            current_page: Main,
         }
     }
 
@@ -63,9 +63,9 @@ impl App {
     /// Renders the user interface widgets.
     pub fn render<B: Backend>(&mut self, frame: &mut Frame<'_, B>) {
         match &self.current_page {
-            MainPage => self.render_table(frame),
-            QrcodePage => self.render_qrcode_page(frame),
-            InfoPage => self.render_info_page(frame),
+            Main => self.render_table(frame),
+            Qrcode => self.render_qrcode_page(frame),
+            Info => self.render_info_page(frame),
         }
     }
 

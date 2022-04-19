@@ -21,20 +21,20 @@ struct AuthyExportedJsonElement {
 impl AuthyExportedJsonElement {
     pub fn get_type(&self) -> String {
         let default_value = "totp";
-        let args: Vec<&str> = self.uri.split("/").collect();
+        let args: Vec<&str> = self.uri.split('/').collect();
         String::from(*args.get(2).unwrap_or(&default_value))
     }
 
     pub fn get_digits(&self) -> u64 {
         let default_value = 6;
-        let args: Vec<&str> = self.uri.split("/").collect();
+        let args: Vec<&str> = self.uri.split('/').collect();
         match args.get(3) {
             Some(s) => {
-                let args: Vec<&str> = s.split("?").collect();
+                let args: Vec<&str> = s.split('?').collect();
                 match args.get(1) {
                     Some(s) => {
                         let args: Vec<&str> =
-                            s.split("&").filter(|s| s.starts_with("digits=")).collect();
+                            s.split('&').filter(|s| s.starts_with("digits=")).collect();
                         match args.get(0) {
                             Some(s) => s.parse::<u64>().unwrap_or(default_value),
                             None => default_value,
@@ -49,16 +49,13 @@ impl AuthyExportedJsonElement {
 
     pub fn get_issuer(&self) -> String {
         let default_value = "";
-        let args: Vec<&str> = self.uri.split("/").collect();
+        let args: Vec<&str> = self.uri.split('/').collect();
         match args.get(3) {
             Some(s) => {
-                let args: Vec<&str> = s.split("?").collect();
+                let args: Vec<&str> = s.split('?').collect();
                 let issuer = args.get(0).unwrap_or(&default_value);
-                match urlencoding::decode(&issuer) {
-                    Ok(r) => {
-                        let result = r.into_owned();
-                        result
-                    }
+                match urlencoding::decode(issuer) {
+                    Ok(r) => r.into_owned(),
                     Err(_e) => issuer.to_string(),
                 }
             }
@@ -80,10 +77,10 @@ pub fn import(file_path: &str) -> Result<Vec<OTPElement>, String> {
     Ok(elements
         .into_iter()
         .map(|e| {
-            let type_ = e.get_type().to_string();
+            let type_ = e.get_type();
             let digits = e.get_digits();
             OTPElement::new(
-                e.secret.to_uppercase().replace("=", ""),
+                e.secret.to_uppercase().replace('=', ""),
                 e.get_issuer(),
                 e.name,
                 digits,

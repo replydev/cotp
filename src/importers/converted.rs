@@ -24,12 +24,10 @@ pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
     };
     let result: Result<Vec<ConvertedJson>, serde_json::Error> =
         serde_json::from_str(&file_to_import_contents);
-    let vector: Vec<ConvertedJson>;
-
-    match result {
-        Ok(r) => vector = r,
+    let vector: Vec<ConvertedJson> = match result {
+        Ok(r) => r,
         Err(e) => return Err(format!("{}", e)),
-    }
+    };
 
     let mut elements: Vec<OTPElement> = Vec::new();
 

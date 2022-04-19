@@ -101,30 +101,6 @@ pub fn decrypt_string(encrypted_text: &str, password: &str) -> Result<String, St
     }
 }
 
-pub fn prompt_for_passwords(message: &str, minimum_password_length: usize, verify: bool) -> String {
-    let mut password;
-    loop {
-        password = rpassword::prompt_password(message).unwrap();
-        if verify {
-            let verify_password = rpassword::prompt_password("Retype the same password: ").unwrap();
-            if password != verify_password {
-                println!("Passwords do not match");
-                continue;
-            }
-            if password.chars().count() >= minimum_password_length {
-                break;
-            }
-        } else if password.chars().count() >= minimum_password_length {
-            break;
-        }
-        println!(
-            "Please insert a password with at least {} digits.",
-            minimum_password_length
-        );
-    }
-    password
-}
-
 #[cfg(test)]
 mod tests {
     use super::{decrypt_string, encrypt_string};
