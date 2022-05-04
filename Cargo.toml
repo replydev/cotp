@@ -19,16 +19,16 @@ lto = true
 codegen-units = 1
 
 [dependencies]
-serde_json = "1.0.79"
+serde_json = "1.0.81"
 serde = { version = "1.0.137", features = ["derive"] }
 dirs = "4.0.0"
 rpassword = "6.0.1"
 data-encoding = "2.3.2"
 crossterm = "0.23.2"
-tui = "0.17.0"
+tui = "0.18.0"
 copypasta-ext = "0.3.7"
 zeroize = "1.4.3"
-clap = "3.1.12"
+clap = "3.1.15"
 hmac = "0.12.1"
 sha-1 = "0.10.0"
 sha2 = "0.10.2"
