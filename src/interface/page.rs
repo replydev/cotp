@@ -3,4 +3,5 @@ pub enum Page {
     Main,
     Qrcode,
     Info,
+    Search,
 }

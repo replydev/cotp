@@ -27,6 +27,7 @@ pub struct App {
     pub(crate) label_text: String,
     pub(crate) print_percentage: bool,
     pub(crate) current_page: Page,
+    pub(crate) search_query: String,
 }
 
 impl App {
@@ -44,6 +45,7 @@ impl App {
             label_text: String::from(""),
             print_percentage: true,
             current_page: Main,
+            search_query: String::from(""),
         }
     }
 
@@ -66,12 +68,23 @@ impl App {
             Main => self.render_table(frame),
             Qrcode => self.render_qrcode_page(frame),
             Info => self.render_info_page(frame),
+            Search => self.render_search_page(frame),
         }
+    }
+
+    fn render_search_page<B: Backend>(&self, frame: &mut Frame<'_, B>) {
+        let search_title = "Search a code...";
+        let paragraph = Paragraph::new(&*self.search_query)
+            .block(Block::default().title(search_title).borders(Borders::ALL))
+            .style(Style::default().fg(Color::White).bg(Color::Black))
+            .alignment(Alignment::Center)
+            .wrap(Wrap { trim: true });
+        self.render_paragraph(frame, paragraph);
     }
 
     fn render_info_page<B: Backend>(&self, frame: &mut Frame<'_, B>) {
         let text = "Press:\n+ -> Increment the HOTP counter\n- -> Decrement the HOTP counter\n
-        k -> Show QRCode of the selected element\nEnter -> Copy the OTP Code to the clipboard\nq, CTRL-D, Esc -> Exit the application";
+        k -> Show QRCode of the selected element\nEnter -> Copy the OTP Code to the clipboard\nCTRL-F -> Search codes\nq, CTRL-D, Esc -> Exit the application";
         let paragraph = Paragraph::new(text)
             .block(
                 Block::default()

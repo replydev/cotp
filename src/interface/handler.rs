@@ -1,12 +1,44 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::interface::app::{App, AppResult};
-use crate::interface::page::Page::{Info, Main, Qrcode};
+use crate::interface::page::Page::*;
 use copypasta_ext::prelude::*;
 use copypasta_ext::x11_fork::ClipboardContext;
 
+use super::page::Page;
+
 /// Handles the key events and updates the state of [`App`].
 pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
+    if app.current_page != Search {
+        handle_key_events_main(key_event, app);
+    } else {
+        match key_event.code {
+            KeyCode::Char(c) => {
+                if key_event.modifiers == KeyModifiers::CONTROL && c == 'f' {
+                    app.current_page = Main;
+                } else {
+                    app.search_query.push(c);
+                }
+            }
+            KeyCode::Enter => {
+                app.current_page = Main;
+                search_and_select(app);
+                app.search_query.clear();
+            }
+            KeyCode::Esc => {
+                app.current_page = Main;
+            }
+            KeyCode::Backspace => {
+                app.search_query.pop();
+            }
+            _ => {}
+        }
+    }
+
+    Ok(())
+}
+
+fn handle_key_events_main(key_event: KeyEvent, app: &mut App) {
     match key_event.code {
         // exit application on ESC
         KeyCode::Esc => {
@@ -20,7 +52,9 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
         }
         // exit application on Q
         KeyCode::Char('q') | KeyCode::Char('Q') => {
-            app.running = false;
+            if app.current_page != Search {
+                app.running = false;
+            }
         }
 
         // Move into the table
@@ -46,21 +80,17 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
             handle_counter_switch(app, false);
         }
 
-        KeyCode::Char('k') | KeyCode::Char('K') => {
-            if app.current_page == Qrcode {
-                app.current_page = Main
-            } else {
-                app.current_page = Qrcode;
+        KeyCode::Char('k') | KeyCode::Char('K') => handle_switch_page(app, Qrcode),
+
+        KeyCode::Char('i') | KeyCode::Char('I') => handle_switch_page(app, Info),
+
+        KeyCode::Char('f') | KeyCode::Char('F') => {
+            if key_event.modifiers == KeyModifiers::CONTROL {
+                handle_switch_page(app, Search)
             }
         }
 
-        KeyCode::Char('i') | KeyCode::Char('I') => {
-            if app.current_page == Info {
-                app.current_page = Main
-            } else {
-                app.current_page = Info;
-            }
-        }
+        KeyCode::Char('/') => handle_switch_page(app, Search),
 
         KeyCode::Enter => {
             if let Some(selected) = app.table.state.selected() {
@@ -81,7 +111,6 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
         }
         _ => {}
     }
-    Ok(())
 }
 
 fn handle_counter_switch(app: &mut App, increment: bool) {
@@ -99,4 +128,43 @@ fn handle_counter_switch(app: &mut App, increment: bool) {
             }
         }
     }
+}
+
+fn handle_switch_page(app: &mut App, page: Page) {
+    let default_page = Main;
+    if app.current_page == page {
+        app.current_page = default_page;
+    } else {
+        app.current_page = page;
+    }
+}
+
+fn search_and_select(app: &mut App) {
+    // Check for issuer
+    for row in app.table.items.iter().enumerate() {
+        let (index, values) = row;
+        if values
+            .get(1)
+            .unwrap()
+            .to_lowercase()
+            .contains(&app.search_query.to_lowercase())
+        {
+            app.table.state.select(Some(index));
+            return;
+        }
+    }
+    // Check for label
+    for row in app.table.items.iter().enumerate() {
+        let (index, values) = row;
+        if values
+            .get(2)
+            .unwrap()
+            .to_lowercase()
+            .contains(&app.search_query.to_lowercase())
+        {
+            app.table.state.select(Some(index));
+            return;
+        }
+    }
+    // TODO Handle if no search results
 }
