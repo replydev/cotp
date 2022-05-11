@@ -12,7 +12,12 @@ license-file = "LICENSE"
 categories = ["command-line-utilities","authentication"]
 keywords = ["cotp","totp","authenticator","google-authenticator","argon2"]
 
-#Optimize release binary size
+# Set bin name for CI 
+[[bin]]
+name = "cotp"
+path = "src/main.rs"
+
+# Optimize release binary size
 [profile.release]
 opt-level = "s"
 lto = true
