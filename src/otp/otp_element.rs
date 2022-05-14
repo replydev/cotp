@@ -20,6 +20,7 @@ pub struct OTPElement {
 }
 
 impl OTPElement {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         secret: String,
         issuer: String,

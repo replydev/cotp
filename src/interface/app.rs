@@ -1,7 +1,7 @@
 use std::error;
 
 use crate::interface::page::Page;
-use crate::interface::page::Page::{Info, Main, Qrcode};
+use crate::interface::page::Page::{Info, Main, Qrcode, Search};
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
