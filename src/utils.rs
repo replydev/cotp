@@ -45,9 +45,8 @@ pub fn create_db_if_needed() -> Result<bool, ()> {
     let db_path = get_db_path();
     let db_dir = db_path.parent().unwrap();
     if !db_dir.exists() {
-        match std::fs::create_dir(db_dir) {
-            Ok(()) => {}
-            Err(_e) => {}
+        if let Err(_e) = std::fs::create_dir(db_dir) {
+            return Err(());
         }
     }
     if !db_path.exists() {
@@ -121,6 +120,6 @@ mod tests {
 
     #[test]
     fn test_db_creation() {
-        assert_eq!(Ok(true), create_db_if_needed());
+        assert!(create_db_if_needed().is_ok());
     }
 }
