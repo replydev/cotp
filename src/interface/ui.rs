@@ -56,3 +56,18 @@ impl<B: Backend> Tui<B> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tui::backend::TestBackend;
+    #[test]
+    fn test_term_tui() -> AppResult<()> {
+        let backend = TestBackend::new(10, 10);
+        let terminal = Terminal::new(backend)?;
+        let mut tui = Tui::new(terminal, EventHandler::new(10));
+        tui.init()?;
+        tui.exit()?;
+        Ok(())
+    }
+}
