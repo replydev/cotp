@@ -9,7 +9,7 @@ use super::page::Page;
 
 /// Handles the key events and updates the state of [`App`].
 pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
-    if app.current_page != Search {
+    if !app.search_bar_focused {
         handle_key_events_main(key_event, app);
     } else {
         match key_event.code {
@@ -21,15 +21,19 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
                 }
             }
             KeyCode::Enter => {
-                app.current_page = Main;
+                app.search_bar_focused = false;
                 search_and_select(app);
                 app.search_query.clear();
             }
             KeyCode::Esc => {
-                app.current_page = Main;
+                app.search_bar_focused = false;
             }
             KeyCode::Backspace => {
                 app.search_query.pop();
+            }
+            KeyCode::Up | KeyCode::Down => {
+                app.search_bar_focused = false;
+                handle_key_events_main(key_event, app);
             }
             _ => {}
         }
@@ -52,7 +56,9 @@ fn handle_key_events_main(key_event: KeyEvent, app: &mut App) {
         }
         // exit application on Q
         KeyCode::Char('q') | KeyCode::Char('Q') => {
-            if app.current_page != Search {
+            // Just could do: app.running = app.search_bar_focused;
+            // But this is more readable
+            if !app.search_bar_focused {
                 app.running = false;
             }
         }
@@ -86,11 +92,11 @@ fn handle_key_events_main(key_event: KeyEvent, app: &mut App) {
 
         KeyCode::Char('f') | KeyCode::Char('F') => {
             if key_event.modifiers == KeyModifiers::CONTROL {
-                handle_switch_page(app, Search)
+                app.search_bar_focused = true;
             }
         }
 
-        KeyCode::Char('/') => handle_switch_page(app, Search),
+        KeyCode::Char('/') => app.search_bar_focused = true,
 
         KeyCode::Enter => {
             if let Some(selected) = app.table.state.selected() {

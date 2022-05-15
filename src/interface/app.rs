@@ -1,7 +1,7 @@
 use std::error;
 
 use crate::interface::page::Page;
-use crate::interface::page::Page::{Info, Main, Qrcode, Search};
+use crate::interface::page::Page::{Info, Main, Qrcode};
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
@@ -28,6 +28,7 @@ pub struct App {
     pub(crate) print_percentage: bool,
     pub(crate) current_page: Page,
     pub(crate) search_query: String,
+    pub(crate) search_bar_focused: bool,
 }
 
 impl App {
@@ -46,6 +47,7 @@ impl App {
             print_percentage: true,
             current_page: Main,
             search_query: String::from(""),
+            search_bar_focused: false,
         }
     }
 
@@ -65,21 +67,10 @@ impl App {
     /// Renders the user interface widgets.
     pub fn render<B: Backend>(&mut self, frame: &mut Frame<'_, B>) {
         match &self.current_page {
-            Main => self.render_table(frame),
+            Main => self.render_main_page(frame),
             Qrcode => self.render_qrcode_page(frame),
             Info => self.render_info_page(frame),
-            Search => self.render_search_page(frame),
         }
-    }
-
-    fn render_search_page<B: Backend>(&self, frame: &mut Frame<'_, B>) {
-        let search_title = "Search a code...";
-        let paragraph = Paragraph::new(&*self.search_query)
-            .block(Block::default().title(search_title).borders(Borders::ALL))
-            .style(Style::default().fg(Color::White).bg(Color::Black))
-            .alignment(Alignment::Center)
-            .wrap(Wrap { trim: true });
-        self.render_paragraph(frame, paragraph);
     }
 
     fn render_info_page<B: Backend>(&self, frame: &mut Frame<'_, B>) {
@@ -132,12 +123,37 @@ impl App {
         frame.render_widget(paragraph, rects[0]);
     }
 
-    fn render_table<B: Backend>(&mut self, frame: &mut Frame<'_, B>) {
+    fn render_main_page<B: Backend>(&mut self, frame: &mut Frame<'_, B>) {
+        let height = frame.size().height;
         let rects = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Percentage(95), Constraint::Percentage(5)].as_ref())
+            .constraints(
+                [
+                    Constraint::Length(3),              // Search bar
+                    Constraint::Length(height - 3 - 6), // Table
+                    Constraint::Length(6),              // Progress bar
+                ]
+                .as_ref(),
+            )
             .margin(2)
             .split(frame.size());
+
+        let search_bar_title = "Press CTRL + F to search a code...";
+        let search_bar = Paragraph::new(&*self.search_query)
+            .block(
+                Block::default()
+                    .title(search_bar_title)
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(if self.search_bar_focused {
+                        Color::LightRed
+                    } else {
+                        Color::White
+                    })),
+            )
+            .style(Style::default().fg(Color::White).bg(Color::Black))
+            .alignment(Alignment::Center)
+            .wrap(Wrap { trim: true });
+
         let header_cells = ["Id", "Issuer", "Label", "OTP"]
             .iter()
             .map(|h| Cell::from(*h).style(Style::default().fg(Color::Black)));
@@ -196,7 +212,8 @@ impl App {
             .percent(self.progress as u16)
             .label(progress_label);
 
-        frame.render_stateful_widget(t, rects[0], &mut self.table.state);
-        frame.render_widget(progress_bar, rects[1]);
+        frame.render_widget(search_bar, rects[0]);
+        frame.render_stateful_widget(t, rects[1], &mut self.table.state);
+        frame.render_widget(progress_bar, rects[2]);
     }
 }
