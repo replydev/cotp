@@ -59,14 +59,49 @@ impl<B: Backend> Tui<B> {
 
 #[cfg(test)]
 mod tests {
+    use crate::otp::otp_element::OTPElement;
+
     use super::*;
     use tui::backend::TestBackend;
     #[test]
     fn test_term_tui() -> AppResult<()> {
-        let backend = TestBackend::new(10, 10);
+        let elements: Vec<OTPElement> = vec![
+            OTPElement::new(
+                "ORSXG5A=".to_string(),
+                "Test".to_string(),
+                "Test".to_string(),
+                6,
+                "TOTP".to_string(),
+                "SHA1".to_string(),
+                String::new(),
+                0,
+                0,
+                30,
+                0,
+                vec![],
+            ),
+            OTPElement::new(
+                "OZ2HE3TP".to_string(),
+                "Test".to_string(),
+                "Test".to_string(),
+                6,
+                "TOTP".to_string(),
+                "SHA1".to_string(),
+                String::new(),
+                0,
+                0,
+                30,
+                0,
+                vec![],
+            ),
+        ];
+        let mut app: App = App::new(elements);
+
+        let backend = TestBackend::new(500, 500);
         let terminal = Terminal::new(backend)?;
         let mut tui = Tui::new(terminal, EventHandler::new(10));
         tui.init()?;
+        tui.draw(&mut app)?;
         tui.exit()?;
         Ok(())
     }
