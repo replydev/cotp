@@ -27,9 +27,9 @@ Before beginning check that you have the required build dependencies to use the 
 
 You need to install the **libxcb-devel** dependency, needed for clipboard coping in X11:
 
-- Debian based: `sudo apt install libxcb1-dev`
-- RHEL based: `sudo dnf install libxcb-devel`
-- Arch based: `sudo pacman -S lib32-libxcb`
+- Debian based: `sudo apt install libxcb1-dev libx11-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev`
+- Fedora / RHEL based: `sudo dnf install libX11-devel`
+- Void Linux `sudo xbps-install -S libxcb-devel`
 
 ### Use the crates.io repository
 
