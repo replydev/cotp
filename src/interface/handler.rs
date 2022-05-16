@@ -14,17 +14,21 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
     } else {
         match key_event.code {
             KeyCode::Char(c) => {
-                if key_event.modifiers == KeyModifiers::CONTROL && c == 'f' {
-                    app.current_page = Main;
+                if key_event.modifiers == KeyModifiers::CONTROL {
+                    match c {
+                        'f' => {
+                            app.search_query.clear();
+                            app.search_bar_focused = false;
+                        }
+                        'c' => app.running = false,
+                        _ => {}
+                    }
                 } else {
                     app.search_query.push(c);
+                    search_and_select(app);
                 }
             }
-            KeyCode::Enter => {
-                app.search_bar_focused = false;
-                search_and_select(app);
-                app.search_query.clear();
-            }
+            KeyCode::Enter => copy_selected_code_to_clipboard(app),
             KeyCode::Esc => {
                 app.search_bar_focused = false;
             }
@@ -98,24 +102,26 @@ fn handle_key_events_main(key_event: KeyEvent, app: &mut App) {
 
         KeyCode::Char('/') => app.search_bar_focused = true,
 
-        KeyCode::Enter => {
-            if let Some(selected) = app.table.state.selected() {
-                if let Some(element) = app.table.items.get(selected) {
-                    if let Some(otp_code) = element.get(3) {
-                        // in some occasions we can't copy contents to clipboard, so let's check for a good result
-                        if let Ok(mut ctx) = ClipboardContext::new() {
-                            match ctx.set_contents(otp_code.to_owned()) {
-                                Ok(_) => app.label_text = String::from("Copied!"),
-                                Err(_) => app.label_text = String::from("Cannot copy"),
-                            }
-                            app.print_percentage = false;
-                            app.current_page = Main;
-                        }
+        KeyCode::Enter => copy_selected_code_to_clipboard(app),
+        _ => {}
+    }
+}
+
+fn copy_selected_code_to_clipboard(app: &mut App) {
+    if let Some(selected) = app.table.state.selected() {
+        if let Some(element) = app.table.items.get(selected) {
+            if let Some(otp_code) = element.get(3) {
+                // in some occasions we can't copy contents to clipboard, so let's check for a good result
+                if let Ok(mut ctx) = ClipboardContext::new() {
+                    match ctx.set_contents(otp_code.to_owned()) {
+                        Ok(_) => app.label_text = String::from("Copied!"),
+                        Err(_) => app.label_text = String::from("Cannot copy"),
                     }
+                    app.print_percentage = false;
+                    app.current_page = Main;
                 }
             }
         }
-        _ => {}
     }
 }
 
