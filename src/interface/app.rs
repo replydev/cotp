@@ -75,7 +75,7 @@ impl App {
 
     fn render_info_page<B: Backend>(&self, frame: &mut Frame<'_, B>) {
         let text = "Press:\n+ -> Increment the HOTP counter\n- -> Decrement the HOTP counter\n
-        k -> Show QRCode of the selected element\nEnter -> Copy the OTP Code to the clipboard\nCTRL-F -> Search codes\nq, CTRL-D, Esc -> Exit the application";
+        k -> Show QRCode of the selected element\nEnter -> Copy the OTP Code to the clipboard\nCTRL-F -> Search codes\nCTRL-W -> Clear the search query\nq, CTRL-D, Esc -> Exit the application";
         let paragraph = Paragraph::new(text)
             .block(
                 Block::default()
