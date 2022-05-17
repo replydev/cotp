@@ -12,38 +12,43 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
     if !app.search_bar_focused {
         handle_key_events_main(key_event, app);
     } else {
-        match key_event.code {
-            KeyCode::Char(c) => {
-                if key_event.modifiers == KeyModifiers::CONTROL {
-                    match c {
-                        'f' => {
-                            app.search_query.clear();
-                            app.search_bar_focused = false;
-                        }
-                        'c' => app.running = false,
-                        _ => {}
-                    }
-                } else {
-                    app.search_query.push(c);
-                    search_and_select(app);
-                }
-            }
-            KeyCode::Enter => copy_selected_code_to_clipboard(app),
-            KeyCode::Esc => {
-                app.search_bar_focused = false;
-            }
-            KeyCode::Backspace => {
-                app.search_query.pop();
-            }
-            KeyCode::Up | KeyCode::Down => {
-                app.search_bar_focused = false;
-                handle_key_events_main(key_event, app);
-            }
-            _ => {}
-        }
+        handle_key_events_search_bar(key_event, app);
     }
 
     Ok(())
+}
+
+fn handle_key_events_search_bar(key_event: KeyEvent, app: &mut App) {
+    match key_event.code {
+        KeyCode::Char(c) => {
+            if key_event.modifiers == KeyModifiers::CONTROL {
+                match c {
+                    'f' | 'F' => {
+                        app.search_query.clear();
+                        app.search_bar_focused = false;
+                    }
+                    'c' | 'C' => app.running = false,
+                    'w' | 'W' => app.search_query.clear(),
+                    _ => {}
+                }
+            } else {
+                app.search_query.push(c);
+                search_and_select(app);
+            }
+        }
+        KeyCode::Enter => copy_selected_code_to_clipboard(app),
+        KeyCode::Esc => {
+            app.search_bar_focused = false;
+        }
+        KeyCode::Backspace => {
+            app.search_query.pop();
+        }
+        KeyCode::Up | KeyCode::Down => {
+            app.search_bar_focused = false;
+            handle_key_events_main(key_event, app);
+        }
+        _ => {}
+    }
 }
 
 fn handle_key_events_main(key_event: KeyEvent, app: &mut App) {
