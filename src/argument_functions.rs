@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 
 use crate::database_management;
-use crate::otp::otp_helper;
 use crate::{importers, utils};
 use clap::ArgMatches;
 use zeroize::Zeroize;
@@ -120,15 +119,16 @@ pub fn export(matches: &ArgMatches) {
 }
 
 pub fn info(matches: &ArgMatches) {
-    match otp_helper::print_element_info(matches.value_of_t_or_exit("index")) {
-        Ok(()) => {}
-        Err(e) => eprintln!("An error occurred: {}", e),
+    if let Err(e) = database_management::print_element_info(matches.value_of_t_or_exit("index")) {
+        eprintln!("An error occurred: {}", e);
     }
 }
 
 pub fn search(matches: &ArgMatches) {
-    match otp_helper::print_elements_matching(matches.value_of("issuer"), matches.value_of("label"))
-    {
+    match database_management::print_elements_matching(
+        matches.value_of("issuer"),
+        matches.value_of("label"),
+    ) {
         Ok(()) => {}
         Err(e) => eprintln!("An error occurred: {}", e),
     }
@@ -154,9 +154,9 @@ pub fn change_password() {
     }
 }
 
-pub fn qrcode(p0: &ArgMatches) {
-    let index: usize = p0.value_of_t_or_exit("index");
-    if let Err(e) = database_management::show_qr_code(index) {
+pub fn qrcode(matches: &ArgMatches) {
+    let issuer: String = matches.value_of_t_or_exit("issuer");
+    if let Err(e) = database_management::show_qr_code(issuer) {
         eprintln!("An error has occurred: {}", e);
     }
 }

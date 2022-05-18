@@ -479,10 +479,10 @@ fn get_matches() -> ArgMatches {
                 .about("Show OTP code information")
                 .arg_required_else_help(true)
                 .arg(
-                    Arg::new("index")
+                    Arg::new("issuer")
                         .short('i')
-                        .long("index")
-                        .help("OTP code index")
+                        .long("issuer")
+                        .help("OTP code issuer")
                         .takes_value(true)
                         .required(true),
                 ),
@@ -514,13 +514,13 @@ fn get_matches() -> ArgMatches {
                 .arg_required_else_help(true)
                 .about("Show otpauth QRCode")
                 .arg(
-                    Arg::new("index")
+                    Arg::new("issuer")
                         .short('i')
-                        .long("index")
-                        .help("OTP Code index")
+                        .long("issuer")
+                        .help("OTP Code issuer")
                         .takes_value(true)
-                        .required(true),
-                ),
+                        .required(true)
+                      ) 
         )
         .get_matches()
 }

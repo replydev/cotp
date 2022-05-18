@@ -4,12 +4,65 @@ use std::path::PathBuf;
 
 use data_encoding::BASE32_NOPAD;
 
-use utils::{check_elements, get_db_path};
+use utils::{check_elements, get_db_path, millis_before_next_step};
 
 use crate::cryptography;
 use crate::otp::otp_element::OTPElement;
+use crate::otp::otp_helper::get_otp_code;
 use crate::utils;
+use copypasta_ext::prelude::ClipboardProvider;
+use copypasta_ext::x11_fork::ClipboardContext;
 use zeroize::Zeroize;
+
+pub fn get_elements() -> Result<Vec<OTPElement>, String> {
+    let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
+    let elements: Vec<OTPElement> = match read_from_file(&pw) {
+        Ok(result) => result,
+        Err(_e) => return Err(String::from("Cannot decrypt existing database")),
+    };
+    pw.zeroize();
+    Ok(elements)
+}
+
+pub fn print_elements_matching(issuer: Option<&str>, label: Option<&str>) -> Result<(), String> {
+    let elements = get_elements()?;
+
+    elements
+        .iter()
+        .filter(|element| {
+            (if let Some(i) = issuer {
+                i.to_lowercase() == element.issuer().to_lowercase()
+            } else {
+                true
+            }) && (if let Some(l) = label {
+                l.to_lowercase() == element.label().to_lowercase()
+            } else {
+                true
+            })
+        })
+        .for_each(|element| {
+            let otp_code = match get_otp_code(element) {
+                Ok(code) => code,
+                Err(e) => e,
+            };
+            println!();
+            println!("Issuer: {}", element.issuer());
+            println!("Label: {}", element.label());
+            println!(
+                "OTP Code: {} ({} seconds remaining)",
+                otp_code,
+                millis_before_next_step() / 1000
+            );
+            if let Ok(mut ctx) = ClipboardContext::new() {
+                match ctx.set_contents(otp_code) {
+                    Ok(_) => println!("Copied to clipboard"),
+                    Err(_) => println!("Cannot copy OTP Code to clipboard"),
+                };
+            }
+            println!();
+        });
+    Ok(())
+}
 
 pub fn read_decrypted_text(password: &str) -> Result<String, String> {
     let encrypted_contents = match read_to_string(&get_db_path()) {
@@ -229,18 +282,51 @@ pub fn export_database(path: PathBuf) -> Result<PathBuf, String> {
     };
 }
 
-pub fn show_qr_code(index: usize) -> Result<(), String> {
-    let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
-    let elements: Vec<OTPElement> = match read_from_file(&pw) {
-        Ok(result) => result,
-        Err(_e) => return Err(String::from("Cannot decrypt existing database")),
-    };
-    pw.zeroize();
-    if let Some(element) = elements.get(index - 1) {
+pub fn show_qr_code(issuer: String) -> Result<(), String> {
+    let elements = get_elements()?;
+    if let Some(element) = elements
+        .into_iter()
+        .filter(|value| {
+            value
+                .issuer()
+                .to_lowercase()
+                .contains(issuer.to_lowercase().as_str())
+        })
+        .next()
+    {
         println!("{}", element.get_qrcode());
         Ok(())
     } else {
-        Err(format!("{} is an invalid index", index))
+        Err(format!("Issuer \"{}\" not found", issuer))
+    }
+}
+
+pub fn print_element_info(issuer: String) -> Result<(), String> {
+    let elements = get_elements()?;
+    if elements.is_empty() {
+        return Err(
+            "there are no elements in your database. Type \"cotp -h\" to get help.".to_string(),
+        );
+    }
+
+    if let Some(chosen_element) = elements
+        .iter()
+        .filter(|element| {
+            element
+                .issuer()
+                .to_lowercase()
+                .contains(issuer.to_lowercase().as_str())
+        })
+        .next()
+    {
+        println!("Issuer: {}", chosen_element.issuer());
+        println!("Label: {}", chosen_element.label());
+        println!("Algorithm: {}", chosen_element.algorithm());
+        println!("Type: {}", chosen_element.type_());
+        println!("Digits: {}", chosen_element.digits());
+        Ok(())
+    } else {
+        Err(format!("Issuer \"{}\" not found", issuer))
     }
 }
 

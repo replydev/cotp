@@ -3,7 +3,6 @@ use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
 use interface::handler::handle_key_events;
 use interface::ui::Tui;
-use otp::otp_helper;
 use std::io;
 use tui::backend::CrosstermBackend;
 use tui::Terminal;
@@ -63,7 +62,7 @@ fn main() -> AppResult<()> {
 }
 
 fn dashboard() -> AppResult<()> {
-    match otp_helper::read_codes() {
+    match database_management::get_elements() {
         Ok(elements) => {
             if elements.is_empty() {
                 println!("No codes, type \"cotp -h\" to get help");
