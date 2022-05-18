@@ -49,7 +49,7 @@ jobs:
       - name:  Install dependencies
         run:   |
               if [ "$RUNNER_OS" == "Linux" ]; then
-                    sudo apt update && sudo apt install -y --no-install-recommends xorg-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev
+                    sudo apt update && sudo apt install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev
               fi
         shell: bash
 
