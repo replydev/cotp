@@ -284,16 +284,12 @@ pub fn export_database(path: PathBuf) -> Result<PathBuf, String> {
 
 pub fn show_qr_code(issuer: String) -> Result<(), String> {
     let elements = get_elements()?;
-    if let Some(element) = elements
-        .into_iter()
-        .filter(|value| {
-            value
-                .issuer()
-                .to_lowercase()
-                .contains(issuer.to_lowercase().as_str())
-        })
-        .next()
-    {
+    if let Some(element) = elements.iter().find(|value| {
+        value
+            .issuer()
+            .to_lowercase()
+            .contains(issuer.to_lowercase().as_str())
+    }) {
         println!("{}", element.get_qrcode());
         Ok(())
     } else {
@@ -309,16 +305,12 @@ pub fn print_element_info(issuer: String) -> Result<(), String> {
         );
     }
 
-    if let Some(chosen_element) = elements
-        .iter()
-        .filter(|element| {
-            element
-                .issuer()
-                .to_lowercase()
-                .contains(issuer.to_lowercase().as_str())
-        })
-        .next()
-    {
+    if let Some(chosen_element) = elements.iter().find(|element| {
+        element
+            .issuer()
+            .to_lowercase()
+            .contains(issuer.to_lowercase().as_str())
+    }) {
         println!("Issuer: {}", chosen_element.issuer());
         println!("Label: {}", chosen_element.label());
         println!("Algorithm: {}", chosen_element.algorithm());
