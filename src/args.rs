@@ -520,7 +520,7 @@ fn get_matches() -> ArgMatches {
                         .help("OTP Code issuer")
                         .takes_value(true)
                         .required(true)
-                      ) 
+                      )
         )
         .get_matches()
 }
