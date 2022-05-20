@@ -1,9 +1,13 @@
+use std::env;
+
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::interface::app::{App, AppResult};
 use crate::interface::page::Page::*;
+use copypasta_ext::osc52::Osc52ClipboardContext;
 use copypasta_ext::prelude::*;
-use copypasta_ext::x11_fork::ClipboardContext;
+use copypasta_ext::wayland_bin::WaylandBinClipboardContext;
+use copypasta_ext::x11_fork::X11ForkClipboardContext;
 
 use super::page::Page;
 
@@ -111,18 +115,43 @@ fn copy_selected_code_to_clipboard(app: &mut App) {
     if let Some(selected) = app.table.state.selected() {
         if let Some(element) = app.table.items.get(selected) {
             if let Some(otp_code) = element.get(3) {
-                // in some occasions we can't copy contents to clipboard, so let's check for a good result
-                if let Ok(mut ctx) = ClipboardContext::new() {
-                    match ctx.set_contents(otp_code.to_owned()) {
-                        Ok(_) => app.label_text = String::from("Copied!"),
-                        Err(_) => app.label_text = String::from("Cannot copy"),
-                    }
-                    app.print_percentage = false;
-                    app.current_page = Main;
+                let result = copy_to_clipboard_decide_method(otp_code);
+                if result {
+                    app.label_text = String::from("Copied!");
+                } else {
+                    app.label_text = String::from("Cannot copy");
                 }
+                app.print_percentage = false;
+                app.current_page = Main;
             }
         }
     }
+}
+
+fn copy_to_clipboard_decide_method(otp_code: &std::string::String) -> bool {
+    if let Some(_) = env::var_os("WAYLAND_DISPLAY") {
+        if let Ok(mut ctx) = WaylandBinClipboardContext::new() {
+            match ctx.set_contents(otp_code.to_owned()) {
+                Ok(_) => return true,
+                Err(_) => (),
+            }
+        }
+    };
+    if let Some(_) = env::var_os("DISPLAY") {
+        if let Ok(mut ctx) = X11ForkClipboardContext::new() {
+            match ctx.set_contents(otp_code.to_owned()) {
+                Ok(_) => return true,
+                Err(_) => (),
+            }
+        }
+    };
+    if let Ok(mut ctx) = Osc52ClipboardContext::new() {
+        match ctx.set_contents(otp_code.to_owned()) {
+            Ok(_) => return true,
+            Err(_) => (),
+        }
+    }
+    return false;
 }
 
 fn handle_counter_switch(app: &mut App, increment: bool) {
