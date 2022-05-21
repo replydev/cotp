@@ -256,7 +256,6 @@ version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc2f548212db51db2dba038e6e86c98a5d4a8ab0767ab230673a28be89a45b87"
 dependencies = [
- "base64",
  "copypasta",
  "libc",
  "which",
@@ -268,6 +267,7 @@ name = "cotp"
 version = "0.2.0"
 dependencies = [
  "aes-gcm",
+ "base64",
  "chacha20poly1305",
  "clap",
  "copypasta-ext",
