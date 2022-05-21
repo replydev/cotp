@@ -4,10 +4,18 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use copypasta_ext::osc52::Osc52ClipboardContext;
+use copypasta_ext::prelude::*;
+use copypasta_ext::x11_fork::ClipboardContext;
 #[cfg(not(debug_assertions))]
 use dirs::home_dir;
 
 use crate::otp::otp_element::OTPElement;
+
+pub enum CopyType {
+    NATIVE,
+    OSC52,
+}
 
 pub fn get_db_path() -> PathBuf {
     match env::var("COTP_DB_PATH") {
@@ -114,11 +122,32 @@ pub fn prompt_for_passwords(message: &str, minimum_password_length: usize, verif
     password
 }
 
-pub fn in_ssh_shell() -> bool {
+fn in_ssh_shell() -> bool {
     return !env::var("SSH_CONNECTION")
         .unwrap_or_default()
         .trim()
         .is_empty();
+}
+
+pub fn copy_string_to_clipboard(content: String) -> Result<CopyType, ()> {
+    if in_ssh_shell() {
+        if let Ok(mut ctx) = Osc52ClipboardContext::new() {
+            return if ctx.set_contents(content).is_ok() {
+                Ok(CopyType::OSC52)
+            } else {
+                Err(())
+            };
+        }
+    } else {
+        if let Ok(mut ctx) = ClipboardContext::new() {
+            return if ctx.set_contents(content).is_ok() {
+                Ok(CopyType::NATIVE)
+            } else {
+                Err(())
+            };
+        }
+    }
+    Err(())
 }
 
 #[cfg(test)]
