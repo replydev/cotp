@@ -50,7 +50,7 @@ pub fn create_db_if_needed() -> Result<bool, ()> {
         }
     }
     if !db_path.exists() {
-        return match std::fs::File::create(db_path) {
+        return match File::create(db_path) {
             Ok(_f) => Ok(true),
             Err(_e) => Err(()),
         };
@@ -112,6 +112,13 @@ pub fn prompt_for_passwords(message: &str, minimum_password_length: usize, verif
         );
     }
     password
+}
+
+pub fn in_ssh_shell() -> bool {
+    return !env::var("SSH_CONNECTION")
+        .unwrap_or_default()
+        .trim()
+        .is_empty();
 }
 
 #[cfg(test)]

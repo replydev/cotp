@@ -2,6 +2,8 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::interface::app::{App, AppResult};
 use crate::interface::page::Page::*;
+use crate::utils::in_ssh_shell;
+use copypasta_ext::osc52::Osc52ClipboardContext;
 use copypasta_ext::prelude::*;
 use copypasta_ext::x11_fork::ClipboardContext;
 
@@ -116,14 +118,25 @@ fn copy_selected_code_to_clipboard(app: &mut App) {
     if let Some(selected) = app.table.state.selected() {
         if let Some(element) = app.table.items.get(selected) {
             if let Some(otp_code) = element.get(3) {
-                // in some occasions we can't copy contents to clipboard, so let's check for a good result
-                if let Ok(mut ctx) = ClipboardContext::new() {
-                    match ctx.set_contents(otp_code.to_owned()) {
-                        Ok(_) => app.label_text = String::from("Copied!"),
-                        Err(_) => app.label_text = String::from("Cannot copy"),
+                if in_ssh_shell() {
+                    if let Ok(mut ctx) = Osc52ClipboardContext::new() {
+                        match ctx.set_contents(otp_code.to_owned()) {
+                            Ok(_) => app.label_text = String::from("Remote copied!"),
+                            Err(_) => app.label_text = String::from("Cannot copy"),
+                        }
+                        app.print_percentage = false;
+                        app.current_page = Main;
                     }
-                    app.print_percentage = false;
-                    app.current_page = Main;
+                } else {
+                    // in some occasions we can't copy contents to clipboard, so let's check for a good result
+                    if let Ok(mut ctx) = ClipboardContext::new() {
+                        match ctx.set_contents(otp_code.to_owned()) {
+                            Ok(_) => app.label_text = String::from("Copied!"),
+                            Err(_) => app.label_text = String::from("Cannot copy"),
+                        }
+                        app.print_percentage = false;
+                        app.current_page = Main;
+                    }
                 }
             }
         }
