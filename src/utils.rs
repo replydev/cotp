@@ -13,7 +13,7 @@ use dirs::home_dir;
 use crate::otp::otp_element::OTPElement;
 
 pub enum CopyType {
-    NATIVE,
+    Native,
     OSC52,
 }
 
@@ -138,14 +138,12 @@ pub fn copy_string_to_clipboard(content: String) -> Result<CopyType, ()> {
                 Err(())
             };
         }
-    } else {
-        if let Ok(mut ctx) = ClipboardContext::new() {
-            return if ctx.set_contents(content).is_ok() {
-                Ok(CopyType::NATIVE)
-            } else {
-                Err(())
-            };
-        }
+    } else if let Ok(mut ctx) = ClipboardContext::new() {
+        return if ctx.set_contents(content).is_ok() {
+            Ok(CopyType::Native)
+        } else {
+            Err(())
+        };
     }
     Err(())
 }

@@ -124,7 +124,7 @@ fn copy_selected_code_to_clipboard(app: &mut App) -> String {
                 Some(otp_code) => {
                     if let Ok(result) = copy_string_to_clipboard(otp_code.to_owned()) {
                         match result {
-                            CopyType::NATIVE => "Copied!".to_string(),
+                            CopyType::Native => "Copied!".to_string(),
                             CopyType::OSC52 => "Remote copied!".to_string(),
                         }
                     } else {

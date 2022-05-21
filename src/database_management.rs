@@ -53,7 +53,7 @@ pub fn print_elements_matching(issuer: Option<&str>, label: Option<&str>) -> Res
             );
             match copy_string_to_clipboard(otp_code) {
                 Ok(result) => match result {
-                    CopyType::NATIVE => println!("Copied to clipboard"),
+                    CopyType::Native => println!("Copied to clipboard"),
                     CopyType::OSC52 => println!("Remote copied to clipboard"),
                 },
                 Err(()) => println!("Cannot copy to clipboard"),
