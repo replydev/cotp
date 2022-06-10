@@ -9,9 +9,7 @@ use utils::{check_elements, get_db_path, millis_before_next_step};
 use crate::cryptography;
 use crate::otp::otp_element::OTPElement;
 use crate::otp::otp_helper::get_otp_code;
-use crate::utils;
-use copypasta_ext::prelude::ClipboardProvider;
-use copypasta_ext::x11_fork::ClipboardContext;
+use crate::utils::{self, copy_string_to_clipboard, CopyType};
 use zeroize::Zeroize;
 
 pub fn get_elements() -> Result<Vec<OTPElement>, String> {
@@ -53,11 +51,12 @@ pub fn print_elements_matching(issuer: Option<&str>, label: Option<&str>) -> Res
                 otp_code,
                 millis_before_next_step() / 1000
             );
-            if let Ok(mut ctx) = ClipboardContext::new() {
-                match ctx.set_contents(otp_code) {
-                    Ok(_) => println!("Copied to clipboard"),
-                    Err(_) => println!("Cannot copy OTP Code to clipboard"),
-                };
+            match copy_string_to_clipboard(otp_code) {
+                Ok(result) => match result {
+                    CopyType::Native => println!("Copied to clipboard"),
+                    CopyType::OSC52 => println!("Remote copied to clipboard"),
+                },
+                Err(()) => println!("Cannot copy to clipboard"),
             }
             println!();
         });

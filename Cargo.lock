@@ -267,6 +267,7 @@ name = "cotp"
 version = "0.2.0"
 dependencies = [
  "aes-gcm",
+ "base64",
  "chacha20poly1305",
  "clap",
  "copypasta-ext",

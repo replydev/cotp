@@ -1,13 +1,20 @@
-use std::env;
+use copypasta_ext::prelude::*;
+use copypasta_ext::x11_fork::ClipboardContext;
+use crossterm::style::Print;
+#[cfg(not(debug_assertions))]
+use dirs::home_dir;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
-
-#[cfg(not(debug_assertions))]
-use dirs::home_dir;
+use std::{env, io};
 
 use crate::otp::otp_element::OTPElement;
+
+pub enum CopyType {
+    Native,
+    OSC52,
+}
 
 pub fn get_db_path() -> PathBuf {
     match env::var("COTP_DB_PATH") {
@@ -50,7 +57,7 @@ pub fn create_db_if_needed() -> Result<bool, ()> {
         }
     }
     if !db_path.exists() {
-        return match std::fs::File::create(db_path) {
+        return match File::create(db_path) {
             Ok(_f) => Ok(true),
             Err(_e) => Err(()),
         };
@@ -112,6 +119,34 @@ pub fn prompt_for_passwords(message: &str, minimum_password_length: usize, verif
         );
     }
     password
+}
+
+fn in_ssh_shell() -> bool {
+    return !env::var("SSH_CONNECTION")
+        .unwrap_or_default()
+        .trim()
+        .is_empty();
+}
+
+pub fn copy_string_to_clipboard(content: String) -> Result<CopyType, ()> {
+    if in_ssh_shell() {
+        // We do not use copypasta_ext::osc52 module because we have enabled terminal raw mode, so we print with crossterm utilities
+        // Check https://github.com/timvisee/rust-clipboard-ext/blob/371df19d2f961882a21c957f396d1e24548d1f28/src/osc52.rs#L92
+        return match crossterm::execute!(
+            io::stdout(),
+            Print(format!("\x1B]52;c;{}\x07", base64::encode(content)))
+        ) {
+            Ok(_) => Ok(CopyType::OSC52),
+            Err(_) => Err(()),
+        };
+    } else if let Ok(mut ctx) = ClipboardContext::new() {
+        return if ctx.set_contents(content).is_ok() {
+            Ok(CopyType::Native)
+        } else {
+            Err(())
+        };
+    }
+    Err(())
 }
 
 #[cfg(test)]
