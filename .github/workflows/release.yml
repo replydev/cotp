@@ -5,7 +5,7 @@ on:
 
   push:
     tags:
-    - 'v[0-9]+.[0-9]+.[0-9]+'
+      - "v[0-9]+.[0-9]+.[0-9]+"
     ## - release
 
 env:
@@ -22,21 +22,21 @@ jobs:
       matrix:
         build: [x86_64-linux, aarch64-linux, x86_64-win-gnu] #, x86_64-windows, win32-msvc
         include:
-        - build: x86_64-linux
-          os: ubuntu-20.04
-          rust: stable
-          target: x86_64-unknown-linux-gnu
-          cross: false
-        - build: aarch64-linux
-          os: ubuntu-20.04
-          rust: stable
-          target: aarch64-unknown-linux-gnu
-          cross: true
-        - build: x86_64-win-gnu
-          os: windows-2019
-          rust: stable
-          target: x86_64-pc-windows-gnu
-          cross: false
+          - build: x86_64-linux
+            os: ubuntu-20.04
+            rust: stable
+            target: x86_64-unknown-linux-gnu
+            cross: false
+          - build: aarch64-linux
+            os: ubuntu-20.04
+            rust: stable
+            target: aarch64-unknown-linux-gnu
+            cross: true
+          - build: x86_64-win-gnu
+            os: windows-2019
+            rust: stable
+            target: x86_64-pc-windows-gnu
+            cross: false
 
     steps:
       - name: Checkout sources
@@ -52,9 +52,14 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
-      - name: Install Linux Dependencies
-        if: matrix.build == 'x86_64-linux' || matrix.build == 'aarch64-linux'
+      - name: Install Dependencies
+        # if: matrix.build == 'x86_64-linux' || matrix.build == 'aarch64-linux'
+        if: matrix.build == 'x86_64-linux'
         run: sudo apt update && sudo apt install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev
+
+      - name: Build Docker image for aarch64 compilation
+        if: matrix.build == 'aarch64-linux'
+        run: docker build -t cotp_build_aarch64:latest .
 
       - name: Run cargo test
         uses: actions-rs/cargo@v1
@@ -165,4 +170,3 @@ jobs:
         id: extract-version
         run: |
           printf "::set-output name=%s::%s\n" tag-name "${GITHUB_REF#refs/tags/}"
-

@@ -148,13 +148,3 @@ pub fn copy_string_to_clipboard(content: String) -> Result<CopyType, ()> {
     }
     Err(())
 }
-
-#[cfg(test)]
-mod tests {
-    use super::create_db_if_needed;
-
-    #[test]
-    fn test_db_creation() {
-        assert!(create_db_if_needed().is_ok());
-    }
-}
