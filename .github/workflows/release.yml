@@ -141,7 +141,8 @@ jobs:
           for dir in bins-* ; do
               platform=${dir#"bins-"}
               unset exe
-              if [[ $platform =~ "windows" ]]; then
+              # If platform contains "win" then append .exe to the filename
+              if [[ "$platform" == *"win"* ]]; then
                   exe=".exe"
               fi
               pkgname=$PROJECT_NAME-$TAG-$platform
