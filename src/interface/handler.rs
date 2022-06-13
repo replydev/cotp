@@ -173,13 +173,39 @@ fn search_and_select(app: &mut App) {
             .get(1)
             .unwrap()
             .to_lowercase()
-            .contains(&app.search_query.to_lowercase())
+            .starts_with(&app.search_query.to_lowercase())
         {
             app.table.state.select(Some(index));
             return;
         }
     }
     // Check for label
+    for row in app.table.items.iter().enumerate() {
+        let (index, values) = row;
+        if values
+            .get(2)
+            .unwrap()
+            .to_lowercase()
+            .starts_with(&app.search_query.to_lowercase())
+        {
+            app.table.state.select(Some(index));
+            return;
+        }
+    }
+    // Check if issuer contains the query
+    for row in app.table.items.iter().enumerate() {
+        let (index, values) = row;
+        if values
+            .get(1)
+            .unwrap()
+            .to_lowercase()
+            .contains(&app.search_query.to_lowercase())
+        {
+            app.table.state.select(Some(index));
+            return;
+        }
+    }
+    // Check if label contains the query
     for row in app.table.items.iter().enumerate() {
         let (index, values) = row;
         if values
