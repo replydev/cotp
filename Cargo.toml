@@ -29,7 +29,7 @@ serde = { version = "1.0.137", features = ["derive"] }
 dirs = "4.0.0"
 rpassword = "6.0.1"
 data-encoding = "2.3.2"
-crossterm = "0.23.2"
+crossterm = "0.24.0"
 tui = "0.18.0"
 copypasta-ext = "0.3.9"
 zeroize = "1.4.3"
