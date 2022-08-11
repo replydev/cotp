@@ -87,6 +87,9 @@ fn dashboard() -> AppResult<()> {
                         Event::Key(key_event) => handle_key_events(key_event, &mut app)?,
                         Event::Mouse(_) => {}
                         Event::Resize(_, _) => {}
+                        Event::FocusGained() => {}
+                        Event::FocusLost() => {}
+                        Event::Paste(_) => {}
                     }
                 }
 

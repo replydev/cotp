@@ -7,7 +7,7 @@ use crossterm::event::{self, Event as CrosstermEvent, KeyEvent, MouseEvent};
 use crate::interface::app::AppResult;
 
 /// Terminal events.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub enum Event {
     /// Terminal tick.
     Tick,
@@ -17,6 +17,12 @@ pub enum Event {
     Mouse(MouseEvent),
     /// Terminal resize.
     Resize(u16, u16),
+    /// Focus gained
+    FocusGained(),
+    /// Focus lost
+    FocusLost(),
+    /// Paste text
+    Paste(String),
 }
 
 /// Terminal event handler.
@@ -47,6 +53,9 @@ impl EventHandler {
                         CrosstermEvent::Key(e) => sender.send(Event::Key(e)),
                         CrosstermEvent::Mouse(e) => sender.send(Event::Mouse(e)),
                         CrosstermEvent::Resize(w, h) => sender.send(Event::Resize(w, h)),
+                        CrosstermEvent::FocusGained => sender.send(Event::FocusGained()),
+                        CrosstermEvent::FocusLost => sender.send(Event::FocusLost()),
+                        CrosstermEvent::Paste(e) => sender.send(Event::Paste(e)),
                     }
                     .expect("failed to send terminal event")
                 }
