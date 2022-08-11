@@ -59,7 +59,7 @@ pub fn encrypt_string(plaintext: String, password: &str) -> Result<String, Strin
 
     match serde_json::to_string(&encrypted_database) {
         Ok(result) => Ok(result),
-        Err(e) => return Err(format!("Failed to serialize encrypted database: {}", e)),
+        Err(e) => Err(format!("Failed to serialize encrypted database: {}", e)),
     }
 }
 

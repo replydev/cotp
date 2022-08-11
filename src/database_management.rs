@@ -86,7 +86,7 @@ pub fn read_decrypted_text(password: &str) -> Result<String, String> {
 }
 
 pub fn read_from_file(password: &str) -> Result<Vec<OTPElement>, String> {
-    return match read_decrypted_text(password) {
+    match read_decrypted_text(password) {
         Ok(mut contents) => {
             let mut vector: Vec<OTPElement> = match serde_json::from_str(&contents) {
                 Ok(results) => results,
@@ -100,14 +100,14 @@ pub fn read_from_file(password: &str) -> Result<Vec<OTPElement>, String> {
             Ok(vector)
         }
         Err(e) => Err(e),
-    };
+    }
 }
 
 pub fn check_secret(secret: &str) -> Result<(), data_encoding::DecodeError> {
-    return match BASE32_NOPAD.decode(secret.as_bytes()) {
+    match BASE32_NOPAD.decode(secret.as_bytes()) {
         Ok(_r) => Ok(()),
         Err(error) => Err(error),
-    };
+    }
 }
 
 pub fn add_element(

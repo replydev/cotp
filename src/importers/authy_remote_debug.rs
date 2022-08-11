@@ -35,7 +35,7 @@ impl AuthyExportedJsonElement {
                     Some(s) => {
                         let args: Vec<&str> =
                             s.split('&').filter(|s| s.starts_with("digits=")).collect();
-                        match args.get(0) {
+                        match args.first() {
                             Some(s) => s.parse::<u64>().unwrap_or(default_value),
                             None => default_value,
                         }
@@ -53,7 +53,7 @@ impl AuthyExportedJsonElement {
         match args.get(3) {
             Some(s) => {
                 let args: Vec<&str> = s.split('?').collect();
-                let issuer = args.get(0).unwrap_or(&default_value);
+                let issuer = args.first().unwrap_or(&default_value);
                 match urlencoding::decode(issuer) {
                     Ok(r) => r.into_owned(),
                     Err(_e) => issuer.to_string(),
