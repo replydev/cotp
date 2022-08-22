@@ -24,7 +24,7 @@ lto = true
 codegen-units = 1
 
 [dependencies]
-serde_json = "1.0.83"
+serde_json = "1.0.85"
 serde = { version = "1.0.143", features = ["derive"] }
 dirs = "4.0.0"
 rpassword = "7.0.0"
