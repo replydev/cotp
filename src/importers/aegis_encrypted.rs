@@ -1,10 +1,12 @@
-use aes_gcm::aead::{Aead, NewAead};
-use aes_gcm::{Aes256Gcm, Key, Nonce}; // Or `Aes128Gcm`
+use aes_gcm::aead::generic_array::GenericArray;
+use aes_gcm::aead::Aead;
+use aes_gcm::{Aes256Gcm, KeyInit, Nonce}; // Or `Aes128Gcm`
 use data_encoding::BASE64;
 use hex::FromHex;
 use serde::Deserialize;
 use serde_json;
 use std::fs::read_to_string;
+use zeroize::Zeroize;
 
 use crate::otp::otp_element::OTPElement;
 
@@ -73,13 +75,15 @@ pub fn import(filepath: &str, password: &str) -> Result<Vec<OTPElement>, String>
     }
 
     match master_key {
-        Some(master_key) => {
+        Some(mut master_key) => {
             let content = match BASE64.decode(aegis_encrypted.db.as_bytes()) {
                 Ok(result) => result,
                 Err(e) => return Err(format!("Error during base64 decoding: {:?}", e)),
             };
 
-            let cipher = Aes256Gcm::new(Key::from_slice(master_key.as_slice()));
+            let key = GenericArray::clone_from_slice(master_key.as_slice());
+            master_key.zeroize();
+            let cipher = Aes256Gcm::new(&key);
 
             let decrypted_db = match cipher.decrypt(
                 Nonce::from_slice(
@@ -115,7 +119,7 @@ fn get_params(slot: &AegisEncryptedSlot) -> Result<Params, String> {
     let p = slot.p.unwrap();
     let r = slot.r.unwrap();
 
-    match scrypt::Params::new((n as f32).log2() as u8, r, p) {
+    match Params::new((n as f32).log2() as u8, r, p) {
         Ok(result) => Ok(result),
         Err(e) => Err(format!("Error during scrypt params creation: {:?}", e)),
     }
@@ -137,8 +141,10 @@ fn get_master_key(slot: &AegisEncryptedSlot, password: &str) -> Result<Vec<u8>, 
     ) {
         return Err(format!("Error during scrypt key derivation: {:?}", e));
     }
+    let key = GenericArray::clone_from_slice(output.as_slice());
+    output.zeroize();
 
-    let cipher = Aes256Gcm::new(Key::from_slice(output.as_slice()));
+    let cipher = Aes256Gcm::new(&key);
     let cipher_text = [
         Vec::from_hex(&slot.key).expect("Failed to parse hex key"),
         Vec::from_hex(&slot.key_params.tag).expect("Failed to parse hex tag"),

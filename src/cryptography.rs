@@ -1,7 +1,7 @@
 use crate::encrypted_database::EncryptedDatabase;
 use argon2::{Config, ThreadMode, Variant, Version};
-use chacha20poly1305::aead::{Aead, NewAead};
-use chacha20poly1305::{Key, XChaCha20Poly1305, XNonce};
+use chacha20poly1305::aead::Aead;
+use chacha20poly1305::{Key, KeyInit, XChaCha20Poly1305, XNonce};
 use data_encoding::BASE64;
 
 const ARGON2ID_SALT_LENGTH: usize = 16;
