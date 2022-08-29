@@ -1,6 +1,7 @@
 pub mod app;
+mod enums;
 pub mod event;
 pub mod handler;
-mod page;
+mod popup;
 pub mod table;
 pub mod ui;

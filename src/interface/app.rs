@@ -1,16 +1,20 @@
 use std::error;
 
-use crate::interface::page::Page;
-use crate::interface::page::Page::{Info, Main, Qrcode};
+use crate::interface::enums::Focus;
+use crate::interface::enums::Page;
+use crate::interface::enums::Page::{Info, Main, Qrcode};
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
 use tui::terminal::Frame;
-use tui::widgets::{Block, Borders, Cell, Gauge, Paragraph, Row, Table, Wrap};
+use tui::widgets::{Block, Borders, Cell, Clear, Gauge, Paragraph, Row, Table, Wrap};
 
 use crate::interface::table::{fill_table, StatefulTable};
 use crate::otp::otp_element::OTPElement;
 use crate::utils::percentage;
+
+use super::enums::PopupAction;
+use super::popup::centered_rect;
 
 /// Application result type.
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
@@ -28,12 +32,15 @@ pub struct App {
     pub(crate) print_percentage: bool,
     pub(crate) current_page: Page,
     pub(crate) search_query: String,
-    pub(crate) search_bar_focused: bool,
+    pub(crate) focus: Focus,
+    pub(crate) popup_text: String,
+    pub(crate) popup_action: PopupAction,
+    pub(crate) data_key: Vec<u8>,
 }
 
 impl App {
     /// Constructs a new instance of [`App`].
-    pub fn new(elements: Vec<OTPElement>) -> Self {
+    pub fn new(elements: Vec<OTPElement>, key: Vec<u8>) -> Self {
         let mut title = String::from(env!("CARGO_PKG_NAME"));
         title.push_str(" v");
         title.push_str(env!("CARGO_PKG_VERSION"));
@@ -47,7 +54,10 @@ impl App {
             print_percentage: true,
             current_page: Main,
             search_query: String::from(""),
-            search_bar_focused: false,
+            focus: Focus::MainPage,
+            popup_text: String::from(""),
+            popup_action: PopupAction::EditOtp,
+            data_key: key,
         }
     }
 
@@ -144,7 +154,7 @@ impl App {
                 Block::default()
                     .title(search_bar_title)
                     .borders(Borders::ALL)
-                    .border_style(Style::default().fg(if self.search_bar_focused {
+                    .border_style(Style::default().fg(if self.focus == Focus::SearchBar {
                         Color::LightRed
                     } else {
                         Color::White
@@ -215,5 +225,15 @@ impl App {
         frame.render_widget(search_bar, rects[0]);
         frame.render_stateful_widget(t, rects[1], &mut self.table.state);
         frame.render_widget(progress_bar, rects[2]);
+        if self.focus == Focus::Popup {
+            let block = Block::default().title("Alert").borders(Borders::ALL);
+            let paragraph = Paragraph::new(&*self.popup_text)
+                .block(block)
+                .alignment(Alignment::Center)
+                .wrap(Wrap { trim: true });
+            let area = centered_rect(60, 20, frame.size());
+            frame.render_widget(Clear, area); //this clears out the background
+            frame.render_widget(paragraph, area);
+        }
     }
 }

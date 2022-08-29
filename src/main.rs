@@ -10,9 +10,8 @@ use zeroize::Zeroize;
 
 mod args;
 mod argument_functions;
-mod cryptography;
+mod crypto;
 mod database_management;
-mod encrypted_database;
 mod importers;
 mod interface;
 mod otp;
@@ -63,12 +62,12 @@ fn main() -> AppResult<()> {
 
 fn dashboard() -> AppResult<()> {
     match database_management::get_elements() {
-        Ok(elements) => {
+        Ok((elements, key)) => {
             if elements.is_empty() {
                 println!("No codes, type \"cotp -h\" to get help");
             } else {
                 // Create an application.
-                let mut app = interface::app::App::new(elements);
+                let mut app = interface::app::App::new(elements, key);
 
                 // Initialize the terminal user interface.
                 let backend = CrosstermBackend::new(io::stderr());
