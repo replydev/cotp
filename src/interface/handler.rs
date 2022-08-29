@@ -31,7 +31,12 @@ fn popup_handler(key_event: KeyEvent, app: &mut App) {
                 let key = app.data_key.clone();
                 let salt = gen_salt().unwrap();
                 match overwrite_database_key(&app.elements, key, &salt) {
-                    Ok(_) => app.popup_text = String::from("Done"),
+                    Ok(_) => {
+                        app.focus = Focus::MainPage;
+                        app.popup_text = String::from("Done");
+                        // Force table render
+                        app.tick(true);
+                    }
                     Err(e) => app.popup_text = e.to_string(),
                 }
             }
