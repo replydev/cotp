@@ -63,7 +63,10 @@ pub fn encrypt_string_with_key(
     ))
 }
 
-pub fn decrypt_string(encrypted_text: &str, password: &str) -> Result<(String, Vec<u8>), String> {
+pub fn decrypt_string(
+    encrypted_text: &str,
+    password: &str,
+) -> Result<(String, Vec<u8>, Vec<u8>), String> {
     //encrypted text is an encrypted database json serialized object
     let encrypted_database: EncryptedDatabase = match serde_json::from_str(encrypted_text) {
         Ok(result) => result,
@@ -96,7 +99,7 @@ pub fn decrypt_string(encrypted_text: &str, password: &str) -> Result<(String, V
         Err(_e) => return Err(String::from("Wrong password")),
     };
     match String::from_utf8(decrypted) {
-        Ok(result) => Ok((result, key)),
+        Ok(result) => Ok((result, key, salt)),
         Err(e) => Err(format!("Error during UTF-8 string conversion: {}", e)),
     }
 }
@@ -113,7 +116,7 @@ mod tests {
         let key = argon_derive_key(b"pa$$w0rd", salt.as_ref()).unwrap();
         let encrypted =
             encrypt_string_with_key(String::from("Secret data@#[]ò"), key, salt.as_ref()).unwrap();
-        let (decrypted, _key) =
+        let (decrypted, _key, _salt) =
             decrypt_string(&serde_json::to_string(&encrypted).unwrap(), "pa$$w0rd").unwrap();
         assert_eq!(String::from("Secret data@#[]ò"), decrypted);
     }

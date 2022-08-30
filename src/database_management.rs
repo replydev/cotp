@@ -13,18 +13,18 @@ use crate::otp::otp_helper::get_otp_code;
 use crate::utils::{self, copy_string_to_clipboard, CopyType};
 use zeroize::Zeroize;
 
-pub fn get_elements() -> Result<(Vec<OTPElement>, Vec<u8>), String> {
+pub fn get_elements() -> Result<(Vec<OTPElement>, Vec<u8>, Vec<u8>), String> {
     let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
-    let (elements, key) = match read_from_file(&pw) {
-        Ok((result, key)) => (result, key),
+    let (elements, key, salt) = match read_from_file(&pw) {
+        Ok((result, key, salt)) => (result, key, salt),
         Err(_e) => return Err(String::from("Cannot decrypt existing database")),
     };
     pw.zeroize();
-    Ok((elements, key))
+    Ok((elements, key, salt))
 }
 
 pub fn print_elements_matching(issuer: Option<&str>, label: Option<&str>) -> Result<(), String> {
-    let (elements, mut key) = get_elements()?;
+    let (elements, mut key, _salt) = get_elements()?;
     key.zeroize();
 
     elements
@@ -65,7 +65,7 @@ pub fn print_elements_matching(issuer: Option<&str>, label: Option<&str>) -> Res
     Ok(())
 }
 
-pub fn read_decrypted_text(password: &str) -> Result<(String, Vec<u8>), String> {
+pub fn read_decrypted_text(password: &str) -> Result<(String, Vec<u8>, Vec<u8>), String> {
     let encrypted_contents = match read_to_string(&get_db_path()) {
         Ok(result) => result,
         Err(e) => {
@@ -87,9 +87,9 @@ pub fn read_decrypted_text(password: &str) -> Result<(String, Vec<u8>), String> 
     crypto::cryptography::decrypt_string(&encrypted_contents, password)
 }
 
-pub fn read_from_file(password: &str) -> Result<(Vec<OTPElement>, Vec<u8>), String> {
+pub fn read_from_file(password: &str) -> Result<(Vec<OTPElement>, Vec<u8>, Vec<u8>), String> {
     match read_decrypted_text(password) {
-        Ok((mut contents, key)) => {
+        Ok((mut contents, key, salt)) => {
             let mut vector: Vec<OTPElement> = match serde_json::from_str(&contents) {
                 Ok(results) => results,
                 Err(e) => {
@@ -99,7 +99,7 @@ pub fn read_from_file(password: &str) -> Result<(Vec<OTPElement>, Vec<u8>), Stri
             };
             contents.zeroize();
             vector.sort_by_key(|a| a.issuer());
-            Ok((vector, key))
+            Ok((vector, key, salt))
         }
         Err(e) => Err(e),
     }
@@ -143,7 +143,7 @@ pub fn add_element(
         vec![],
     );
     let mut elements = match read_from_file(&pw) {
-        Ok((result, mut key)) => {
+        Ok((result, mut key, _salt)) => {
             key.zeroize();
             result
         }
@@ -165,7 +165,7 @@ pub fn remove_element_from_db(indexes: Vec<usize>) -> Result<(), String> {
 
     let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
     let mut elements: Vec<OTPElement> = match read_from_file(&pw) {
-        Ok((result, mut key)) => {
+        Ok((result, mut key, _salt)) => {
             key.zeroize();
             result
         }
@@ -222,7 +222,7 @@ pub fn edit_element(
 
     let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
     let mut elements: Vec<OTPElement> = match read_from_file(&pw) {
-        Ok((result, mut key)) => {
+        Ok((result, mut key, _salt)) => {
             key.zeroize();
             result
         }
@@ -275,7 +275,7 @@ pub fn export_database(path: PathBuf) -> Result<PathBuf, String> {
     let contents = crypto::cryptography::decrypt_string(&encrypted_contents, &pw);
     pw.zeroize();
     match contents {
-        Ok((mut contents, mut key)) => {
+        Ok((mut contents, mut key, _salt)) => {
             key.zeroize();
             if contents == "[]" {
                 return Err(String::from(
@@ -294,7 +294,7 @@ pub fn export_database(path: PathBuf) -> Result<PathBuf, String> {
 }
 
 pub fn show_qr_code(issuer: String) -> Result<(), String> {
-    let (elements, mut key) = get_elements()?;
+    let (elements, mut key, _salt) = get_elements()?;
     key.zeroize();
     if let Some(element) = elements.iter().find(|value| {
         value
@@ -310,7 +310,7 @@ pub fn show_qr_code(issuer: String) -> Result<(), String> {
 }
 
 pub fn print_element_info(issuer: String) -> Result<(), String> {
-    let (elements, mut key) = get_elements()?;
+    let (elements, mut key, _salt) = get_elements()?;
     key.zeroize();
     if elements.is_empty() {
         return Err(

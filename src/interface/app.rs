@@ -36,11 +36,12 @@ pub struct App {
     pub(crate) popup_text: String,
     pub(crate) popup_action: PopupAction,
     pub(crate) data_key: Vec<u8>,
+    pub(crate) salt: Vec<u8>,
 }
 
 impl App {
     /// Constructs a new instance of [`App`].
-    pub fn new(elements: Vec<OTPElement>, key: Vec<u8>) -> Self {
+    pub fn new(elements: Vec<OTPElement>, key: Vec<u8>, salt: Vec<u8>) -> Self {
         let mut title = String::from(env!("CARGO_PKG_NAME"));
         title.push_str(" v");
         title.push_str(env!("CARGO_PKG_VERSION"));
@@ -58,6 +59,7 @@ impl App {
             popup_text: String::from(""),
             popup_action: PopupAction::EditOtp,
             data_key: key,
+            salt,
         }
     }
 

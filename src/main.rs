@@ -62,12 +62,12 @@ fn main() -> AppResult<()> {
 
 fn dashboard() -> AppResult<()> {
     match database_management::get_elements() {
-        Ok((elements, key)) => {
+        Ok((elements, key, salt)) => {
             if elements.is_empty() {
                 println!("No codes, type \"cotp -h\" to get help");
             } else {
                 // Create an application.
-                let mut app = interface::app::App::new(elements, key);
+                let mut app = interface::app::App::new(elements, key, salt);
 
                 // Initialize the terminal user interface.
                 let backend = CrosstermBackend::new(io::stderr());

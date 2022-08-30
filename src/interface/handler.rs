@@ -1,6 +1,5 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::crypto::cryptography::gen_salt;
 use crate::database_management::overwrite_database_key;
 use crate::interface::app::{App, AppResult};
 use crate::interface::enums::Page::*;
@@ -29,8 +28,7 @@ fn popup_handler(key_event: KeyEvent, app: &mut App) {
                     return;
                 }
                 let key = app.data_key.clone();
-                let salt = gen_salt().unwrap();
-                match overwrite_database_key(&app.elements, key, &salt) {
+                match overwrite_database_key(&app.elements, key, &app.salt) {
                     Ok(_) => {
                         app.focus = Focus::MainPage;
                         app.popup_text = String::from("Done");
@@ -154,9 +152,12 @@ fn main_handler(key_event: KeyEvent, app: &mut App) {
 fn delete_selected_code(app: &mut App) -> Result<String, String> {
     match app.table.state.selected() {
         Some(selected) => {
-            app.elements.remove(selected);
-
-            Ok("Done".to_string())
+            if app.elements.len() > selected {
+                app.elements.remove(selected);
+                Ok("Done".to_string())
+            } else {
+                Err("Index out of bounds".to_string())
+            }
         }
         None => Err("No code selected".to_string()),
     }

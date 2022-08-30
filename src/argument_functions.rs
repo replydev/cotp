@@ -139,7 +139,7 @@ pub fn change_password() {
     let result = database_management::read_decrypted_text(&old_password);
     old_password.zeroize();
     match result {
-        Ok((mut s, mut key)) => {
+        Ok((mut s, mut key, _salt)) => {
             key.zeroize();
             let mut new_password = utils::prompt_for_passwords("New password: ", 8, true);
             match database_management::overwrite_database_json(&s, &new_password) {
