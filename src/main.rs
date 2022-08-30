@@ -91,6 +91,7 @@ fn dashboard() -> AppResult<()> {
                         Event::Paste(_) => {}
                     }
                 }
+                app.data_key.zeroize();
 
                 // Exit the user interface.
                 tui.exit()?;
