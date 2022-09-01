@@ -343,12 +343,12 @@ pub fn overwrite_database(elements: &[OTPElement], password: &str) -> Result<(),
 pub fn overwrite_database_json(json: &str, password: &str) -> Result<(), std::io::Error> {
     let salt = gen_salt().unwrap();
     let key = crypto::cryptography::argon_derive_key(password.as_bytes(), &salt).unwrap();
-    overwrite_database_json_key(json, key, salt.as_ref())
+    overwrite_database_json_key(json, &key, salt.as_ref())
 }
 
 pub fn overwrite_database_key(
     elements: &[OTPElement],
-    key: Vec<u8>,
+    key: &Vec<u8>,
     salt: &[u8],
 ) -> Result<(), std::io::Error> {
     let json_string: &str = &serde_json::to_string(&elements)?;
@@ -357,7 +357,7 @@ pub fn overwrite_database_key(
 
 pub fn overwrite_database_json_key(
     json: &str,
-    key: Vec<u8>,
+    key: &Vec<u8>,
     salt: &[u8],
 ) -> Result<(), std::io::Error> {
     let encrypted =

@@ -1,4 +1,5 @@
 #![forbid(unsafe_code)]
+use database_management::overwrite_database_key;
 use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
 use interface::handler::handle_key_events;
@@ -62,12 +63,12 @@ fn main() -> AppResult<()> {
 
 fn dashboard() -> AppResult<()> {
     match database_management::get_elements() {
-        Ok((elements, key, salt)) => {
+        Ok((elements, mut key, salt)) => {
             if elements.is_empty() {
                 println!("No codes, type \"cotp -h\" to get help");
             } else {
                 // Create an application.
-                let mut app = interface::app::App::new(elements, key, salt);
+                let mut app = interface::app::App::new(elements);
 
                 // Initialize the terminal user interface.
                 let backend = CrosstermBackend::new(io::stderr());
@@ -91,7 +92,25 @@ fn dashboard() -> AppResult<()> {
                         Event::Paste(_) => {}
                     }
                 }
-                app.data_key.zeroize();
+
+                // Overwrite database if modified
+                let error: Option<String> = if app.data_modified {
+                    if let Err(_) = overwrite_database_key(&app.elements, &key, &salt) {
+                        Some("Failed to overwrite database".to_string())
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+
+                // Zeroize the key
+                key.zeroize();
+
+                // Print the error
+                if error.is_some() {
+                    eprintln!("{}", error.unwrap());
+                }
 
                 // Exit the user interface.
                 tui.exit()?;

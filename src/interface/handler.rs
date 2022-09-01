@@ -1,6 +1,5 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::database_management::overwrite_database_key;
 use crate::interface::app::{App, AppResult};
 use crate::interface::enums::Page::*;
 use crate::utils::{copy_string_to_clipboard, CopyType};
@@ -27,16 +26,10 @@ fn popup_handler(key_event: KeyEvent, app: &mut App) {
                     app.popup_text = e;
                     return;
                 }
-                let key = app.data_key.clone();
-                match overwrite_database_key(&app.elements, key, &app.salt) {
-                    Ok(_) => {
-                        app.focus = Focus::MainPage;
-                        app.popup_text = String::from("Done");
-                        // Force table render
-                        app.tick(true);
-                    }
-                    Err(e) => app.popup_text = e.to_string(),
-                }
+                app.focus = Focus::MainPage;
+                app.data_modified = true;
+                // Force table render
+                app.tick(true);
             }
             KeyCode::Char('n') | KeyCode::Char('N') => {
                 app.focus = Focus::MainPage;
@@ -95,7 +88,7 @@ fn main_handler(key_event: KeyEvent, app: &mut App) {
             } else if app.table.state.selected().is_some() {
                 // Ask the user if he wants to delete the OTP Code
                 app.focus = Focus::Popup;
-                app.popup_text = String::from("Do you want to delete the selected OTP Code?");
+                app.popup_text = String::from("Do you want to delete the selected OTP Code? [Y/N]");
                 app.popup_action = PopupAction::DeleteOtp;
             }
         }

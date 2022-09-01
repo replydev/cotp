@@ -40,7 +40,7 @@ pub fn gen_salt() -> Result<[u8; ARGON2ID_SALT_LENGTH], String> {
 
 pub fn encrypt_string_with_key(
     plain_text: String,
-    key: Vec<u8>,
+    key: &Vec<u8>,
     salt: &[u8],
 ) -> Result<EncryptedDatabase, String> {
     let wrapped_key = Key::from_slice(key.as_slice());
@@ -115,7 +115,7 @@ mod tests {
         let salt = gen_salt().unwrap();
         let key = argon_derive_key(b"pa$$w0rd", salt.as_ref()).unwrap();
         let encrypted =
-            encrypt_string_with_key(String::from("Secret data@#[]ò"), key, salt.as_ref()).unwrap();
+            encrypt_string_with_key(String::from("Secret data@#[]ò"), &key, salt.as_ref()).unwrap();
         let (decrypted, _key, _salt) =
             decrypt_string(&serde_json::to_string(&encrypted).unwrap(), "pa$$w0rd").unwrap();
         assert_eq!(String::from("Secret data@#[]ò"), decrypted);
