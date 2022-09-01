@@ -95,7 +95,7 @@ fn dashboard() -> AppResult<()> {
 
                 // Overwrite database if modified
                 let error: Option<String> = if app.data_modified {
-                    if let Err(_) = overwrite_database_key(&app.elements, &key, &salt) {
+                    if overwrite_database_key(&app.elements, &key, &salt).is_err() {
                         Some("Failed to overwrite database".to_string())
                     } else {
                         None

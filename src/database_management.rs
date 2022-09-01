@@ -13,7 +13,9 @@ use crate::otp::otp_helper::get_otp_code;
 use crate::utils::{self, copy_string_to_clipboard, CopyType};
 use zeroize::Zeroize;
 
-pub fn get_elements() -> Result<(Vec<OTPElement>, Vec<u8>, Vec<u8>), String> {
+type ReadResult = (Vec<OTPElement>, Vec<u8>, Vec<u8>);
+
+pub fn get_elements() -> Result<ReadResult, String> {
     let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
     let (elements, key, salt) = match read_from_file(&pw) {
         Ok((result, key, salt)) => (result, key, salt),
@@ -87,7 +89,7 @@ pub fn read_decrypted_text(password: &str) -> Result<(String, Vec<u8>, Vec<u8>),
     crypto::cryptography::decrypt_string(&encrypted_contents, password)
 }
 
-pub fn read_from_file(password: &str) -> Result<(Vec<OTPElement>, Vec<u8>, Vec<u8>), String> {
+pub fn read_from_file(password: &str) -> Result<ReadResult, String> {
     match read_decrypted_text(password) {
         Ok((mut contents, key, salt)) => {
             let mut vector: Vec<OTPElement> = match serde_json::from_str(&contents) {
