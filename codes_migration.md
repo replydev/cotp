@@ -7,6 +7,7 @@ Some needs to be converted using simple python script you can find listed in the
 |--|--|--|--|
 | [andOTP](https://github.com/andOTP/andOTP) | Make a backup using the app itself. | No |`--andotp` |
 | [Aegis](https://github.com/beemdevelopment/Aegis) | Make a backup using the app itself. | No |`--aegis` |
+| [Aegis](https://github.com/beemdevelopment/Aegis) (encrypted) | Make an encrypted backup using the app itself. | No |`--aegis-encrypted` |
 | [Authy](https://authy.com/) | Obtain `/data/data/com.authy.authy/shared_prefs/com.authy.storage.tokens.authenticator.xml` from your phone. | [Yes](https://github.com/replydev/cotp/blob/master/converters/authy.py) | `--authy` |
 | [Authy](https://authy.com/) (2nd method) | Follow this guide: https://gist.github.com/gboudreau/94bb0c11a6209c82418d01a59d958c93. | No | `--authy-exported` |
 | [cotp](https://github.com/replydev/cotp) | Export you database using `cotp export`. | No |`--cotp` |
