@@ -10,7 +10,7 @@ Some needs to be converted using simple python script you can find listed in the
 | [Aegis](https://github.com/beemdevelopment/Aegis) (encrypted) | Make an encrypted backup using the app itself. | No |`--aegis-encrypted` |
 | [Authy](https://authy.com/) | Obtain `/data/data/com.authy.authy/shared_prefs/com.authy.storage.tokens.authenticator.xml` from your phone. | [Yes](https://github.com/replydev/cotp/blob/master/converters/authy.py) | `--authy` |
 | [Authy](https://authy.com/) (2nd method) | Follow this guide: https://gist.github.com/gboudreau/94bb0c11a6209c82418d01a59d958c93. | No | `--authy-exported` |
-| [cotp](https://github.com/replydev/cotp) | Export you database using `cotp export`. | No |`--cotp` |
+| [cotp](https://github.com/replydev/cotp) | Export your database using `cotp export`. | No |`--cotp` |
 | [FreeOTP](https://freeotp.github.io/) | Obtain `/data/data/org.fedorahosted.freeotp/shared_prefs/tokens.xml` from your phone. | [Yes](https://github.com/replydev/cotp/blob/master/converters/freeotp.py) | `--freeotp` |
 | [FreeOTP+](https://github.com/helloworld1/FreeOTPPlus) | Make a backup using the app itself. | No | `--freeotp-plus` |
 | [Google Authenticator](https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2) | Obtain `/data/data/com.google.android.apps.authenticator2/databases/databases` from your phone | [Yes](https://github.com/replydev/cotp/blob/master/converters/gauth.py) | `--google-authenticator` |
