@@ -60,6 +60,7 @@ fn search_bar_handler(key_event: KeyEvent, app: &mut App) {
         KeyCode::Enter => {
             app.label_text = copy_selected_code_to_clipboard(app);
             app.print_percentage = false;
+            app.focus = Focus::MainPage;
         }
         KeyCode::Esc => {
             app.focus = Focus::MainPage;
