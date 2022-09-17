@@ -6,24 +6,28 @@ use data_encoding::BASE32_NOPAD;
 
 use utils::{check_elements, get_db_path, millis_before_next_step};
 
-use crate::cryptography;
+use crate::crypto;
+use crate::crypto::cryptography::gen_salt;
 use crate::otp::otp_element::OTPElement;
 use crate::otp::otp_helper::get_otp_code;
 use crate::utils::{self, copy_string_to_clipboard, CopyType};
 use zeroize::Zeroize;
 
-pub fn get_elements() -> Result<Vec<OTPElement>, String> {
+type ReadResult = (Vec<OTPElement>, Vec<u8>, Vec<u8>);
+
+pub fn get_elements() -> Result<ReadResult, String> {
     let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
-    let elements: Vec<OTPElement> = match read_from_file(&pw) {
-        Ok(result) => result,
+    let (elements, key, salt) = match read_from_file(&pw) {
+        Ok((result, key, salt)) => (result, key, salt),
         Err(_e) => return Err(String::from("Cannot decrypt existing database")),
     };
     pw.zeroize();
-    Ok(elements)
+    Ok((elements, key, salt))
 }
 
 pub fn print_elements_matching(issuer: Option<&str>, label: Option<&str>) -> Result<(), String> {
-    let elements = get_elements()?;
+    let (elements, mut key, _salt) = get_elements()?;
+    key.zeroize();
 
     elements
         .iter()
@@ -63,7 +67,7 @@ pub fn print_elements_matching(issuer: Option<&str>, label: Option<&str>) -> Res
     Ok(())
 }
 
-pub fn read_decrypted_text(password: &str) -> Result<String, String> {
+pub fn read_decrypted_text(password: &str) -> Result<(String, Vec<u8>, Vec<u8>), String> {
     let encrypted_contents = match read_to_string(&get_db_path()) {
         Ok(result) => result,
         Err(e) => {
@@ -82,12 +86,12 @@ pub fn read_decrypted_text(password: &str) -> Result<String, String> {
         };
     }
     //rust close files at the end of the function
-    cryptography::decrypt_string(&encrypted_contents, password)
+    crypto::cryptography::decrypt_string(&encrypted_contents, password)
 }
 
-pub fn read_from_file(password: &str) -> Result<Vec<OTPElement>, String> {
+pub fn read_from_file(password: &str) -> Result<ReadResult, String> {
     match read_decrypted_text(password) {
-        Ok(mut contents) => {
+        Ok((mut contents, key, salt)) => {
             let mut vector: Vec<OTPElement> = match serde_json::from_str(&contents) {
                 Ok(results) => results,
                 Err(e) => {
@@ -97,7 +101,7 @@ pub fn read_from_file(password: &str) -> Result<Vec<OTPElement>, String> {
             };
             contents.zeroize();
             vector.sort_by_key(|a| a.issuer());
-            Ok(vector)
+            Ok((vector, key, salt))
         }
         Err(e) => Err(e),
     }
@@ -117,7 +121,7 @@ pub fn add_element(
     algorithm: &str,
     digits: u64,
     counter: u64,
-    hotp_type: bool,
+    type_: &str,
 ) -> Result<(), String> {
     let upper_secret = secret.to_uppercase().replace('=', "");
     match check_secret(&upper_secret) {
@@ -125,7 +129,6 @@ pub fn add_element(
         Err(error) => return Err(error.to_string()),
     }
     let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
-    let type_ = if hotp_type { "HOTP" } else { "TOTP" };
     let otp_element = OTPElement::new(
         upper_secret,
         issuer.to_string(),
@@ -141,7 +144,10 @@ pub fn add_element(
         vec![],
     );
     let mut elements = match read_from_file(&pw) {
-        Ok(result) => result,
+        Ok((result, mut key, _salt)) => {
+            key.zeroize();
+            result
+        }
         Err(e) => return Err(e),
     };
     elements.push(otp_element);
@@ -160,7 +166,10 @@ pub fn remove_element_from_db(indexes: Vec<usize>) -> Result<(), String> {
 
     let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
     let mut elements: Vec<OTPElement> = match read_from_file(&pw) {
-        Ok(result) => result,
+        Ok((result, mut key, _salt)) => {
+            key.zeroize();
+            result
+        }
         Err(e) => {
             return Err(e);
         }
@@ -214,7 +223,10 @@ pub fn edit_element(
 
     let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
     let mut elements: Vec<OTPElement> = match read_from_file(&pw) {
-        Ok(result) => result,
+        Ok((result, mut key, _salt)) => {
+            key.zeroize();
+            result
+        }
         Err(_e) => return Err(String::from("Cannot decrypt existing database")),
     };
 
@@ -261,10 +273,11 @@ pub fn export_database(path: PathBuf) -> Result<PathBuf, String> {
         Err(e) => return Err(format!("Error during file reading: {:?}", e)),
     };
     let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
-    let contents = cryptography::decrypt_string(&encrypted_contents, &pw);
+    let contents = crypto::cryptography::decrypt_string(&encrypted_contents, &pw);
     pw.zeroize();
-    return match contents {
-        Ok(mut contents) => {
+    match contents {
+        Ok((mut contents, mut key, _salt)) => {
+            key.zeroize();
             if contents == "[]" {
                 return Err(String::from(
                     "there are no elements in your database, type \"cotp -h\" to get help",
@@ -278,11 +291,12 @@ pub fn export_database(path: PathBuf) -> Result<PathBuf, String> {
             Ok(exported_path)
         }
         Err(e) => Err(e),
-    };
+    }
 }
 
 pub fn show_qr_code(issuer: String) -> Result<(), String> {
-    let elements = get_elements()?;
+    let (elements, mut key, _salt) = get_elements()?;
+    key.zeroize();
     if let Some(element) = elements.iter().find(|value| {
         value
             .issuer()
@@ -297,7 +311,8 @@ pub fn show_qr_code(issuer: String) -> Result<(), String> {
 }
 
 pub fn print_element_info(issuer: String) -> Result<(), String> {
-    let elements = get_elements()?;
+    let (elements, mut key, _salt) = get_elements()?;
+    key.zeroize();
     if elements.is_empty() {
         return Err(
             "there are no elements in your database. Type \"cotp -h\" to get help.".to_string(),
@@ -327,7 +342,30 @@ pub fn overwrite_database(elements: &[OTPElement], password: &str) -> Result<(),
 }
 
 pub fn overwrite_database_json(json: &str, password: &str) -> Result<(), std::io::Error> {
-    let encrypted = cryptography::encrypt_string(json.to_string(), password).unwrap();
+    let salt = gen_salt().unwrap();
+    let key = crypto::cryptography::argon_derive_key(password.as_bytes(), &salt).unwrap();
+    overwrite_database_json_key(json, &key, salt.as_ref())
+}
+
+pub fn overwrite_database_key(
+    elements: &[OTPElement],
+    key: &Vec<u8>,
+    salt: &[u8],
+) -> Result<(), std::io::Error> {
+    let json_string: &str = &serde_json::to_string(&elements)?;
+    overwrite_database_json_key(json_string, key, salt)
+}
+
+pub fn overwrite_database_json_key(
+    json: &str,
+    key: &Vec<u8>,
+    salt: &[u8],
+) -> Result<(), std::io::Error> {
+    let encrypted =
+        crypto::cryptography::encrypt_string_with_key(json.to_string(), key, salt).unwrap();
     let mut file = File::create(utils::get_db_path())?;
-    utils::write_to_file(&encrypted, &mut file)
+    match serde_json::to_string(&encrypted) {
+        Ok(v) => utils::write_to_file(&v, &mut file),
+        Err(e) => Err(std::io::Error::from(e)),
+    }
 }

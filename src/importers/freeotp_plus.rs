@@ -39,29 +39,31 @@ pub fn import(file_path: &str) -> Result<Vec<OTPElement>, String> {
         Err(e) => return Err(format!("Error during deserializing: {:?}", e)),
     };
 
-    let mut converted_elements: Vec<OTPElement> = vec![];
-    for (i, token) in freeotp.tokens.into_iter().enumerate() {
-        converted_elements.push(OTPElement::new(
-            encode_secret(&token.secret),
-            token.issuer_ext,
-            freeotp
-                .token_order
-                .get(i)
-                .unwrap_or(&String::from("No label"))
-                .to_owned(),
-            token.digits,
-            token._type,
-            token.algo,
-            String::from(""),
-            0,
-            0,
-            token.period,
-            token.counter,
-            vec![],
-        ));
-    }
-
-    Ok(converted_elements)
+    Ok(freeotp
+        .tokens
+        .into_iter()
+        .enumerate()
+        .map(|(i, token)| {
+            OTPElement::new(
+                encode_secret(&token.secret),
+                token.issuer_ext,
+                freeotp
+                    .token_order
+                    .get(i)
+                    .unwrap_or(&String::from("No label"))
+                    .to_owned(),
+                token.digits,
+                token._type,
+                token.algo,
+                String::from(""),
+                0,
+                0,
+                token.period,
+                token.counter,
+                vec![],
+            )
+        })
+        .collect())
 }
 
 fn encode_secret(secret: &[i8]) -> String {

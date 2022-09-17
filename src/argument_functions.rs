@@ -63,7 +63,7 @@ pub fn add(matches: &ArgMatches) {
         matches.value_of("algorithm").unwrap(),
         matches.value_of_t("digits").unwrap_or(6),
         matches.value_of_t("counter").unwrap_or_default(),
-        matches.is_present("hotp"),
+        matches.value_of("type").unwrap(),
     ) {
         Ok(()) => println!("Success"),
         Err(e) => eprintln!("An error occurred: {}", e),
@@ -136,10 +136,11 @@ pub fn search(matches: &ArgMatches) {
 
 pub fn change_password() {
     let mut old_password = utils::prompt_for_passwords("Old password: ", 8, false);
-    let decrypted_text = database_management::read_decrypted_text(&old_password);
+    let result = database_management::read_decrypted_text(&old_password);
     old_password.zeroize();
-    match decrypted_text {
-        Ok(mut s) => {
+    match result {
+        Ok((mut s, mut key, _salt)) => {
+            key.zeroize();
             let mut new_password = utils::prompt_for_passwords("New password: ", 8, true);
             match database_management::overwrite_database_json(&s, &new_password) {
                 Ok(()) => println!("Password changed"),

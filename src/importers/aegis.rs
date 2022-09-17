@@ -54,36 +54,36 @@ pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
 
 pub fn import_from_string(file_to_import_contents: &str) -> Result<Vec<OTPElement>, String> {
     match serde_json::from_str::<AegisJson>(file_to_import_contents) {
-        Ok(element) => Ok(do_import(element.db.entries)),
+        Ok(element) => Ok(map_entries(element.db.entries)),
         Err(_) => {
             let aegis_db: AegisDb = match serde_json::from_str(file_to_import_contents) {
                 Ok(element) => element,
                 Err(e) => return Err(format!("{:?}", e)),
             };
             // maybe we are importing from an encrypted aegis database, so we don
-            Ok(do_import(aegis_db.entries))
+            Ok(map_entries(aegis_db.entries))
         }
     }
 }
 
-fn do_import(entries: Vec<AegisElement>) -> Vec<OTPElement> {
-    let mut elements: Vec<OTPElement> = Vec::with_capacity(entries.len());
-
-    for element in entries {
-        elements.push(OTPElement::new(
-            element.info.secret,
-            element.issuer,
-            element.name,
-            element.info.digits,
-            element._type,
-            element.info.algo,
-            String::from(""),
-            0,
-            0,
-            element.info.period.unwrap_or_default(),
-            element.info.counter.unwrap_or_default(),
-            vec![],
-        ));
-    }
-    elements
+fn map_entries(entries: Vec<AegisElement>) -> Vec<OTPElement> {
+    entries
+        .into_iter()
+        .map(|e| {
+            OTPElement::new(
+                e.info.secret,
+                e.issuer,
+                e.name,
+                e.info.digits,
+                e._type,
+                e.info.algo,
+                String::from(""),
+                0,
+                0,
+                e.info.period.unwrap_or_default(),
+                e.info.counter.unwrap_or_default(),
+                vec![],
+            )
+        })
+        .collect()
 }

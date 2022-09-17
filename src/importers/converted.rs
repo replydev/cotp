@@ -1,4 +1,4 @@
-use std::fs::read_to_string;
+use std::{fs::read_to_string, vec};
 
 use serde::Deserialize;
 use serde_json;
@@ -29,23 +29,23 @@ pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
         Err(e) => return Err(format!("{}", e)),
     };
 
-    let mut elements: Vec<OTPElement> = Vec::new();
-
-    for element in vector {
-        elements.push(OTPElement::new(
-            element.secret,
-            element.issuer.unwrap_or_default(),
-            element.label.unwrap_or_default(),
-            element.digits,
-            element.type_,
-            element.algorithm,
-            String::from(""),
-            0,
-            0,
-            30,
-            element.counter,
-            vec![],
-        ))
-    }
-    Ok(elements)
+    Ok(vector
+        .into_iter()
+        .map(|e| {
+            OTPElement::new(
+                e.secret,
+                e.issuer.unwrap_or_default(),
+                e.label.unwrap_or_default(),
+                e.digits,
+                e.type_,
+                e.algorithm,
+                String::from(""),
+                0,
+                0,
+                30,
+                e.counter,
+                vec![],
+            )
+        })
+        .collect())
 }

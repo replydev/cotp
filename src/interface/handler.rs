@@ -1,30 +1,52 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::interface::app::{App, AppResult};
-use crate::interface::page::Page::*;
+use crate::interface::enums::Page::*;
 use crate::utils::{copy_string_to_clipboard, CopyType};
 
-use super::page::Page;
+use super::enums::Page;
+use super::enums::{Focus, PopupAction};
 
 /// Handles the key events and updates the state of [`App`].
 pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
-    if !app.search_bar_focused {
-        handle_key_events_main(key_event, app);
-    } else {
-        handle_key_events_search_bar(key_event, app);
+    match app.focus {
+        Focus::MainPage => main_handler(key_event, app),
+        Focus::SearchBar => search_bar_handler(key_event, app),
+        Focus::Popup => popup_handler(key_event, app),
     }
-
     Ok(())
 }
 
-fn handle_key_events_search_bar(key_event: KeyEvent, app: &mut App) {
+fn popup_handler(key_event: KeyEvent, app: &mut App) {
+    match app.popup_action {
+        PopupAction::EditOtp => todo!(),
+        PopupAction::DeleteOtp => match key_event.code {
+            KeyCode::Char('y') | KeyCode::Char('Y') => {
+                if let Err(e) = delete_selected_code(app) {
+                    app.popup_text = e;
+                    return;
+                }
+                app.focus = Focus::MainPage;
+                app.data_modified = true;
+                // Force table render
+                app.tick(true);
+            }
+            KeyCode::Char('n') | KeyCode::Char('N') => {
+                app.focus = Focus::MainPage;
+            }
+            _ => {}
+        },
+    }
+}
+
+fn search_bar_handler(key_event: KeyEvent, app: &mut App) {
     match key_event.code {
         KeyCode::Char(c) => {
             if key_event.modifiers == KeyModifiers::CONTROL {
                 match c {
                     'f' | 'F' => {
                         app.search_query.clear();
-                        app.search_bar_focused = false;
+                        app.focus = Focus::MainPage;
                     }
                     'c' | 'C' => app.running = false,
                     'w' | 'W' => app.search_query.clear(),
@@ -38,22 +60,23 @@ fn handle_key_events_search_bar(key_event: KeyEvent, app: &mut App) {
         KeyCode::Enter => {
             app.label_text = copy_selected_code_to_clipboard(app);
             app.print_percentage = false;
+            app.focus = Focus::MainPage;
         }
         KeyCode::Esc => {
-            app.search_bar_focused = false;
+            app.focus = Focus::MainPage;
         }
         KeyCode::Backspace => {
             app.search_query.pop();
         }
         KeyCode::Up | KeyCode::Down => {
-            app.search_bar_focused = false;
-            handle_key_events_main(key_event, app);
+            app.focus = Focus::MainPage;
+            main_handler(key_event, app);
         }
         _ => {}
     }
 }
 
-fn handle_key_events_main(key_event: KeyEvent, app: &mut App) {
+fn main_handler(key_event: KeyEvent, app: &mut App) {
     match key_event.code {
         // exit application on ESC
         KeyCode::Esc => {
@@ -63,13 +86,16 @@ fn handle_key_events_main(key_event: KeyEvent, app: &mut App) {
         KeyCode::Char('d') | KeyCode::Char('D') => {
             if key_event.modifiers == KeyModifiers::CONTROL {
                 app.running = false;
+            } else if app.table.state.selected().is_some() {
+                // Ask the user if he wants to delete the OTP Code
+                app.focus = Focus::Popup;
+                app.popup_text = String::from("Do you want to delete the selected OTP Code? [Y/N]");
+                app.popup_action = PopupAction::DeleteOtp;
             }
         }
         // exit application on Q
         KeyCode::Char('q') | KeyCode::Char('Q') => {
-            // Just could do: app.running = app.search_bar_focused;
-            // But this is more readable
-            if !app.search_bar_focused {
+            if app.focus != Focus::SearchBar {
                 app.running = false;
             }
         }
@@ -103,17 +129,31 @@ fn handle_key_events_main(key_event: KeyEvent, app: &mut App) {
 
         KeyCode::Char('f') | KeyCode::Char('F') => {
             if key_event.modifiers == KeyModifiers::CONTROL {
-                app.search_bar_focused = true;
+                app.focus = Focus::SearchBar;
             }
         }
 
-        KeyCode::Char('/') => app.search_bar_focused = true,
+        KeyCode::Char('/') => app.focus = Focus::SearchBar,
 
         KeyCode::Enter => {
             app.label_text = copy_selected_code_to_clipboard(app);
             app.print_percentage = false;
         }
         _ => {}
+    }
+}
+
+fn delete_selected_code(app: &mut App) -> Result<String, String> {
+    match app.table.state.selected() {
+        Some(selected) => {
+            if app.elements.len() > selected {
+                app.elements.remove(selected);
+                Ok("Done".to_string())
+            } else {
+                Err("Index out of bounds".to_string())
+            }
+        }
+        None => Err("No code selected".to_string()),
     }
 }
 
