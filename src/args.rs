@@ -34,12 +34,13 @@ fn get_matches() -> ArgMatches {
                 .about("Add a new OTP Code")
                 .arg_required_else_help(true)
                 .arg(
-                    Arg::new("hotp")
-                        .short('o')
-                        .long("hotp")
-                        .help("Specify this is an HOTP Code")
-                        .takes_value(false)
-                        .requires("counter"),
+                    Arg::new("type")
+                        .short('t')
+                        .long("type")
+                        .help("Specify the OTP code type")
+                        .takes_value(true)
+                        .possible_values(&["TOTP", "HOTP", "STEAM","YANDEX"])
+                        .default_value("TOTP"),
                 )
                 .arg(
                     Arg::new("issuer")
@@ -75,6 +76,7 @@ fn get_matches() -> ArgMatches {
                         .help("OTP Code digits")
                         .takes_value(true)
                         .required(false)
+                        .default_value_if("type", Some("STEAM"), Some("5"))
                         .default_value("6"),
                 )
                 .arg(
@@ -82,6 +84,7 @@ fn get_matches() -> ArgMatches {
                         .short('c')
                         .long("counter")
                         .help("HOTP code counter")
+                        .required_if_eq("type", "HOTP")
                         .takes_value(true),
                 ),
         )

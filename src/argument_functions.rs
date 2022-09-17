@@ -63,7 +63,7 @@ pub fn add(matches: &ArgMatches) {
         matches.value_of("algorithm").unwrap(),
         matches.value_of_t("digits").unwrap_or(6),
         matches.value_of_t("counter").unwrap_or_default(),
-        matches.is_present("hotp"),
+        matches.value_of("type").unwrap(),
     ) {
         Ok(()) => println!("Success"),
         Err(e) => eprintln!("An error occurred: {}", e),

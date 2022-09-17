@@ -121,7 +121,7 @@ pub fn add_element(
     algorithm: &str,
     digits: u64,
     counter: u64,
-    hotp_type: bool,
+    type_: &str,
 ) -> Result<(), String> {
     let upper_secret = secret.to_uppercase().replace('=', "");
     match check_secret(&upper_secret) {
@@ -129,7 +129,6 @@ pub fn add_element(
         Err(error) => return Err(error.to_string()),
     }
     let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
-    let type_ = if hotp_type { "HOTP" } else { "TOTP" };
     let otp_element = OTPElement::new(
         upper_secret,
         issuer.to_string(),
