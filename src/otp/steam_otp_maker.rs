@@ -25,3 +25,13 @@ fn to_steam_string(mut code: usize, digits: usize) -> String {
     }
     res
 }
+
+#[cfg(test)]
+mod tests {
+    use super::to_steam_string;
+
+    #[test]
+    fn test_steam_code() {
+        assert_eq!(to_steam_string(36751792, 5), String::from("GJ2F4"))
+    }
+}
