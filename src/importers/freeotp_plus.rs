@@ -44,6 +44,11 @@ pub fn import(file_path: &str) -> Result<Vec<OTPElement>, String> {
         .into_iter()
         .enumerate()
         .map(|(i, token)| {
+            let counter: Option<u64> = if token.algo.to_uppercase().as_str() == "HOTP" {
+                Some(token.counter)
+            } else {
+                None
+            };
             OTPElement::new(
                 encode_secret(&token.secret),
                 token.issuer_ext,
@@ -55,12 +60,8 @@ pub fn import(file_path: &str) -> Result<Vec<OTPElement>, String> {
                 token.digits,
                 token._type,
                 token.algo,
-                String::from(""),
-                0,
-                0,
                 token.period,
-                token.counter,
-                vec![],
+                counter,
             )
         })
         .collect())

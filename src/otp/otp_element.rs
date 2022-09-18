@@ -2,6 +2,13 @@ use qrcode::render::unicode;
 use qrcode::QrCode;
 use serde::{Deserialize, Serialize};
 
+pub enum OTPType {
+    TOTP,
+    HOTP,
+    STEAM,
+    YANDEX,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct OTPElement {
     secret: String,
@@ -28,12 +35,12 @@ impl OTPElement {
         digits: u64,
         type_: String,
         algorithm: String,
-        thumbnail: String,
-        last_used: u64,
-        used_frequency: u64,
+        // thumbnail: String,
+        // last_used: u64,
+        // used_frequency: u64,
         period: u64,
-        counter: u64,
-        tags: Vec<String>,
+        counter: Option<u64>,
+        // tags: Vec<String>,
     ) -> OTPElement {
         OTPElement {
             secret,
@@ -42,12 +49,12 @@ impl OTPElement {
             digits,
             type_,
             algorithm,
-            thumbnail,
-            last_used,
-            used_frequency,
             period,
-            counter: Some(counter),
-            tags,
+            counter: counter,
+            thumbnail: String::from(""),
+            last_used: 0,
+            used_frequency: 0,
+            tags: vec![],
         }
     }
     pub fn secret(&self) -> String {

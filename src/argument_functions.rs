@@ -55,6 +55,7 @@ pub fn import(matches: &ArgMatches) {
 
 pub fn add(matches: &ArgMatches) {
     let mut secret = utils::prompt_for_passwords("Insert the secret: ", 0, false);
+
     match database_management::add_element(
         secret.as_str(),
         // Safe to unwrap due to default values
@@ -62,7 +63,10 @@ pub fn add(matches: &ArgMatches) {
         matches.value_of("label").unwrap(),
         matches.value_of("algorithm").unwrap(),
         matches.value_of_t("digits").unwrap_or(6),
-        matches.value_of_t("counter").unwrap_or_default(),
+        match matches.value_of_t("counter") {
+            Ok(r) => Some(r),
+            Err(_) => None,
+        },
         matches.value_of("type").unwrap(),
     ) {
         Ok(()) => println!("Success"),

@@ -78,6 +78,11 @@ pub fn import(file_path: &str) -> Result<Vec<OTPElement>, String> {
         .into_iter()
         .map(|e| {
             let type_ = e.get_type();
+            let counter: Option<u64> = if type_.to_uppercase().as_str() == "HOTP" {
+                Some(0)
+            } else {
+                None
+            };
             let digits = e.get_digits();
             OTPElement::new(
                 e.secret.to_uppercase().replace('=', ""),
@@ -86,12 +91,8 @@ pub fn import(file_path: &str) -> Result<Vec<OTPElement>, String> {
                 digits,
                 type_,
                 "SHA1".to_string(),
-                "".to_string(),
-                0,
-                0,
                 30,
-                0,
-                Vec::new(),
+                counter,
             )
         })
         .collect())

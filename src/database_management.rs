@@ -120,7 +120,7 @@ pub fn add_element(
     label: &str,
     algorithm: &str,
     digits: u64,
-    counter: u64,
+    counter: Option<u64>,
     type_: &str,
 ) -> Result<(), String> {
     let upper_secret = secret.to_uppercase().replace('=', "");
@@ -136,12 +136,8 @@ pub fn add_element(
         digits,
         type_.to_string(),
         String::from(algorithm).to_uppercase(),
-        String::from("Default"),
-        0,
-        0,
         30,
         counter,
-        vec![],
     );
     let mut elements = match read_from_file(&pw) {
         Ok((result, mut key, _salt)) => {

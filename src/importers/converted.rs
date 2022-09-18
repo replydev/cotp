@@ -1,4 +1,4 @@
-use std::{fs::read_to_string, vec};
+use std::fs::read_to_string;
 
 use serde::Deserialize;
 use serde_json;
@@ -32,6 +32,11 @@ pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
     Ok(vector
         .into_iter()
         .map(|e| {
+            let counter: Option<u64> = if e.type_.to_uppercase().as_str() == "HOTP" {
+                Some(e.counter)
+            } else {
+                None
+            };
             OTPElement::new(
                 e.secret,
                 e.issuer.unwrap_or_default(),
@@ -39,12 +44,8 @@ pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
                 e.digits,
                 e.type_,
                 e.algorithm,
-                String::from(""),
                 0,
-                0,
-                30,
-                e.counter,
-                vec![],
+                counter,
             )
         })
         .collect())

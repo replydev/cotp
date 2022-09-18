@@ -77,12 +77,8 @@ fn map_entries(entries: Vec<AegisElement>) -> Vec<OTPElement> {
                 e.info.digits,
                 e._type,
                 e.info.algo,
-                String::from(""),
-                0,
-                0,
-                e.info.period.unwrap_or_default(),
-                e.info.counter.unwrap_or_default(),
-                vec![],
+                e.info.period.unwrap_or(30),
+                e.info.counter,
             )
         })
         .collect()

@@ -21,7 +21,7 @@ pub fn get_otp_code(element: &OTPElement) -> Result<String, String> {
                 Ok(format_code(code, element.digits() as usize))
             }
             None => Err(String::from(
-                "The element is an HOTP code but the is no counter value.",
+                "The element is an HOTP code but there is no counter value.",
             )),
         },
         "STEAM" => steam(element),
