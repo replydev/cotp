@@ -90,7 +90,7 @@ where
 }
 
 fn to_yandex_string(mut code: u64, digits: usize) -> String {
-    code = code % EN_ALPHABET_LENGTH.pow(digits as u32);
+    code %= EN_ALPHABET_LENGTH.pow(digits as u32);
     let mut s = String::with_capacity(digits);
     let mut i: isize = digits as isize - 1;
     while i >= 0 {

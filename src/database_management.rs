@@ -114,6 +114,7 @@ pub fn check_secret(secret: &str) -> Result<(), data_encoding::DecodeError> {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn add_element(
     secret: &str,
     issuer: &str,

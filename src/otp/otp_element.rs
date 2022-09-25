@@ -2,13 +2,6 @@ use qrcode::render::unicode;
 use qrcode::QrCode;
 use serde::{Deserialize, Serialize};
 
-pub enum OTPType {
-    TOTP,
-    HOTP,
-    STEAM,
-    YANDEX,
-}
-
 #[derive(Serialize, Deserialize)]
 pub struct OTPElement {
     secret: String,
@@ -52,7 +45,7 @@ impl OTPElement {
             type_,
             algorithm,
             period,
-            counter: counter,
+            counter,
             thumbnail: String::from(""),
             last_used: 0,
             used_frequency: 0,
