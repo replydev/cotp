@@ -1,13 +1,14 @@
 use std::convert::TryInto;
 use std::time::SystemTime;
 
+use aes_gcm::aead::generic_array::GenericArray;
 use data_encoding::BASE32_NOPAD;
 use hmac::digest::block_buffer::Eager;
 use hmac::digest::core_api::{
     BlockSizeUser, BufferKindUser, CoreProxy, FixedOutputCore, UpdateCore,
 };
 use hmac::digest::generic_array::typenum::{IsLess, Le, NonZero, U256};
-use hmac::digest::HashMarker;
+use hmac::digest::{HashMarker, OutputSizeUser};
 use hmac::{Hmac, Mac};
 use sha1::Sha1;
 use sha2::{Sha256, Sha512};
@@ -55,11 +56,8 @@ where
         Ok(result) => result,
         Err(e) => return Err(format!("{:?}", e)),
     };
-    // calculate HMAC from secret bytes and counter
-    let mut hmac: Hmac<D> =
-        Hmac::new_from_slice(secret_decoded.as_slice()).expect("Failed to derive HMAC");
-    hmac.update(&counter.to_be_bytes());
-    let hash = hmac.finalize().into_bytes();
+
+    let hash = hotp_hash::<D>(&secret_decoded, counter);
 
     // calculate offset
     let offset: usize = match hash.last() {
@@ -73,6 +71,27 @@ where
         Err(_) => return Err(String::from("Invalid digest")),
     };
     Ok(u32::from_be_bytes(code_bytes) & 0x7fffffff)
+}
+
+pub fn hotp_hash<D>(
+    secret: &[u8],
+    counter: u64,
+) -> GenericArray<u8, <<D as CoreProxy>::Core as OutputSizeUser>::OutputSize>
+where
+    D: CoreProxy,
+    D::Core: HashMarker
+        + UpdateCore
+        + FixedOutputCore
+        + BufferKindUser<BufferKind = Eager>
+        + Default
+        + Clone,
+    <D::Core as BlockSizeUser>::BlockSize: IsLess<U256>,
+    Le<<D::Core as BlockSizeUser>::BlockSize, U256>: NonZero,
+{
+    // calculate HMAC from secret bytes and counter
+    let mut hmac: Hmac<D> = Hmac::new_from_slice(secret).expect("Failed to derive HMAC");
+    hmac.update(&counter.to_be_bytes());
+    hmac.finalize().into_bytes()
 }
 
 #[cfg(test)]

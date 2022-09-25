@@ -24,6 +24,7 @@ pub struct OTPElement {
     period: u64,
     counter: Option<u64>,
     tags: Vec<String>,
+    yandex_pin: Option<String>,
 }
 
 impl OTPElement {
@@ -41,6 +42,7 @@ impl OTPElement {
         period: u64,
         counter: Option<u64>,
         // tags: Vec<String>,
+        yandex_pin: Option<String>,
     ) -> OTPElement {
         OTPElement {
             secret,
@@ -55,6 +57,7 @@ impl OTPElement {
             last_used: 0,
             used_frequency: 0,
             tags: vec![],
+            yandex_pin,
         }
     }
     pub fn secret(&self) -> String {
@@ -77,6 +80,12 @@ impl OTPElement {
     }
     pub fn counter(&self) -> Option<u64> {
         self.counter
+    }
+    pub fn period(&self) -> u64 {
+        self.period
+    }
+    pub fn yandex_pin(&self) -> Option<String> {
+        self.yandex_pin.clone()
     }
 
     pub fn set_secret(&mut self, secret: String) {
@@ -149,12 +158,9 @@ mod test {
             6,
             String::from("TOTP"),
             String::from("SHA1"),
-            String::from(""),
-            0,
-            0,
             30,
-            0,
-            vec![],
+            None,
+            None,
         );
         assert_eq!(otp_element.get_otpauth_uri().as_str(), "otpauth://totp/IssuerText:LabelText?secret=xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g&algorithm=SHA1&digits=6&period=30&lock=false");
     }

@@ -62,6 +62,7 @@ pub fn import(file_path: &str) -> Result<Vec<OTPElement>, String> {
                 token.algo,
                 token.period,
                 counter,
+                None,
             )
         })
         .collect())

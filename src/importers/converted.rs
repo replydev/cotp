@@ -46,6 +46,7 @@ pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
                 e.algorithm,
                 0,
                 counter,
+                None,
             )
         })
         .collect())

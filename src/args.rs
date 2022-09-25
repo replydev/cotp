@@ -86,6 +86,13 @@ fn get_matches() -> ArgMatches {
                         .help("HOTP code counter")
                         .required_if_eq("type", "HOTP")
                         .takes_value(true),
+                ).arg(
+                    Arg::new("yandex-pin")
+                    .short('p')
+                    .long("yandex-pin")
+                    .help("Yandex code pin")
+                    .required_if_eq("type", "YANDEX")
+                    .takes_value(true),
                 ),
         )
         .subcommand(

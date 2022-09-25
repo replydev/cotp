@@ -2,6 +2,7 @@ use crate::otp::otp_element::OTPElement;
 use crate::otp::otp_maker::{hotp, totp};
 
 use super::steam_otp_maker::steam;
+use super::yandex_otp_maker::yandex;
 
 pub fn get_otp_code(element: &OTPElement) -> Result<String, String> {
     match element.type_().to_uppercase().as_str() {
@@ -25,6 +26,7 @@ pub fn get_otp_code(element: &OTPElement) -> Result<String, String> {
             )),
         },
         "STEAM" => steam(element),
+        "YANDEX" => yandex(element),
         _ => unreachable!(),
     }
 }

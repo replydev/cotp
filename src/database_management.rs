@@ -122,6 +122,7 @@ pub fn add_element(
     digits: u64,
     counter: Option<u64>,
     type_: &str,
+    yandex_pin: Option<String>,
 ) -> Result<(), String> {
     let upper_secret = secret.to_uppercase().replace('=', "");
     match check_secret(&upper_secret) {
@@ -138,6 +139,7 @@ pub fn add_element(
         String::from(algorithm).to_uppercase(),
         30,
         counter,
+        yandex_pin,
     );
     let mut elements = match read_from_file(&pw) {
         Ok((result, mut key, _salt)) => {

@@ -79,6 +79,7 @@ fn map_entries(entries: Vec<AegisElement>) -> Vec<OTPElement> {
                 e.info.algo,
                 e.info.period.unwrap_or(30),
                 e.info.counter,
+                None,
             )
         })
         .collect()

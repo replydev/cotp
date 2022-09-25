@@ -93,6 +93,7 @@ pub fn import(file_path: &str) -> Result<Vec<OTPElement>, String> {
                 "SHA1".to_string(),
                 30,
                 counter,
+                None,
             )
         })
         .collect())
