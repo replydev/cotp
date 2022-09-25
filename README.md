@@ -12,7 +12,6 @@ cotp is written with simplicity in mind, the interface is quite minimalist and i
 
 [![asciicast](https://asciinema.org/a/459912.svg)](https://asciinema.org/a/459912)
 
-  
 If you are familiar with the command line interface using cotp will not be a problem. Just type `cotp` to enter the TUI dashboard. Type `i` to get some instruction. Otherwise just enter `cotp --help`.
 
 In the first run you will be prompted to insert a password to initialize the database.
@@ -26,6 +25,8 @@ It also uses [AES-GCM](https://docs.rs/aes-gcm/latest/aes_gcm/) to import from e
 ## Compatibility
 
 cotp can generate both **TOTP** and **HOTP** codes, compliant with **rfc6238** and **rfc4226** specifications. Also, it is possible to customize settings like **HMAC algorithm** and **digits**, to provide compatibility to other two-factor authentication systems.
+
+Latest releases also include support for Steam, Yandex, MOTP codes and code copying from SSH Remote Shell.
 
 ### Cross Plaform
 
