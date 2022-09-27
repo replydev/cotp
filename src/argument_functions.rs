@@ -68,7 +68,7 @@ pub fn add(matches: &ArgMatches) {
             Err(_) => None,
         },
         matches.value_of("type").unwrap(),
-        matches.value_of("yandex-pin").map(|v| v.to_owned()),
+        matches.value_of("pin").map(|v| v.to_owned()),
     ) {
         Ok(()) => println!("Success"),
         Err(e) => eprintln!("An error occurred: {}", e),

@@ -39,7 +39,7 @@ fn get_matches() -> ArgMatches {
                         .long("type")
                         .help("Specify the OTP code type")
                         .takes_value(true)
-                        .possible_values(&["TOTP", "HOTP", "STEAM","YANDEX"])
+                        .possible_values(&["TOTP", "HOTP", "STEAM","YANDEX","MOTP"])
                         .default_value("TOTP"),
                 )
                 .arg(
@@ -87,11 +87,12 @@ fn get_matches() -> ArgMatches {
                         .required_if_eq("type", "HOTP")
                         .takes_value(true),
                 ).arg(
-                    Arg::new("yandex-pin")
+                    Arg::new("pin")
                     .short('p')
-                    .long("yandex-pin")
-                    .help("Yandex code pin")
+                    .long("pin")
+                    .help("Code pin (for Yandex and MOTP)")
                     .required_if_eq("type", "YANDEX")
+                    .required_if_eq("type", "MOTP")
                     .takes_value(true),
                 ),
         )

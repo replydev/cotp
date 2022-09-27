@@ -17,7 +17,7 @@ pub struct OTPElement {
     period: u64,
     counter: Option<u64>,
     tags: Vec<String>,
-    yandex_pin: Option<String>,
+    pin: Option<String>,
 }
 
 impl OTPElement {
@@ -35,7 +35,7 @@ impl OTPElement {
         period: u64,
         counter: Option<u64>,
         // tags: Vec<String>,
-        yandex_pin: Option<String>,
+        pin: Option<String>,
     ) -> OTPElement {
         OTPElement {
             secret,
@@ -50,7 +50,7 @@ impl OTPElement {
             last_used: 0,
             used_frequency: 0,
             tags: vec![],
-            yandex_pin,
+            pin,
         }
     }
     pub fn secret(&self) -> String {
@@ -77,8 +77,8 @@ impl OTPElement {
     pub fn period(&self) -> u64 {
         self.period
     }
-    pub fn yandex_pin(&self) -> Option<String> {
-        self.yandex_pin.clone()
+    pub fn pin(&self) -> Option<String> {
+        self.pin.clone()
     }
 
     pub fn set_secret(&mut self, secret: String) {

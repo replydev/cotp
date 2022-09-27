@@ -42,7 +42,7 @@ where
     <D::Core as BlockSizeUser>::BlockSize: IsLess<U256>,
     Le<<D::Core as BlockSizeUser>::BlockSize, U256>: NonZero,
 {
-    match element.yandex_pin() {
+    match element.pin() {
         Some(pin) => {
             let decoded_secret = match BASE32_NOPAD.decode(element.secret().as_bytes()) {
                 Ok(r) => r,
@@ -85,7 +85,7 @@ where
 
             Ok(to_yandex_string(code, element.digits() as usize))
         }
-        None => Err(String::from("This element has not a yandex pin")),
+        None => Err(String::from("This element has not a pin")),
     }
 }
 
