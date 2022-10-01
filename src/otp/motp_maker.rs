@@ -32,8 +32,6 @@ fn get_motp_code(element: &OTPElement, seconds: u64) -> Result<String, String> {
 
 #[cfg(test)]
 mod tests {
-    use md5::Md5;
-
     use crate::otp::otp_element::OTPElement;
 
     use super::get_motp_code;
