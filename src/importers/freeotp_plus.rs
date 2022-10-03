@@ -4,7 +4,7 @@ use data_encoding::BASE32_NOPAD;
 use serde::Deserialize;
 use serde_json;
 
-use crate::otp::otp_element::OTPElement;
+use crate::otp::otp_element::{OTPAlgorithm, OTPElement, OTPType};
 
 #[derive(Deserialize)]
 struct FreeOTPPlusJson {
@@ -49,21 +49,21 @@ pub fn import(file_path: &str) -> Result<Vec<OTPElement>, String> {
             } else {
                 None
             };
-            OTPElement::new(
-                encode_secret(&token.secret),
-                token.issuer_ext,
-                freeotp
+            OTPElement {
+                counter,
+                secret: encode_secret(&token.secret),
+                issuer: token.issuer_ext,
+                label: freeotp
                     .token_order
                     .get(i)
                     .unwrap_or(&String::from("No label"))
                     .to_owned(),
-                token.digits,
-                token._type,
-                token.algo,
-                token.period,
-                counter,
-                None,
-            )
+                digits: token.digits,
+                type_: OTPType::from(token._type.as_str()),
+                algorithm: OTPAlgorithm::from(token.algo.as_str()),
+                period: token.period,
+                pin: None,
+            }
         })
         .collect())
 }

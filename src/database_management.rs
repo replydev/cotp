@@ -4,16 +4,15 @@ use std::path::PathBuf;
 
 use data_encoding::BASE32_NOPAD;
 
-use utils::{check_elements, get_db_path, millis_before_next_step};
+use utils::get_db_path;
 
 use crate::crypto;
 use crate::crypto::cryptography::gen_salt;
-use crate::otp::otp_element::OTPElement;
-use crate::otp::otp_helper::get_otp_code;
-use crate::utils::{self, copy_string_to_clipboard, CopyType};
+use crate::otp::otp_element::{OTPDatabase, OTPElement, OTPType};
+use crate::utils::{self};
 use zeroize::Zeroize;
 
-type ReadResult = (Vec<OTPElement>, Vec<u8>, Vec<u8>);
+pub type ReadResult = (OTPDatabase, Vec<u8>, Vec<u8>);
 
 pub fn get_elements() -> Result<ReadResult, String> {
     let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
@@ -23,48 +22,6 @@ pub fn get_elements() -> Result<ReadResult, String> {
     };
     pw.zeroize();
     Ok((elements, key, salt))
-}
-
-pub fn print_elements_matching(issuer: Option<&str>, label: Option<&str>) -> Result<(), String> {
-    let (elements, mut key, _salt) = get_elements()?;
-    key.zeroize();
-
-    elements
-        .iter()
-        .filter(|element| {
-            (if let Some(i) = issuer {
-                i.to_lowercase() == element.issuer().to_lowercase()
-            } else {
-                true
-            }) && (if let Some(l) = label {
-                l.to_lowercase() == element.label().to_lowercase()
-            } else {
-                true
-            })
-        })
-        .for_each(|element| {
-            let otp_code = match get_otp_code(element) {
-                Ok(code) => code,
-                Err(e) => e,
-            };
-            println!();
-            println!("Issuer: {}", element.issuer());
-            println!("Label: {}", element.label());
-            println!(
-                "OTP Code: {} ({} seconds remaining)",
-                otp_code,
-                millis_before_next_step() / 1000
-            );
-            match copy_string_to_clipboard(otp_code) {
-                Ok(result) => match result {
-                    CopyType::Native => println!("Copied to clipboard"),
-                    CopyType::OSC52 => println!("Remote copied to clipboard"),
-                },
-                Err(()) => println!("Cannot copy to clipboard"),
-            }
-            println!();
-        });
-    Ok(())
 }
 
 pub fn read_decrypted_text(password: &str) -> Result<(String, Vec<u8>, Vec<u8>), String> {
@@ -92,24 +49,30 @@ pub fn read_decrypted_text(password: &str) -> Result<(String, Vec<u8>, Vec<u8>),
 pub fn read_from_file(password: &str) -> Result<ReadResult, String> {
     match read_decrypted_text(password) {
         Ok((mut contents, key, salt)) => {
-            let mut vector: Vec<OTPElement> = match serde_json::from_str(&contents) {
+            let mut database: OTPDatabase = match serde_json::from_str(&contents) {
                 Ok(results) => results,
                 Err(e) => {
-                    contents.zeroize();
-                    return Err(format!("Failed to deserialize database: {:?}", e));
+                    let elements: Vec<OTPElement> = match serde_json::from_str(&contents) {
+                        Ok(r) => r,
+                        Err(_) => {
+                            contents.zeroize();
+                            return Err(format!("Failed to deserialize database: {:?}", e));
+                        }
+                    };
+                    OTPDatabase::new(1, elements)
                 }
             };
             contents.zeroize();
-            vector.sort_by_key(|a| a.issuer());
-            Ok((vector, key, salt))
+            database.sort();
+            Ok((database, key, salt))
         }
         Err(e) => Err(e),
     }
 }
 
-pub fn check_secret(secret: &str, type_: &str) -> Result<(), String> {
+pub fn check_secret(secret: &str, type_: OTPType) -> Result<(), String> {
     match type_ {
-        "MOTP" => match hex::decode(secret) {
+        OTPType::Motp => match hex::decode(secret) {
             Ok(_) => Ok(()),
             Err(e) => Err(format!("{}", e)),
         },
@@ -118,152 +81,6 @@ pub fn check_secret(secret: &str, type_: &str) -> Result<(), String> {
             Err(error) => Err(format!("{}", error)),
         },
     }
-}
-
-#[allow(clippy::too_many_arguments)]
-pub fn add_element(
-    secret: &str,
-    issuer: &str,
-    label: &str,
-    algorithm: &str,
-    digits: u64,
-    counter: Option<u64>,
-    type_: &str,
-    pin: Option<String>,
-) -> Result<(), String> {
-    let upper_secret = secret.to_uppercase().replace('=', "");
-    match check_secret(&upper_secret, type_.to_uppercase().as_str()) {
-        Ok(()) => {}
-        Err(error) => return Err(error),
-    }
-    let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
-    let otp_element = OTPElement::new(
-        upper_secret,
-        issuer.to_string(),
-        label.to_string(),
-        digits,
-        type_.to_string(),
-        String::from(algorithm).to_uppercase(),
-        30,
-        counter,
-        pin,
-    );
-    let mut elements = match read_from_file(&pw) {
-        Ok((result, mut key, _salt)) => {
-            key.zeroize();
-            result
-        }
-        Err(e) => return Err(e),
-    };
-    elements.push(otp_element);
-    let result = match overwrite_database(&elements, &pw) {
-        Ok(()) => Ok(()),
-        Err(e) => Err(format!("{}", e)),
-    };
-    pw.zeroize();
-    result
-}
-
-pub fn remove_element_from_db(indexes: Vec<usize>) -> Result<(), String> {
-    if indexes.is_empty() {
-        return Err(String::from("Bad args"));
-    }
-
-    let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
-    let mut elements: Vec<OTPElement> = match read_from_file(&pw) {
-        Ok((result, mut key, _salt)) => {
-            key.zeroize();
-            result
-        }
-        Err(e) => {
-            return Err(e);
-        }
-    };
-
-    if indexes.iter().max().unwrap_or(&0) > &elements.len() {
-        return Err(format!(
-            "Index {} is out of bounds",
-            indexes.iter().max().unwrap_or(&0)
-        ));
-    }
-    let mut c = 0;
-
-    for mut index in indexes {
-        if index == 0 {
-            return Err(String::from("0 is a bad index"));
-        }
-        //user inserts numbers starting from 1, so we will decrement the value because we use array indexes instead
-        index -= 1;
-
-        match check_elements(index - c, elements.as_slice()) {
-            Ok(()) => {
-                elements.remove(index - c);
-                c += 1;
-            }
-            Err(e) => return Err(e),
-        }
-    }
-
-    let result = match overwrite_database(&elements, &pw) {
-        Ok(()) => Ok(()),
-        Err(e) => Err(format!("{}", e)),
-    };
-    pw.zeroize();
-    result
-}
-
-pub fn edit_element(
-    mut id: usize,
-    secret: &str,
-    issuer: &str,
-    label: &str,
-    algorithm: &str,
-    digits: u64,
-    counter: u64,
-) -> Result<(), String> {
-    if id == 0 {
-        return Err(String::from("Invalid index"));
-    }
-    id -= 1;
-
-    let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
-    let mut elements: Vec<OTPElement> = match read_from_file(&pw) {
-        Ok((result, mut key, _salt)) => {
-            key.zeroize();
-            result
-        }
-        Err(_e) => return Err(String::from("Cannot decrypt existing database")),
-    };
-
-    let result = match check_elements(id, elements.as_slice()) {
-        Ok(()) => {
-            if !secret.trim().is_empty() {
-                elements[id].set_secret(secret.to_string());
-            }
-            if !issuer.trim().is_empty() {
-                elements[id].set_issuer(issuer.to_string());
-            }
-            if !label.trim().is_empty() {
-                elements[id].set_label(label.to_string());
-            }
-            if !algorithm.trim().is_empty() {
-                elements[id].set_algorithm(algorithm.to_string().to_uppercase());
-            }
-            if digits > 0 {
-                elements[id].set_digits(digits);
-            }
-            if counter > 0 {
-                elements[id].set_counter(Some(counter));
-            }
-            match overwrite_database(&elements, &pw) {
-                Ok(()) => Ok(()),
-                Err(e) => Err(format!("{}", e)),
-            }
-        }
-        Err(e) => Err(e),
-    };
-    pw.zeroize();
-    result
 }
 
 pub fn export_database(path: PathBuf) -> Result<PathBuf, String> {
@@ -299,50 +116,8 @@ pub fn export_database(path: PathBuf) -> Result<PathBuf, String> {
     }
 }
 
-pub fn show_qr_code(issuer: String) -> Result<(), String> {
-    let (elements, mut key, _salt) = get_elements()?;
-    key.zeroize();
-    if let Some(element) = elements.iter().find(|value| {
-        value
-            .issuer()
-            .to_lowercase()
-            .contains(issuer.to_lowercase().as_str())
-    }) {
-        println!("{}", element.get_qrcode());
-        Ok(())
-    } else {
-        Err(format!("Issuer \"{}\" not found", issuer))
-    }
-}
-
-pub fn print_element_info(issuer: String) -> Result<(), String> {
-    let (elements, mut key, _salt) = get_elements()?;
-    key.zeroize();
-    if elements.is_empty() {
-        return Err(
-            "there are no elements in your database. Type \"cotp -h\" to get help.".to_string(),
-        );
-    }
-
-    if let Some(chosen_element) = elements.iter().find(|element| {
-        element
-            .issuer()
-            .to_lowercase()
-            .contains(issuer.to_lowercase().as_str())
-    }) {
-        println!("Issuer: {}", chosen_element.issuer());
-        println!("Label: {}", chosen_element.label());
-        println!("Algorithm: {}", chosen_element.algorithm());
-        println!("Type: {}", chosen_element.type_());
-        println!("Digits: {}", chosen_element.digits());
-        Ok(())
-    } else {
-        Err(format!("Issuer \"{}\" not found", issuer))
-    }
-}
-
-pub fn overwrite_database(elements: &[OTPElement], password: &str) -> Result<(), std::io::Error> {
-    let json_string: &str = &serde_json::to_string(&elements)?;
+pub fn overwrite_database(database: &OTPDatabase, password: &str) -> Result<(), std::io::Error> {
+    let json_string: &str = &serde_json::to_string(&database)?;
     overwrite_database_json(json_string, password)
 }
 
@@ -353,11 +128,11 @@ pub fn overwrite_database_json(json: &str, password: &str) -> Result<(), std::io
 }
 
 pub fn overwrite_database_key(
-    elements: &[OTPElement],
+    database: &OTPDatabase,
     key: &Vec<u8>,
     salt: &[u8],
 ) -> Result<(), std::io::Error> {
-    let json_string: &str = &serde_json::to_string(&elements)?;
+    let json_string: &str = &serde_json::to_string(&database)?;
     overwrite_database_json_key(json_string, key, salt)
 }
 

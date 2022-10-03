@@ -2,6 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::interface::app::{App, AppResult};
 use crate::interface::enums::Page::*;
+use crate::otp::otp_element::OTPType;
 use crate::utils::{copy_string_to_clipboard, CopyType};
 
 use super::enums::Page;
@@ -146,8 +147,8 @@ fn main_handler(key_event: KeyEvent, app: &mut App) {
 fn delete_selected_code(app: &mut App) -> Result<String, String> {
     match app.table.state.selected() {
         Some(selected) => {
-            if app.elements.len() > selected {
-                app.elements.remove(selected);
+            if app.database.elements_ref().len() > selected {
+                app.database.delete_element(selected);
                 Ok("Done".to_string())
             } else {
                 Err("Index out of bounds".to_string())
@@ -181,15 +182,15 @@ fn copy_selected_code_to_clipboard(app: &mut App) -> String {
 
 fn handle_counter_switch(app: &mut App, increment: bool) {
     if let Some(selected) = app.table.state.selected() {
-        if let Some(element) = app.elements.get_mut(selected) {
-            if element.type_().to_uppercase() == "HOTP" {
+        if let Some(element) = app.database.mut_element(selected) {
+            if element.type_ == OTPType::Hotp {
                 // safe to unwrap becouse the element type is HOTP
-                let counter = element.counter().unwrap();
-                element.set_counter(if increment {
+                let counter = element.counter.unwrap();
+                element.counter = if increment {
                     Some(counter.checked_add(1).unwrap_or(u64::MAX))
                 } else {
                     Some(counter.saturating_sub(1))
-                });
+                };
                 app.tick(true);
             }
         }

@@ -1,7 +1,6 @@
 use tui::widgets::TableState;
 
-use crate::otp::otp_element::OTPElement;
-use crate::otp::otp_helper::get_otp_code;
+use crate::otp::otp_element::{OTPElement, OTPType};
 
 pub struct StatefulTable {
     pub(crate) state: TableState,
@@ -48,18 +47,20 @@ impl StatefulTable {
 
 pub fn fill_table(table: &mut StatefulTable, elements: &[OTPElement]) {
     for (i, element) in elements.iter().enumerate() {
-        let label = match element.type_().as_str() {
-            "HOTP" => match element.counter() {
-                Some(result) => element.label() + (format!(" ({} counter)", result).as_str()),
-                None => element.label(),
+        let label = match element.type_ {
+            OTPType::Hotp => match element.counter {
+                Some(result) => {
+                    element.label.to_owned() + (format!(" ({} counter)", result).as_str())
+                }
+                None => element.label.to_owned(),
             },
-            _ => element.label(),
+            _ => element.label.to_owned(),
         };
         table.items.push(vec![
             (i + 1).to_string(),
-            element.issuer(),
+            element.issuer.to_owned(),
             label,
-            get_otp_code(element).unwrap(),
+            element.get_otp_code().unwrap(),
         ]);
     }
 }

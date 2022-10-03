@@ -3,7 +3,7 @@ use std::fs::read_to_string;
 use serde::Deserialize;
 use serde_json;
 
-use crate::otp::otp_element::OTPElement;
+use crate::otp::otp_element::{OTPAlgorithm, OTPElement, OTPType};
 
 #[derive(Deserialize)]
 struct AegisJson {
@@ -69,18 +69,16 @@ pub fn import_from_string(file_to_import_contents: &str) -> Result<Vec<OTPElemen
 fn map_entries(entries: Vec<AegisElement>) -> Vec<OTPElement> {
     entries
         .into_iter()
-        .map(|e| {
-            OTPElement::new(
-                e.info.secret,
-                e.issuer,
-                e.name,
-                e.info.digits,
-                e._type,
-                e.info.algo,
-                e.info.period.unwrap_or(30),
-                e.info.counter,
-                None,
-            )
+        .map(|e| OTPElement {
+            secret: e.info.secret,
+            issuer: e.issuer,
+            label: e.name,
+            digits: e.info.digits,
+            type_: OTPType::from(e._type.as_str()),
+            algorithm: OTPAlgorithm::from(e.info.algo.as_str()),
+            period: e.info.period.unwrap_or(30),
+            counter: e.info.counter,
+            pin: None,
         })
         .collect()
 }

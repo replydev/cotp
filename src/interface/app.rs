@@ -3,6 +3,7 @@ use std::error;
 use crate::interface::enums::Focus;
 use crate::interface::enums::Page;
 use crate::interface::enums::Page::{Info, Main, Qrcode};
+use crate::otp::otp_element::OTPDatabase;
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
@@ -25,7 +26,7 @@ pub struct App {
     pub running: bool,
     title: String,
     pub(crate) table: StatefulTable,
-    pub(crate) elements: Vec<OTPElement>,
+    pub(crate) database: OTPDatabase,
     progress: u16,
     /// Text to print replacing the percentage
     pub(crate) label_text: String,
@@ -40,15 +41,15 @@ pub struct App {
 
 impl App {
     /// Constructs a new instance of [`App`].
-    pub fn new(elements: Vec<OTPElement>) -> Self {
+    pub fn new(database: OTPDatabase) -> Self {
         let mut title = String::from(env!("CARGO_PKG_NAME"));
         title.push_str(" v");
         title.push_str(env!("CARGO_PKG_VERSION"));
         Self {
             running: true,
             title,
-            table: StatefulTable::new(&elements),
-            elements,
+            table: StatefulTable::new(database.elements_ref()),
+            database,
             progress: percentage(),
             label_text: String::from(""),
             print_percentage: true,
@@ -69,7 +70,7 @@ impl App {
         if new_progress < self.progress || force_update {
             // Update codes
             self.table.items.clear();
-            fill_table(&mut self.table, &self.elements);
+            fill_table(&mut self.table, self.database.elements_ref());
         }
         self.progress = new_progress;
     }
@@ -100,8 +101,8 @@ impl App {
 
     fn render_qrcode_page<B: Backend>(&self, frame: &mut Frame<'_, B>) {
         let paragraph = if let Some(i) = self.table.state.selected() {
-            if let Some(element) = self.elements.get(i) {
-                let title = format!("{} - {}", element.issuer(), element.label());
+            if let Some(element) = self.database.elements_ref().get(i) {
+                let title = format!("{} - {}", &element.issuer, &element.issuer);
                 Paragraph::new(element.get_qrcode())
                     .block(Block::default().title(title).borders(Borders::ALL))
                     .style(Style::default().fg(Color::White).bg(Color::Black))

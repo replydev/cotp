@@ -1,18 +1,14 @@
 use clap::{Arg, ArgMatches, Command};
 
-use crate::argument_functions;
+use crate::{argument_functions, otp::otp_element::OTPDatabase};
 
-pub fn args_parser() -> bool {
+pub fn args_parser(database: &mut OTPDatabase) -> bool {
     match get_matches().subcommand() {
-        Some(("add", add_matches)) => argument_functions::add(add_matches),
-        Some(("edit", edit_matches)) => argument_functions::edit(edit_matches),
-        Some(("remove", remove_matches)) => argument_functions::remove(remove_matches),
+        Some(("add", add_matches)) => argument_functions::add(add_matches, database),
+        Some(("edit", edit_matches)) => argument_functions::edit(edit_matches, database),
         Some(("import", import_matches)) => argument_functions::import(import_matches),
-        Some(("info", info_matches)) => argument_functions::info(info_matches),
         Some(("export", export_matches)) => argument_functions::export(export_matches),
-        Some(("qrcode", qrcode_matches)) => argument_functions::qrcode(qrcode_matches),
         Some(("passwd", _)) => argument_functions::change_password(),
-        Some(("search", search_matches)) => argument_functions::search(search_matches),
         _ => return true,
     }
     false
@@ -485,53 +481,53 @@ fn get_matches() -> ArgMatches {
                     .default_value("."),
             ),
         )
-        .subcommand(
-            Command::new("info")
-                .about("Show OTP code information")
-                .arg_required_else_help(true)
-                .arg(
-                    Arg::new("issuer")
-                        .short('i')
-                        .long("issuer")
-                        .help("OTP code issuer")
-                        .takes_value(true)
-                        .required(true),
-                ),
-        )
-        .subcommand(
-            Command::new("search")
-                .about("Show OTP code for matching database entries")
-                .arg_required_else_help(true)
-                .arg(
-                    Arg::new("issuer")
-                        .short('i')
-                        .long("issuer")
-                        .help("Search database by issuer")
-                        .takes_value(true)
-                        .required_unless_present("label"),
-                )
-                .arg(
-                    Arg::new("label")
-                        .short('l')
-                        .long("label")
-                        .help("Search database by label")
-                        .takes_value(true)
-                        .required_unless_present("issuer"),
-                ),
-        )
+        // .subcommand(
+        //     Command::new("info")
+        //         .about("Show OTP code information")
+        //         .arg_required_else_help(true)
+        //         .arg(
+        //             Arg::new("issuer")
+        //                 .short('i')
+        //                 .long("issuer")
+        //                 .help("OTP code issuer")
+        //                 .takes_value(true)
+        //                 .required(true),
+        //         ),
+        // )
+        // .subcommand(
+        //     Command::new("search")
+        //         .about("Show OTP code for matching database entries")
+        //         .arg_required_else_help(true)
+        //         .arg(
+        //             Arg::new("issuer")
+        //                 .short('i')
+        //                 .long("issuer")
+        //                 .help("Search database by issuer")
+        //                 .takes_value(true)
+        //                 .required_unless_present("label"),
+        //         )
+        //         .arg(
+        //             Arg::new("label")
+        //                 .short('l')
+        //                 .long("label")
+        //                 .help("Search database by label")
+        //                 .takes_value(true)
+        //                 .required_unless_present("issuer"),
+        //         ),
+        // )
         .subcommand(Command::new("passwd").about("Change your database password"))
-        .subcommand(
-            Command::new("qrcode")
-                .arg_required_else_help(true)
-                .about("Show otpauth QRCode")
-                .arg(
-                    Arg::new("issuer")
-                        .short('i')
-                        .long("issuer")
-                        .help("OTP Code issuer")
-                        .takes_value(true)
-                        .required(true)
-                      )
-        )
+        // .subcommand(
+        //     Command::new("qrcode")
+        //         .arg_required_else_help(true)
+        //         .about("Show otpauth QRCode")
+        //         .arg(
+        //             Arg::new("issuer")
+        //                 .short('i')
+        //                 .long("issuer")
+        //                 .help("OTP Code issuer")
+        //                 .takes_value(true)
+        //                 .required(true)
+        //               )
+        // )
         .get_matches()
 }

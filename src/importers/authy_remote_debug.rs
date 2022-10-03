@@ -9,7 +9,7 @@ use serde::Deserialize;
 use serde_json;
 use std::fs::read_to_string;
 
-use crate::otp::otp_element::OTPElement;
+use crate::otp::otp_element::{OTPAlgorithm, OTPElement, OTPType};
 
 #[derive(Deserialize)]
 struct AuthyExportedJsonElement {
@@ -77,24 +77,24 @@ pub fn import(file_path: &str) -> Result<Vec<OTPElement>, String> {
     Ok(elements
         .into_iter()
         .map(|e| {
-            let type_ = e.get_type();
-            let counter: Option<u64> = if type_.to_uppercase().as_str() == "HOTP" {
+            let type_ = OTPType::from(e.get_type().as_str());
+            let counter: Option<u64> = if type_ == OTPType::Hotp {
                 Some(0)
             } else {
                 None
             };
             let digits = e.get_digits();
-            OTPElement::new(
-                e.secret.to_uppercase().replace('=', ""),
-                e.get_issuer(),
-                e.name,
+            OTPElement {
+                secret: e.secret.to_uppercase().replace('=', ""),
+                issuer: e.get_issuer(),
+                label: e.name,
                 digits,
                 type_,
-                "SHA1".to_string(),
-                30,
+                algorithm: OTPAlgorithm::OTPSha1,
+                period: 30,
                 counter,
-                None,
-            )
+                pin: None,
+            }
         })
         .collect())
 }
