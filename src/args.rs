@@ -1,17 +1,17 @@
-use clap::{Arg, ArgMatches, Command};
+use clap::{value_parser, Arg, ArgMatches, Command};
 
 use crate::{argument_functions, otp::otp_element::OTPDatabase};
 
-pub fn args_parser(database: &mut OTPDatabase) -> bool {
+pub fn args_parser(database: &mut OTPDatabase) -> Option<Result<String, String>> {
     match get_matches().subcommand() {
-        Some(("add", add_matches)) => argument_functions::add(add_matches, database),
-        Some(("edit", edit_matches)) => argument_functions::edit(edit_matches, database),
-        Some(("import", import_matches)) => argument_functions::import(import_matches),
-        Some(("export", export_matches)) => argument_functions::export(export_matches),
-        Some(("passwd", _)) => argument_functions::change_password(),
-        _ => return true,
+        Some(("add", add_matches)) => Some(argument_functions::add(add_matches, database)),
+        Some(("edit", edit_matches)) => Some(argument_functions::edit(edit_matches, database)),
+        Some(("import", import_matches)) => Some(argument_functions::import(import_matches)),
+        Some(("export", export_matches)) => Some(argument_functions::export(export_matches)),
+        Some(("passwd", _)) => Some(argument_functions::change_password()),
+        Some((_, _)) => return Some(Err(String::from("Invalid args"))),
+        None => None,
     }
-    false
 }
 
 fn get_matches() -> ArgMatches {
@@ -72,8 +72,19 @@ fn get_matches() -> ArgMatches {
                         .help("OTP Code digits")
                         .num_args(1)
                         .required(false)
+                        .value_parser(value_parser!(usize))
                         .default_value_if("type", "STEAM", "5")
                         .default_value("6"),
+                )
+                .arg(
+                    Arg::new("period")
+                        .short('e')
+                        .long("period")
+                        .help("OTP Code period")
+                        .num_args(1)
+                        .required(false)
+                        .value_parser(value_parser!(usize))
+                        .default_value("30"),
                 )
                 .arg(
                     Arg::new("counter")
@@ -81,7 +92,8 @@ fn get_matches() -> ArgMatches {
                         .long("counter")
                         .help("HOTP code counter")
                         .required_if_eq("type", "HOTP")
-                        .num_args(1),
+                        .num_args(1)
+                        .value_parser(value_parser!(usize)),
                 ).arg(
                     Arg::new("pin")
                     .short('p')
@@ -135,7 +147,17 @@ fn get_matches() -> ArgMatches {
                         .long("digits")
                         .help("OTP Code digits")
                         .num_args(1)
-                        .value_parser(["label", "algorithm", "issuer", "counter"]),
+                        .value_parser(value_parser!(usize))
+                        .required_unless_present_any(["label", "algorithm", "issuer", "counter"]),
+                )
+                .arg(
+                    Arg::new("period")
+                        .short('e')
+                        .long("period")
+                        .help("OTP Code period")
+                        .num_args(1)
+                        .value_parser(value_parser!(usize))
+                        .required_unless_present_any(["label", "algorithm", "issuer", "counter"]),
                 )
                 .arg(
                     Arg::new("counter")
@@ -143,6 +165,7 @@ fn get_matches() -> ArgMatches {
                         .long("counter")
                         .help("HOTP code counter (only for HOTP codes)")
                         .num_args(1)
+                        .value_parser(value_parser!(usize))
                         .required_unless_present_any(["label", "algorithm", "issuer", "digits"]),
                 )
                 .arg(
@@ -163,6 +186,7 @@ fn get_matches() -> ArgMatches {
                         .long("index")
                         .help("OTP code index")
                         .num_args(1..)
+                        .value_parser(value_parser!(usize))
                         .required(true)
                 ),
         )

@@ -15,24 +15,6 @@ use sha2::{Sha256, Sha512};
 
 use super::otp_element::OTPAlgorithm;
 
-pub fn totp(secret: &str, algorithm: OTPAlgorithm) -> Result<u32, String> {
-    let time = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-    generate_totp(secret, algorithm, time, 30, 0)
-}
-
-fn generate_totp(
-    secret: &str,
-    algorithm: OTPAlgorithm,
-    time: u64,
-    time_step: u64,
-    skew: i64,
-) -> Result<u32, String> {
-    hotp(secret, algorithm, ((time as i64 + skew) as u64) / time_step)
-}
-
 pub fn hotp(secret: &str, algorithm: OTPAlgorithm, counter: u64) -> Result<u32, String> {
     match algorithm.to_string().to_uppercase().as_str() {
         "SHA256" => generate_hotp::<Sha256>(secret, counter),
@@ -100,20 +82,7 @@ where
 mod tests {
     use sha1::Sha1;
 
-    use crate::otp::otp_element::OTPAlgorithm;
-
-    use crate::otp::otp_maker::{generate_hotp, generate_totp};
-
-    #[test]
-    fn test_totp() {
-        assert_eq!(
-            format_code(
-                generate_totp("BASE32SECRET3232", OTPAlgorithm::OTPSha1, 0, 30, 0).unwrap(),
-                6
-            ),
-            "260182"
-        );
-    }
+    use crate::otp::hotp_maker::generate_hotp;
 
     #[test]
     fn test_hotp() {

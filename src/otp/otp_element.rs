@@ -6,9 +6,7 @@ use qrcode::QrCode;
 use serde::{Deserialize, Serialize};
 
 use super::{
-    motp_maker::motp,
-    otp_maker::{hotp, totp},
-    steam_otp_maker::steam,
+    hotp_maker::hotp, motp_maker::motp, steam_otp_maker::steam, totp_maker::totp,
     yandex_otp_maker::yandex,
 };
 

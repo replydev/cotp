@@ -1,5 +1,7 @@
 #![forbid(unsafe_code)]
-use database_management::{get_elements, overwrite_database_key, ReadResult};
+use database_management::{
+    get_elements, overwrite_database_json_key, overwrite_database_key, ReadResult,
+};
 use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
 use interface::handler::handle_key_events;
@@ -49,12 +51,27 @@ fn main() -> AppResult<()> {
     };
     match args::args_parser(&mut result.0) {
         // no args, show dashboard
-        true => match dashboard(result) {
+        None => match dashboard(result) {
             Ok(()) => std::process::exit(0),
             Err(_) => std::process::exit(-2),
         },
         // args parsed, can exit
-        false => std::process::exit(0),
+        Some(r) => match r {
+            Ok(_) => match overwrite_database_key(&result.0, &result.1, &result.2) {
+                Ok(_) => {
+                    println!("Success");
+                    std::process::exit(0)
+                }
+                Err(_) => {
+                    eprintln!("An error occurred during database overwriting");
+                    std::process::exit(-2)
+                }
+            },
+            Err(e) => {
+                eprintln!("{}", e);
+                std::process::exit(-2);
+            }
+        },
     }
 }
 
