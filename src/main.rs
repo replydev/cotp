@@ -4,7 +4,7 @@ use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
 use interface::handler::handle_key_events;
 use interface::ui::Tui;
-use otp::otp_element::{OTPDatabase, CURRENT_DATABASE_VERSION};
+use otp::otp_element::OTPDatabase;
 use std::{io, vec};
 use tui::backend::CrosstermBackend;
 use tui::Terminal;
@@ -58,10 +58,10 @@ fn main() -> AppResult<()> {
     }
 }
 
-fn dashboard(readResult: ReadResult) -> AppResult<()> {
-    let database = readResult.0;
-    let mut key = readResult.1;
-    let salt = readResult.2;
+fn dashboard(read_result: ReadResult) -> AppResult<()> {
+    let database = read_result.0;
+    let mut key = read_result.1;
+    let salt = read_result.2;
 
     if database.elements_ref().is_empty() {
         println!("No codes, type \"cotp -h\" to get help");

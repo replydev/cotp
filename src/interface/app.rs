@@ -11,7 +11,6 @@ use tui::terminal::Frame;
 use tui::widgets::{Block, Borders, Cell, Clear, Gauge, Paragraph, Row, Table, Wrap};
 
 use crate::interface::table::{fill_table, StatefulTable};
-use crate::otp::otp_element::OTPElement;
 use crate::utils::percentage;
 
 use super::enums::PopupAction;

@@ -9,26 +9,26 @@ use clap::ArgMatches;
 use zeroize::Zeroize;
 
 pub fn import(matches: &ArgMatches) {
-    let path = matches.value_of("path").unwrap();
+    let path = matches.get_one::<String>("path").unwrap();
 
-    let result = if matches.is_present("cotp") || matches.is_present("andotp") {
+    let result = if matches.contains_id("cotp") || matches.contains_id("andotp") {
         importers::and_otp::import(path)
-    } else if matches.is_present("aegis") {
+    } else if matches.contains_id("aegis") {
         importers::aegis::import(path)
-    } else if matches.is_present("aegis-encrypted") {
+    } else if matches.contains_id("aegis-encrypted") {
         let mut password =
             utils::prompt_for_passwords("Insert password for DB decryption: ", 0, false);
         let result = importers::aegis_encrypted::import(path, password.as_str());
         password.zeroize();
         result
-    } else if matches.is_present("freeotp-plus") {
+    } else if matches.contains_id("freeotp-plus") {
         importers::freeotp_plus::import(path)
-    } else if matches.is_present("authy-exported") {
+    } else if matches.contains_id("authy-exported") {
         importers::authy_remote_debug::import(path)
-    } else if matches.is_present("google-authenticator")
-        || matches.is_present("authy")
-        || matches.is_present("microsoft-authenticator")
-        || matches.is_present("freeotp")
+    } else if matches.contains_id("google-authenticator")
+        || matches.contains_id("authy")
+        || matches.contains_id("microsoft-authenticator")
+        || matches.contains_id("freeotp")
     {
         importers::converted::import(path)
     } else {
@@ -61,7 +61,13 @@ pub fn import(matches: &ArgMatches) {
 
 pub fn add(matches: &ArgMatches, database: &mut OTPDatabase) {
     let secret = utils::prompt_for_passwords("Insert the secret: ", 0, false);
-    let type_ = OTPType::from(matches.value_of("type").unwrap().to_uppercase().as_str());
+    let type_ = OTPType::from(
+        matches
+            .get_one::<String>("type")
+            .unwrap()
+            .to_uppercase()
+            .as_str(),
+    );
     if check_secret(&secret, type_).is_err() {
         eprintln!("Invalid secret.");
         return;
@@ -73,28 +79,24 @@ pub fn add(matches: &ArgMatches, database: &mut OTPDatabase) {
         label: matches.get_one::<String>("label").unwrap().clone(),
         digits: *matches.get_one::<usize>("digits").unwrap_or(&6) as u64,
         type_,
-        algorithm: match matches
-            .value_of("algorithm")
-            .unwrap()
-            .to_uppercase()
-            .as_str()
-        {
-            "SHA256" => OTPAlgorithm::OTPSha256,
-            "SHA512" => OTPAlgorithm::OTPSha512,
-            "MD5" => OTPAlgorithm::OTPMd5,
-            _ => OTPAlgorithm::OTPSha1,
-        },
+        algorithm: OTPAlgorithm::from(
+            matches
+                .get_one::<String>("algorithm")
+                .unwrap()
+                .to_uppercase()
+                .as_str(),
+        ),
         period: *matches.get_one::<usize>("period").unwrap_or(&6) as u64,
         counter: matches.get_one::<u64>("counter").map(|e| *e),
         pin: matches.get_one::<String>("pin").map(|v| v.to_owned()),
     };
 
     database.add_element(otp_element);
-    println!("Success");
+    println!("Success.");
 }
 
 pub fn edit(matches: &ArgMatches, database: &mut OTPDatabase) {
-    let mut secret = match matches.is_present("change-secret") {
+    let mut secret = match matches.contains_id("change-secret") {
         true => Some(utils::prompt_for_passwords("Insert the secret: ", 0, false)),
         false => None,
     };

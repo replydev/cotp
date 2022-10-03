@@ -34,8 +34,8 @@ fn get_matches() -> ArgMatches {
                         .short('t')
                         .long("type")
                         .help("Specify the OTP code type")
-                        .takes_value(true)
-                        .possible_values(&["TOTP", "HOTP", "STEAM","YANDEX","MOTP"])
+                        .num_args(1)
+                        .value_parser(["TOTP", "HOTP", "STEAM","YANDEX","MOTP"])
                         .default_value("TOTP"),
                 )
                 .arg(
@@ -43,7 +43,7 @@ fn get_matches() -> ArgMatches {
                         .short('i')
                         .long("issuer")
                         .help("OTP Code issuer")
-                        .takes_value(true)
+                        .num_args(1)
                         .required(true),
                 )
                 .arg(
@@ -51,7 +51,7 @@ fn get_matches() -> ArgMatches {
                         .short('l')
                         .long("label")
                         .help("OTP Code label")
-                        .takes_value(true)
+                        .num_args(1)
                         .required(false)
                         .default_value(""),
                 )
@@ -60,9 +60,9 @@ fn get_matches() -> ArgMatches {
                         .short('a')
                         .long("algoritmh")
                         .help("OTP Code algorithm")
-                        .takes_value(true)
+                        .num_args(1)
                         .required(false)
-                        .possible_values(&["SHA1", "SHA256", "SHA512"])
+                        .value_parser(["SHA1", "SHA256", "SHA512"])
                         .default_value("SHA1"),
                 )
                 .arg(
@@ -70,9 +70,9 @@ fn get_matches() -> ArgMatches {
                         .short('d')
                         .long("digits")
                         .help("OTP Code digits")
-                        .takes_value(true)
+                        .num_args(1)
                         .required(false)
-                        .default_value_if("type", Some("STEAM"), Some("5"))
+                        .default_value_if("type", "STEAM", "5")
                         .default_value("6"),
                 )
                 .arg(
@@ -81,7 +81,7 @@ fn get_matches() -> ArgMatches {
                         .long("counter")
                         .help("HOTP code counter")
                         .required_if_eq("type", "HOTP")
-                        .takes_value(true),
+                        .num_args(1),
                 ).arg(
                     Arg::new("pin")
                     .short('p')
@@ -89,7 +89,7 @@ fn get_matches() -> ArgMatches {
                     .help("Code pin (for Yandex and MOTP)")
                     .required_if_eq("type", "YANDEX")
                     .required_if_eq("type", "MOTP")
-                    .takes_value(true),
+                    .num_args(1),
                 ),
         )
         .subcommand(
@@ -101,7 +101,7 @@ fn get_matches() -> ArgMatches {
                         .short('i')
                         .long("index")
                         .help("OTP Code index")
-                        .takes_value(true)
+                        .num_args(1)
                         .required(true),
                 )
                 .arg(
@@ -109,7 +109,7 @@ fn get_matches() -> ArgMatches {
                         .short('s')
                         .long("issuer")
                         .help("OTP Code issuer")
-                        .takes_value(true)
+                        .num_args(1)
                         .required_unless_present_any(["label", "algorithm", "digits", "counter"]),
                 )
                 .arg(
@@ -117,7 +117,7 @@ fn get_matches() -> ArgMatches {
                         .short('l')
                         .long("label")
                         .help("OTP Code label")
-                        .takes_value(true)
+                        .num_args(1)
                         .required_unless_present_any(["issuer", "algorithm", "digits", "counter"]),
                 )
                 .arg(
@@ -125,24 +125,24 @@ fn get_matches() -> ArgMatches {
                         .short('a')
                         .long("algoritmh")
                         .help("OTP Code algorithm")
-                        .takes_value(true)
+                        .num_args(1)
                         .required_unless_present_any(["label", "issuer", "digits", "counter"])
-                        .possible_values(&["SHA1", "SHA256", "SHA512"]),
+                        .value_parser(["SHA1", "SHA256", "SHA512"]),
                 )
                 .arg(
                     Arg::new("digits")
                         .short('d')
                         .long("digits")
                         .help("OTP Code digits")
-                        .takes_value(true)
-                        .required_unless_present_any(["label", "algorithm", "issuer", "counter"]),
+                        .num_args(1)
+                        .value_parser(["label", "algorithm", "issuer", "counter"]),
                 )
                 .arg(
                     Arg::new("counter")
                         .short('c')
                         .long("counter")
                         .help("HOTP code counter (only for HOTP codes)")
-                        .takes_value(true)
+                        .num_args(1)
                         .required_unless_present_any(["label", "algorithm", "issuer", "digits"]),
                 )
                 .arg(
@@ -150,7 +150,7 @@ fn get_matches() -> ArgMatches {
                         .short('k')
                         .long("change-secret")
                         .help("Change the OTP code secret")
-                        .takes_value(false),
+                        .num_args(0),
                 ),
         )
         .subcommand(
@@ -162,9 +162,8 @@ fn get_matches() -> ArgMatches {
                         .short('i')
                         .long("index")
                         .help("OTP code index")
-                        .takes_value(true)
+                        .num_args(1..)
                         .required(true)
-                        .multiple_values(true),
                 ),
         )
         .subcommand(
@@ -176,7 +175,7 @@ fn get_matches() -> ArgMatches {
                         .short('c')
                         .long("cotp")
                         .help("Import from cotp exported database")
-                        .takes_value(false)
+                        .num_args(0)
                         .required_unless_present_any(&[
                             "andotp",
                             "aegis",
@@ -205,7 +204,7 @@ fn get_matches() -> ArgMatches {
                         .short('e')
                         .long("andotp")
                         .help("Import from andOTP backup")
-                        .takes_value(false)
+                        .num_args(0)
                         .required_unless_present_any(&[
                             "cotp",
                             "aegis",
@@ -234,7 +233,7 @@ fn get_matches() -> ArgMatches {
                         .short('a')
                         .long("aegis")
                         .help("Import from Aegis backup")
-                        .takes_value(false)
+                        .num_args(0)
                         .required_unless_present_any(&[
                             "andotp",
                             "cotp",
@@ -263,7 +262,7 @@ fn get_matches() -> ArgMatches {
                         .short('k')
                         .long("aegis-encrypted")
                         .help("Import from Aegis encrypted backup")
-                        .takes_value(false)
+                        .num_args(0)
                         .required_unless_present_any(&[
                             "andotp",
                             "cotp",
@@ -292,7 +291,7 @@ fn get_matches() -> ArgMatches {
                         .short('f')
                         .long("freeotp-plus")
                         .help("Import from FreeOTP+ backup")
-                        .takes_value(false)
+                        .num_args(0)
                         .required_unless_present_any(&[
                             "andotp",
                             "aegis",
@@ -321,7 +320,7 @@ fn get_matches() -> ArgMatches {
                         .short('r')
                         .long("freeotp")
                         .help("Import from FreeOTP converted database")
-                        .takes_value(false)
+                        .num_args(0)
                         .required_unless_present_any(&[
                             "andotp",
                             "aegis",
@@ -350,7 +349,7 @@ fn get_matches() -> ArgMatches {
                         .short('g')
                         .long("google-authenticator")
                         .help("Import from Google Authenticator converted database")
-                        .takes_value(false)
+                        .num_args(0)
                         .required_unless_present_any(&[
                             "andotp",
                             "aegis",
@@ -379,7 +378,7 @@ fn get_matches() -> ArgMatches {
                         .short('t')
                         .long("authy")
                         .help("Import from Authy converted database")
-                        .takes_value(false)
+                        .num_args(0)
                         .required_unless_present_any(&[
                             "andotp",
                             "aegis",
@@ -408,7 +407,7 @@ fn get_matches() -> ArgMatches {
                         .short('m')
                         .long("microsoft-authenticator")
                         .help("Import from Microsoft Authenticator converted database")
-                        .takes_value(false)
+                        .num_args(0)
                         .required_unless_present_any(&[
                             "andotp",
                             "aegis",
@@ -437,7 +436,7 @@ fn get_matches() -> ArgMatches {
                         .short('u')
                         .long("authy-exported")
                         .help("Import from Authy Database exported following https://gist.github.com/gboudreau/94bb0c11a6209c82418d01a59d958c93")
-                        .takes_value(false)
+                        .num_args(0)
                         .required_unless_present_any(&[
                             "andotp",
                             "aegis",
@@ -466,7 +465,7 @@ fn get_matches() -> ArgMatches {
                         .short('p')
                         .long("path")
                         .help("Backup path")
-                        .takes_value(true)
+                        .num_args(1)
                         .required(true),
                 ),
         )
@@ -476,7 +475,7 @@ fn get_matches() -> ArgMatches {
                     .short('p')
                     .long("path")
                     .help("Export file path")
-                    .takes_value(true)
+                    .num_args(1)
                     .required(false)
                     .default_value("."),
             ),
@@ -490,7 +489,7 @@ fn get_matches() -> ArgMatches {
         //                 .short('i')
         //                 .long("issuer")
         //                 .help("OTP code issuer")
-        //                 .takes_value(true)
+        //                 .num_args(1)
         //                 .required(true),
         //         ),
         // )
@@ -503,7 +502,7 @@ fn get_matches() -> ArgMatches {
         //                 .short('i')
         //                 .long("issuer")
         //                 .help("Search database by issuer")
-        //                 .takes_value(true)
+        //                 .num_args(1)
         //                 .required_unless_present("label"),
         //         )
         //         .arg(
@@ -511,7 +510,7 @@ fn get_matches() -> ArgMatches {
         //                 .short('l')
         //                 .long("label")
         //                 .help("Search database by label")
-        //                 .takes_value(true)
+        //                 .num_args(1)
         //                 .required_unless_present("issuer"),
         //         ),
         // )
@@ -525,7 +524,7 @@ fn get_matches() -> ArgMatches {
         //                 .short('i')
         //                 .long("issuer")
         //                 .help("OTP Code issuer")
-        //                 .takes_value(true)
+        //                 .num_args(1)
         //                 .required(true)
         //               )
         // )

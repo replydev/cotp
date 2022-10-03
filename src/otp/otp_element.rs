@@ -1,4 +1,4 @@
-use std::{fmt, vec};
+use std::fmt;
 
 use crate::otp::otp_element::OTPType::*;
 use qrcode::render::unicode;
@@ -199,7 +199,6 @@ impl OTPElement {
                     "This element is an MOTP code but the is not pin value",
                 )),
             },
-            _ => unreachable!(),
         }
     }
 

@@ -1,9 +1,6 @@
 // Ported from https://github.com/beemdevelopment/Aegis/blob/master/app/src/main/java/com/beemdevelopment/aegis/crypto/otp/OTP.java
 
-use super::{
-    otp_element::{OTPAlgorithm, OTPElement},
-    otp_maker::totp,
-};
+use super::{otp_element::OTPAlgorithm, otp_maker::totp};
 
 const STEAM_ALPHABET: &str = "23456789BCDFGHJKMNPQRTVWXY";
 
