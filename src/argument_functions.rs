@@ -1,14 +1,11 @@
 use std::path::PathBuf;
 
-use crate::database_management::{self, check_secret};
-use crate::otp::otp_element::{
-    OTPAlgorithm, OTPDatabase, OTPElement, OTPType, CURRENT_DATABASE_VERSION,
-};
+use crate::otp::otp_element::{OTPAlgorithm, OTPDatabase, OTPElement, OTPType};
 use crate::{importers, utils};
 use clap::ArgMatches;
 use zeroize::Zeroize;
 
-pub fn import(matches: &ArgMatches) -> Result<String, String> {
+pub fn import(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, String> {
     let path = matches.get_one::<String>("path").unwrap();
 
     let result = if matches.contains_id("cotp") || matches.contains_id("andotp") {
@@ -43,10 +40,9 @@ pub fn import(matches: &ArgMatches) -> Result<String, String> {
     };
 
     let mut pw = utils::prompt_for_passwords("Choose a password: ", 8, true);
-    let result = match database_management::overwrite_database(
-        &OTPDatabase::new(CURRENT_DATABASE_VERSION, elements),
-        &pw,
-    ) {
+    database.add_all(elements);
+
+    let result = match database.save_with_pw(&pw) {
         Ok(()) => Ok(String::from("Successfully imported database")),
         Err(e) => Err(format!(
             "An error occurred during database overwriting: {}",
@@ -66,9 +62,6 @@ pub fn add(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, S
             .to_uppercase()
             .as_str(),
     );
-    if check_secret(&secret, type_).is_err() {
-        return Err(String::from("Invalid secret."));
-    }
 
     let otp_element = OTPElement {
         secret,
@@ -84,9 +77,13 @@ pub fn add(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, S
                 .as_str(),
         ),
         period: *matches.get_one::<usize>("period").unwrap_or(&6) as u64,
-        counter: matches.get_one::<u64>("counter").map(|e| *e),
+        counter: matches.get_one::<u64>("counter").copied(),
         pin: matches.get_one::<String>("pin").map(|v| v.to_owned()),
     };
+
+    if !otp_element.valid_secret() {
+        return Err(String::from("Invalid secret."));
+    }
 
     database.add_element(otp_element);
     Ok(String::from("Success."))
@@ -101,28 +98,28 @@ pub fn edit(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, 
     let index = *matches.get_one::<usize>("index").unwrap();
     let otp_element: Option<&OTPElement> = database.get_element(index);
 
-    let issuer = matches.get_one::<String>("issuer").map(|e| e.clone());
-    let label = matches.get_one::<String>("label").map(|e| e.clone());
-    let digits = matches.get_one::<u64>("usize").map(|e| *e);
-    let period = matches.get_one::<u64>("period").map(|e| *e);
-    let counter = matches.get_one::<u64>("counter").map(|e| *e);
-    let pin = matches.get_one::<String>("label").map(|e| e.clone());
+    let issuer = matches.get_one::<String>("issuer").cloned();
+    let label = matches.get_one::<String>("label").cloned();
+    let digits = matches.get_one::<u64>("usize").copied();
+    let period = matches.get_one::<u64>("period").copied();
+    let counter = matches.get_one::<u64>("counter").copied();
+    let pin = matches.get_one::<String>("label").cloned();
 
     match otp_element {
         Some(v) => {
             let mut element = v.clone();
 
-            if issuer.is_some() {
-                element.issuer = issuer.unwrap();
+            if let Some(v) = issuer {
+                element.issuer = v;
             }
-            if label.is_some() {
-                element.label = label.unwrap();
+            if let Some(v) = label {
+                element.label = v;
             }
-            if digits.is_some() {
-                element.digits = digits.unwrap();
+            if let Some(v) = digits {
+                element.digits = v;
             }
-            if period.is_some() {
-                element.period = period.unwrap();
+            if let Some(v) = period {
+                element.period = v;
             }
             if counter.is_some() {
                 element.counter = counter;
@@ -139,10 +136,8 @@ pub fn edit(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, 
     Ok(String::from("Success."))
 }
 
-pub fn export(matches: &ArgMatches) -> Result<String, String> {
-    match database_management::export_database(PathBuf::from(
-        matches.get_one::<&str>("path").unwrap(),
-    )) {
+pub fn export(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, String> {
+    match database.export(PathBuf::from(matches.get_one::<&str>("path").unwrap())) {
         Ok(export_result) => Ok(format!(
             "Database was successfully exported at {}",
             export_result.to_str().unwrap_or("**Invalid path**")
@@ -151,22 +146,12 @@ pub fn export(matches: &ArgMatches) -> Result<String, String> {
     }
 }
 
-pub fn change_password() -> Result<String, String> {
-    let mut old_password = utils::prompt_for_passwords("Old password: ", 8, false);
-    let result = database_management::read_decrypted_text(&old_password);
-    old_password.zeroize();
-    match result {
-        Ok((mut s, mut key, _salt)) => {
-            key.zeroize();
-            let mut new_password = utils::prompt_for_passwords("New password: ", 8, true);
-            let r = match database_management::overwrite_database_json(&s, &new_password) {
-                Ok(()) => Ok(String::from("Password changed")),
-                Err(e) => Err(format!("An error has occurred: {}", e)),
-            };
-            s.zeroize();
-            new_password.zeroize();
-            r
-        }
+pub fn change_password(database: &mut OTPDatabase) -> Result<String, String> {
+    let mut new_password = utils::prompt_for_passwords("New password: ", 8, true);
+    let r = match database.save_with_pw(&new_password) {
+        Ok(()) => Ok(String::from("Password changed")),
         Err(e) => Err(format!("An error has occurred: {}", e)),
-    }
+    };
+    new_password.zeroize();
+    r
 }

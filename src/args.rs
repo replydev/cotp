@@ -2,19 +2,26 @@ use clap::{value_parser, Arg, ArgMatches, Command};
 
 use crate::{argument_functions, otp::otp_element::OTPDatabase};
 
-pub fn args_parser(database: &mut OTPDatabase) -> Option<Result<String, String>> {
-    match get_matches().subcommand() {
+pub fn args_parser(
+    matches: ArgMatches,
+    database: &mut OTPDatabase,
+) -> Option<Result<String, String>> {
+    match matches.subcommand() {
         Some(("add", add_matches)) => Some(argument_functions::add(add_matches, database)),
         Some(("edit", edit_matches)) => Some(argument_functions::edit(edit_matches, database)),
-        Some(("import", import_matches)) => Some(argument_functions::import(import_matches)),
-        Some(("export", export_matches)) => Some(argument_functions::export(export_matches)),
-        Some(("passwd", _)) => Some(argument_functions::change_password()),
-        Some((_, _)) => return Some(Err(String::from("Invalid args"))),
+        Some(("import", import_matches)) => {
+            Some(argument_functions::import(import_matches, database))
+        }
+        Some(("export", export_matches)) => {
+            Some(argument_functions::export(export_matches, database))
+        }
+        Some(("passwd", _)) => Some(argument_functions::change_password(database)),
+        Some((_, _)) => Some(Err(String::from("Invalid args"))),
         None => None,
     }
 }
 
-fn get_matches() -> ArgMatches {
+pub fn get_matches() -> ArgMatches {
     Command::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .author(

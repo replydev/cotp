@@ -1,12 +1,11 @@
 #![forbid(unsafe_code)]
-use database_management::{
-    get_elements, overwrite_database_json_key, overwrite_database_key, ReadResult,
-};
+use args::get_matches;
 use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
 use interface::handler::handle_key_events;
 use interface::ui::Tui;
-use otp::otp_element::OTPDatabase;
+use otp::otp_element::{OTPDatabase, CURRENT_DATABASE_VERSION};
+use reading::{get_elements, ReadResult};
 use std::{io, vec};
 use tui::backend::CrosstermBackend;
 use tui::Terminal;
@@ -15,10 +14,10 @@ use zeroize::Zeroize;
 mod args;
 mod argument_functions;
 mod crypto;
-mod database_management;
 mod importers;
 mod interface;
 mod otp;
+mod reading;
 mod utils;
 
 fn init() -> Result<ReadResult, String> {
@@ -26,13 +25,14 @@ fn init() -> Result<ReadResult, String> {
         Ok(needs_creation) => {
             if needs_creation {
                 let mut pw = utils::prompt_for_passwords("Choose a password: ", 8, true);
-                if database_management::overwrite_database_json("[]", &pw).is_err() {
+                let mut database = OTPDatabase::new(CURRENT_DATABASE_VERSION, vec![]);
+                if database.save_with_pw(&pw).is_err() {
                     return Err(String::from(
                         "An error occurred during database overwriting",
                     ));
                 }
                 pw.zeroize();
-                return Ok((OTPDatabase::new(2, vec![]), vec![], vec![]));
+                Ok((database, vec![], vec![]))
             } else {
                 get_elements()
             }
@@ -42,6 +42,7 @@ fn init() -> Result<ReadResult, String> {
 }
 
 fn main() -> AppResult<()> {
+    let matches = get_matches();
     let mut result = match init() {
         Ok(v) => v,
         Err(e) => {
@@ -49,7 +50,7 @@ fn main() -> AppResult<()> {
             std::process::exit(-1);
         }
     };
-    match args::args_parser(&mut result.0) {
+    match args::args_parser(matches, &mut result.0) {
         // no args, show dashboard
         None => match dashboard(result) {
             Ok(()) => std::process::exit(0),
@@ -57,16 +58,20 @@ fn main() -> AppResult<()> {
         },
         // args parsed, can exit
         Some(r) => match r {
-            Ok(_) => match overwrite_database_key(&result.0, &result.1, &result.2) {
-                Ok(_) => {
-                    println!("Success");
-                    std::process::exit(0)
+            Ok(_) => {
+                if result.0.is_modified() {
+                    match &result.0.save(&result.1, &result.2) {
+                        Ok(_) => {
+                            println!("Success");
+                        }
+                        Err(_) => {
+                            eprintln!("An error occurred during database overwriting");
+                            std::process::exit(-2)
+                        }
+                    }
                 }
-                Err(_) => {
-                    eprintln!("An error occurred during database overwriting");
-                    std::process::exit(-2)
-                }
-            },
+                std::process::exit(0)
+            }
             Err(e) => {
                 eprintln!("{}", e);
                 std::process::exit(-2);
@@ -110,11 +115,10 @@ fn dashboard(read_result: ReadResult) -> AppResult<()> {
         }
 
         // Overwrite database if modified
-        let error: Option<String> = if app.data_modified {
-            if overwrite_database_key(&app.database, &key, &salt).is_err() {
-                Some("Failed to overwrite database".to_string())
-            } else {
-                None
+        let error: Option<String> = if app.data_modified || app.database.is_outdated() {
+            match app.database.save(&key, &salt) {
+                Ok(()) => None,
+                Err(e) => Some(e),
             }
         } else {
             None

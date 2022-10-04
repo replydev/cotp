@@ -1,9 +1,15 @@
-use std::fmt;
+use std::{fmt, fs::File, io::Write, path::PathBuf};
 
-use crate::otp::otp_element::OTPType::*;
+use crate::{
+    crypto::cryptography::{argon_derive_key, encrypt_string_with_key, gen_salt},
+    otp::otp_element::OTPType::*,
+    utils,
+};
+use data_encoding::BASE32_NOPAD;
 use qrcode::render::unicode;
 use qrcode::QrCode;
 use serde::{Deserialize, Serialize};
+use zeroize::Zeroize;
 
 use super::{
     hotp_maker::hotp, motp_maker::motp, steam_otp_maker::steam, totp_maker::totp,
@@ -12,7 +18,7 @@ use super::{
 
 pub const CURRENT_DATABASE_VERSION: u16 = 2;
 
-#[derive(Serialize, Deserialize, PartialEq, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum OTPAlgorithm {
     Sha1,
     Sha256,
@@ -37,7 +43,7 @@ impl From<&str> for OTPAlgorithm {
     }
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum OTPType {
     Totp,
     Hotp,
@@ -68,22 +74,85 @@ impl From<&str> for OTPType {
 pub struct OTPDatabase {
     version: u16,
     elements: Vec<OTPElement>,
+    #[serde(skip)]
+    modified: bool,
 }
 
 impl OTPDatabase {
     pub fn new(version: u16, elements: Vec<OTPElement>) -> OTPDatabase {
-        OTPDatabase { version, elements }
+        OTPDatabase {
+            version,
+            elements,
+            modified: false,
+        }
+    }
+
+    pub fn is_modified(&self) -> bool {
+        self.modified
+    }
+
+    pub fn is_outdated(&self) -> bool {
+        self.version < CURRENT_DATABASE_VERSION
+    }
+
+    pub fn save(&mut self, key: &Vec<u8>, salt: &[u8]) -> Result<(), String> {
+        self.modified = false;
+        match overwrite_database_key(self, key, salt) {
+            Ok(()) => Ok(()),
+            Err(e) => Err(format!("{:?}", e)),
+        }
+    }
+
+    pub fn save_with_pw(&mut self, password: &str) -> Result<(), String> {
+        let salt = gen_salt()?;
+        let key = argon_derive_key(password.as_bytes(), &salt)?;
+        self.save(&key, &salt)
+    }
+
+    pub fn export(&self, path: PathBuf) -> Result<PathBuf, String> {
+        if self.elements.is_empty() {
+            return Err(String::from(
+                "there are no elements in your database, type \"cotp -h\" to get help",
+            ));
+        }
+
+        let exported_path = if path.is_dir() {
+            path.join("exported.cotp")
+        } else {
+            path
+        };
+
+        match serde_json::to_string(self) {
+            Ok(mut contents) => {
+                if contents == "[]" {}
+                let mut file = File::create(&exported_path).expect("Cannot create file");
+                let contents_bytes = contents.as_bytes();
+                file.write_all(contents_bytes)
+                    .expect("Failed to write contents");
+                contents.zeroize();
+                Ok(exported_path)
+            }
+            Err(e) => Err(format!("{:?}", e)),
+        }
+    }
+
+    pub fn add_all(&mut self, mut elements: Vec<OTPElement>) {
+        self.modified = true;
+        self.elements.append(&mut elements)
     }
 
     pub fn add_element(&mut self, element: OTPElement) {
+        self.modified = true;
         self.elements.push(element)
     }
 
     pub fn edit_element(&mut self, index: usize, element: OTPElement) {
+        self.modified = true;
         self.elements[index] = element;
     }
 
     pub fn delete_element(&mut self, index: usize) {
+        self.modified = true;
         self.elements.remove(index);
     }
 
@@ -101,6 +170,28 @@ impl OTPDatabase {
 
     pub fn sort(&mut self) {
         self.elements.sort_by(|c1, c2| c1.issuer.cmp(&c2.issuer))
+    }
+}
+
+fn overwrite_database_key(
+    database: &OTPDatabase,
+    key: &Vec<u8>,
+    salt: &[u8],
+) -> Result<(), std::io::Error> {
+    let json_string: &str = &serde_json::to_string(&database)?;
+    overwrite_database_json_key(json_string, key, salt)
+}
+
+fn overwrite_database_json_key(
+    json: &str,
+    key: &Vec<u8>,
+    salt: &[u8],
+) -> Result<(), std::io::Error> {
+    let encrypted = encrypt_string_with_key(json.to_string(), key, salt).unwrap();
+    let mut file = File::create(utils::get_db_path())?;
+    match serde_json::to_string(&encrypted) {
+        Ok(v) => utils::write_to_file(&v, &mut file),
+        Err(e) => Err(std::io::Error::from(e)),
     }
 }
 
@@ -204,6 +295,13 @@ impl OTPElement {
         // Get the formatted code
         let s = (value % 10_u32.pow(self.digits as u32)).to_string();
         "0".repeat(self.digits as usize - s.chars().count()) + s.as_str()
+    }
+
+    pub fn valid_secret(&self) -> bool {
+        match self.type_ {
+            OTPType::Motp => hex::decode(&self.secret).is_ok(),
+            _ => BASE32_NOPAD.decode(self.secret.as_bytes()).is_ok(),
+        }
     }
 }
 

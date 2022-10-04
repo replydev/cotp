@@ -1,5 +1,4 @@
 use std::convert::TryInto;
-use std::time::SystemTime;
 
 use aes_gcm::aead::generic_array::GenericArray;
 use data_encoding::BASE32_NOPAD;
