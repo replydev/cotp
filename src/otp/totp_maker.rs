@@ -29,7 +29,7 @@ mod tests {
     fn test_totp() {
         assert_eq!(
             format_code(
-                generate_totp("BASE32SECRET3232", OTPAlgorithm::OTPSha1, 0, 30, 0).unwrap(),
+                generate_totp("BASE32SECRET3232", OTPAlgorithm::Sha1, 0, 30, 0).unwrap(),
                 6
             ),
             "260182"

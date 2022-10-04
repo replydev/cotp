@@ -14,10 +14,10 @@ pub const CURRENT_DATABASE_VERSION: u16 = 2;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, Copy)]
 pub enum OTPAlgorithm {
-    OTPSha1,
-    OTPSha256,
-    OTPSha512,
-    OTPMd5,
+    Sha1,
+    Sha256,
+    Sha512,
+    Md5,
 }
 
 impl fmt::Display for OTPAlgorithm {
@@ -29,10 +29,10 @@ impl fmt::Display for OTPAlgorithm {
 impl From<&str> for OTPAlgorithm {
     fn from(s: &str) -> Self {
         match s.to_uppercase().as_str() {
-            "SHA256" => Self::OTPSha256,
-            "SHA512" => Self::OTPSha512,
-            "MD5" => OTPAlgorithm::OTPMd5,
-            _ => Self::OTPSha1,
+            "SHA256" => Self::Sha256,
+            "SHA512" => Self::Sha512,
+            "MD5" => OTPAlgorithm::Md5,
+            _ => Self::Sha1,
         }
     }
 }
@@ -57,8 +57,8 @@ impl From<&str> for OTPType {
         match s.to_uppercase().as_str() {
             "HOTP" => Hotp,
             "STEAM" => Steam,
-            "Yandex" => Yandex,
-            "Motp" => Motp,
+            "YANDEX" => Yandex,
+            "MOTP" => Motp,
             _ => Totp,
         }
     }
@@ -209,7 +209,7 @@ impl OTPElement {
 
 #[cfg(test)]
 mod test {
-    use crate::otp::otp_element::OTPAlgorithm::OTPSha1;
+    use crate::otp::otp_element::OTPAlgorithm::Sha1;
     use crate::otp::otp_element::OTPElement;
     use crate::otp::otp_element::OTPType::Totp;
 
@@ -221,7 +221,7 @@ mod test {
             label: String::from("LabelText"),
             digits: 6,
             type_: Totp,
-            algorithm: OTPSha1,
+            algorithm: Sha1,
             period: 30,
             counter: None,
             pin: None,

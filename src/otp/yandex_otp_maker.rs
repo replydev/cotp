@@ -32,11 +32,11 @@ pub fn yandex(
         .unwrap()
         .as_secs();
     match algoritmh {
-        OTPAlgorithm::OTPSha256 => {
+        OTPAlgorithm::Sha256 => {
             calculate_yandex_code::<Sha256>(secret, pin, period, digits, seconds)
         }
 
-        OTPAlgorithm::OTPSha512 => {
+        OTPAlgorithm::Sha512 => {
             calculate_yandex_code::<Sha512>(secret, pin, period, digits, seconds)
         }
 

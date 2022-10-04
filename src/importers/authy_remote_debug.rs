@@ -90,7 +90,7 @@ pub fn import(file_path: &str) -> Result<Vec<OTPElement>, String> {
                 label: e.name,
                 digits,
                 type_,
-                algorithm: OTPAlgorithm::OTPSha1,
+                algorithm: OTPAlgorithm::Sha1,
                 period: 30,
                 counter,
                 pin: None,

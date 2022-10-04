@@ -18,7 +18,7 @@ pub fn get_elements() -> Result<ReadResult, String> {
     let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
     let (elements, key, salt) = match read_from_file(&pw) {
         Ok((result, key, salt)) => (result, key, salt),
-        Err(_e) => return Err(String::from("Cannot decrypt existing database")),
+        Err(e) => return Err(format!("Cannot decrypt existing database: {}", e)),
     };
     pw.zeroize();
     Ok((elements, key, salt))
