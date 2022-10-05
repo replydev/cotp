@@ -1,4 +1,4 @@
-use clap::{value_parser, Arg, ArgMatches, Command};
+use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
 
 use crate::{argument_functions, otp::otp_element::OTPDatabase};
 
@@ -180,7 +180,7 @@ pub fn get_matches() -> ArgMatches {
                         .short('k')
                         .long("change-secret")
                         .help("Change the OTP code secret")
-                        .num_args(0),
+                        .action(ArgAction::SetTrue),
                 ),
         )
         .subcommand(
@@ -206,7 +206,7 @@ pub fn get_matches() -> ArgMatches {
                         .short('c')
                         .long("cotp")
                         .help("Import from cotp exported database")
-                        .num_args(0)
+                        .action(ArgAction::SetTrue)
                         .required_unless_present_any(&[
                             "andotp",
                             "aegis",
@@ -235,7 +235,7 @@ pub fn get_matches() -> ArgMatches {
                         .short('e')
                         .long("andotp")
                         .help("Import from andOTP backup")
-                        .num_args(0)
+                        .action(ArgAction::SetTrue)
                         .required_unless_present_any(&[
                             "cotp",
                             "aegis",
@@ -264,7 +264,7 @@ pub fn get_matches() -> ArgMatches {
                         .short('a')
                         .long("aegis")
                         .help("Import from Aegis backup")
-                        .num_args(0)
+                        .action(ArgAction::SetTrue)
                         .required_unless_present_any(&[
                             "andotp",
                             "cotp",
@@ -293,7 +293,7 @@ pub fn get_matches() -> ArgMatches {
                         .short('k')
                         .long("aegis-encrypted")
                         .help("Import from Aegis encrypted backup")
-                        .num_args(0)
+                        .action(ArgAction::SetTrue)
                         .required_unless_present_any(&[
                             "andotp",
                             "cotp",
@@ -322,7 +322,7 @@ pub fn get_matches() -> ArgMatches {
                         .short('f')
                         .long("freeotp-plus")
                         .help("Import from FreeOTP+ backup")
-                        .num_args(0)
+                        .action(ArgAction::SetTrue)
                         .required_unless_present_any(&[
                             "andotp",
                             "aegis",
@@ -351,7 +351,7 @@ pub fn get_matches() -> ArgMatches {
                         .short('r')
                         .long("freeotp")
                         .help("Import from FreeOTP converted database")
-                        .num_args(0)
+                        .action(ArgAction::SetTrue)
                         .required_unless_present_any(&[
                             "andotp",
                             "aegis",
@@ -380,7 +380,7 @@ pub fn get_matches() -> ArgMatches {
                         .short('g')
                         .long("google-authenticator")
                         .help("Import from Google Authenticator converted database")
-                        .num_args(0)
+                        .action(ArgAction::SetTrue)
                         .required_unless_present_any(&[
                             "andotp",
                             "aegis",
@@ -409,7 +409,7 @@ pub fn get_matches() -> ArgMatches {
                         .short('t')
                         .long("authy")
                         .help("Import from Authy converted database")
-                        .num_args(0)
+                        .action(ArgAction::SetTrue)
                         .required_unless_present_any(&[
                             "andotp",
                             "aegis",
@@ -438,7 +438,7 @@ pub fn get_matches() -> ArgMatches {
                         .short('m')
                         .long("microsoft-authenticator")
                         .help("Import from Microsoft Authenticator converted database")
-                        .num_args(0)
+                        .action(ArgAction::SetTrue)
                         .required_unless_present_any(&[
                             "andotp",
                             "aegis",
@@ -467,7 +467,7 @@ pub fn get_matches() -> ArgMatches {
                         .short('u')
                         .long("authy-exported")
                         .help("Import from Authy Database exported following https://gist.github.com/gboudreau/94bb0c11a6209c82418d01a59d958c93")
-                        .num_args(0)
+                        .action(ArgAction::SetTrue)
                         .required_unless_present_any(&[
                             "andotp",
                             "aegis",
@@ -511,53 +511,6 @@ pub fn get_matches() -> ArgMatches {
                     .default_value("."),
             ),
         )
-        // .subcommand(
-        //     Command::new("info")
-        //         .about("Show OTP code information")
-        //         .arg_required_else_help(true)
-        //         .arg(
-        //             Arg::new("issuer")
-        //                 .short('i')
-        //                 .long("issuer")
-        //                 .help("OTP code issuer")
-        //                 .num_args(1)
-        //                 .required(true),
-        //         ),
-        // )
-        // .subcommand(
-        //     Command::new("search")
-        //         .about("Show OTP code for matching database entries")
-        //         .arg_required_else_help(true)
-        //         .arg(
-        //             Arg::new("issuer")
-        //                 .short('i')
-        //                 .long("issuer")
-        //                 .help("Search database by issuer")
-        //                 .num_args(1)
-        //                 .required_unless_present("label"),
-        //         )
-        //         .arg(
-        //             Arg::new("label")
-        //                 .short('l')
-        //                 .long("label")
-        //                 .help("Search database by label")
-        //                 .num_args(1)
-        //                 .required_unless_present("issuer"),
-        //         ),
-        // )
         .subcommand(Command::new("passwd").about("Change your database password"))
-        // .subcommand(
-        //     Command::new("qrcode")
-        //         .arg_required_else_help(true)
-        //         .about("Show otpauth QRCode")
-        //         .arg(
-        //             Arg::new("issuer")
-        //                 .short('i')
-        //                 .long("issuer")
-        //                 .help("OTP Code issuer")
-        //                 .num_args(1)
-        //                 .required(true)
-        //               )
-        // )
         .get_matches()
 }

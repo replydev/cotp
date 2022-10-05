@@ -8,24 +8,24 @@ use zeroize::Zeroize;
 pub fn import(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, String> {
     let path = matches.get_one::<String>("path").unwrap();
 
-    let result = if matches.contains_id("cotp") || matches.contains_id("andotp") {
+    let result = if matches.get_flag("cotp") || matches.get_flag("andotp") {
         importers::and_otp::import(path)
-    } else if matches.contains_id("aegis") {
+    } else if matches.get_flag("aegis") {
         importers::aegis::import(path)
-    } else if matches.contains_id("aegis-encrypted") {
+    } else if matches.get_flag("aegis-encrypted") {
         let mut password =
             utils::prompt_for_passwords("Insert password for DB decryption: ", 0, false);
         let result = importers::aegis_encrypted::import(path, password.as_str());
         password.zeroize();
         result
-    } else if matches.contains_id("freeotp-plus") {
+    } else if matches.get_flag("freeotp-plus") {
         importers::freeotp_plus::import(path)
-    } else if matches.contains_id("authy-exported") {
+    } else if matches.get_flag("authy-exported") {
         importers::authy_remote_debug::import(path)
-    } else if matches.contains_id("google-authenticator")
-        || matches.contains_id("authy")
-        || matches.contains_id("microsoft-authenticator")
-        || matches.contains_id("freeotp")
+    } else if matches.get_flag("google-authenticator")
+        || matches.get_flag("authy")
+        || matches.get_flag("microsoft-authenticator")
+        || matches.get_flag("freeotp")
     {
         importers::converted::import(path)
     } else {
@@ -90,7 +90,7 @@ pub fn add(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, S
 }
 
 pub fn edit(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, String> {
-    let mut secret = match matches.contains_id("change-secret") {
+    let mut secret = match matches.get_flag("change-secret") {
         true => Some(utils::prompt_for_passwords("Insert the secret: ", 0, false)),
         false => None,
     };
