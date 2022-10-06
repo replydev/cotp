@@ -3,7 +3,7 @@ use std::fs::read_to_string;
 use serde::Deserialize;
 use serde_json;
 
-use crate::otp::otp_element::OTPElement;
+use crate::otp::otp_element::{OTPAlgorithm, OTPElement, OTPType};
 
 #[derive(Deserialize)]
 struct ConvertedJson {
@@ -37,17 +37,17 @@ pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
             } else {
                 None
             };
-            OTPElement::new(
-                e.secret,
-                e.issuer.unwrap_or_default(),
-                e.label.unwrap_or_default(),
-                e.digits,
-                e.type_,
-                e.algorithm,
-                0,
+            OTPElement {
+                secret: e.secret,
+                issuer: e.issuer.unwrap_or_default(),
+                label: e.label.unwrap_or_default(),
+                digits: e.digits,
+                type_: OTPType::from(e.type_.as_str()),
+                algorithm: OTPAlgorithm::from(e.algorithm.as_str()),
+                period: 30,
                 counter,
-                None,
-            )
+                pin: None,
+            }
         })
         .collect())
 }

@@ -9,8 +9,6 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, io};
 
-use crate::otp::otp_element::OTPElement;
-
 pub enum CopyType {
     Native,
     OSC52,
@@ -72,20 +70,6 @@ pub fn delete_db() -> std::io::Result<()> {
 pub fn write_to_file(content: &str, file: &mut File) -> Result<(), std::io::Error> {
     file.write_all(content.as_bytes())?;
     file.sync_all()
-}
-
-pub fn check_elements(id: usize, elements: &[OTPElement]) -> Result<(), String> {
-    if elements.is_empty() {
-        return Err(String::from(
-            "there are no elements in your database. Type \"cotp -h\" to get help.",
-        ));
-    }
-
-    if id >= elements.len() {
-        return Err(format!("{} is a bad index", id + 1));
-    }
-
-    Ok(())
 }
 
 pub fn millis_before_next_step() -> u64 {

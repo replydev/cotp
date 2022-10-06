@@ -1,5 +1,4 @@
 use std::convert::TryInto;
-use std::time::SystemTime;
 
 use aes_gcm::aead::generic_array::GenericArray;
 use data_encoding::BASE32_NOPAD;
@@ -13,26 +12,10 @@ use hmac::{Hmac, Mac};
 use sha1::Sha1;
 use sha2::{Sha256, Sha512};
 
-pub fn totp(secret: &str, algorithm: &str) -> Result<u32, String> {
-    let time = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-    generate_totp(secret, algorithm, time, 30, 0)
-}
+use super::otp_element::OTPAlgorithm;
 
-fn generate_totp(
-    secret: &str,
-    algorithm: &str,
-    time: u64,
-    time_step: u64,
-    skew: i64,
-) -> Result<u32, String> {
-    hotp(secret, algorithm, ((time as i64 + skew) as u64) / time_step)
-}
-
-pub fn hotp(secret: &str, algorithm: &str, counter: u64) -> Result<u32, String> {
-    match algorithm {
+pub fn hotp(secret: &str, algorithm: OTPAlgorithm, counter: u64) -> Result<u32, String> {
+    match algorithm.to_string().to_uppercase().as_str() {
         "SHA256" => generate_hotp::<Sha256>(secret, counter),
         "SHA512" => generate_hotp::<Sha512>(secret, counter),
         _ => generate_hotp::<Sha1>(secret, counter),
@@ -96,20 +79,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::otp::otp_helper::format_code;
-    use crate::otp::otp_maker::{generate_hotp, generate_totp};
     use sha1::Sha1;
 
-    #[test]
-    fn test_totp() {
-        assert_eq!(
-            format_code(
-                generate_totp("BASE32SECRET3232", "SHA1", 0, 30, 0).unwrap(),
-                6
-            ),
-            "260182"
-        );
-    }
+    use crate::otp::hotp_maker::generate_hotp;
 
     #[test]
     fn test_hotp() {
@@ -121,5 +93,11 @@ mod tests {
             format_code(generate_hotp::<Sha1>("BASE32SECRET3232", 1).unwrap(), 6),
             "055283"
         );
+    }
+
+    fn format_code(value: u32, digits: u32) -> String {
+        // Get the formatted code
+        let s = (value % 10_u32.pow(digits)).to_string();
+        "0".repeat(digits as usize - s.chars().count()) + s.as_str()
     }
 }
