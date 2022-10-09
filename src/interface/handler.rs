@@ -32,7 +32,13 @@ fn popup_handler(key_event: KeyEvent, app: &mut App) {
                 // Force table render
                 app.tick(true);
             }
-            KeyCode::Char('n') | KeyCode::Char('N') => {
+            KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
+                app.focus = Focus::MainPage;
+            }
+            _ => {}
+        },
+        PopupAction::GeneralInfo => match key_event.code {
+            KeyCode::Char('I') | KeyCode::Char('i') | KeyCode::Esc | KeyCode::Enter => {
                 app.focus = Focus::MainPage;
             }
             _ => {}
@@ -90,6 +96,8 @@ fn main_handler(key_event: KeyEvent, app: &mut App) {
             } else if app.table.state.selected().is_some() {
                 // Ask the user if he wants to delete the OTP Code
                 app.focus = Focus::Popup;
+                app.popup_percent_x = 60;
+                app.popup_percent_y = 20;
                 app.popup_text = String::from("Do you want to delete the selected OTP Code? [Y/N]");
                 app.popup_action = PopupAction::DeleteOtp;
             }
@@ -126,7 +134,24 @@ fn main_handler(key_event: KeyEvent, app: &mut App) {
 
         KeyCode::Char('k') | KeyCode::Char('K') => handle_switch_page(app, Qrcode),
 
-        KeyCode::Char('i') | KeyCode::Char('I') => handle_switch_page(app, Info),
+        KeyCode::Char('i') | KeyCode::Char('I') => {
+            app.focus = Focus::Popup;
+            app.popup_action = PopupAction::GeneralInfo;
+            app.popup_percent_x = 40;
+            app.popup_percent_y = 50;
+            app.popup_text = String::from(
+                "
+            Press:
+            + -> Increment the HOTP counter
+            - -> Decrement the HOTP counter
+            k -> Show QRCode of the selected element
+            Enter -> Copy the OTP Code to the clipboard
+            CTRL-F -> Search codes
+            CTRL-W -> Clear the search query
+            q, CTRL-D, Esc -> Exit the application
+            ",
+            );
+        }
 
         KeyCode::Char('f') | KeyCode::Char('F') => {
             if key_event.modifiers == KeyModifiers::CONTROL {

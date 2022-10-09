@@ -2,9 +2,10 @@ use std::error;
 
 use crate::interface::enums::Focus;
 use crate::interface::enums::Page;
-use crate::interface::enums::Page::{Info, Main, Qrcode};
+use crate::interface::enums::Page::{Main, Qrcode};
 use crate::otp::otp_element::OTPDatabase;
 use tui::backend::Backend;
+use tui::layout::Rect;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
 use tui::terminal::Frame;
@@ -15,6 +16,8 @@ use crate::utils::percentage;
 
 use super::enums::PopupAction;
 use super::popup::centered_rect;
+
+const LARGE_APPLICATION_WIDTH: u16 = 75;
 
 /// Application result type.
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
@@ -36,6 +39,8 @@ pub struct App {
     pub(crate) popup_text: String,
     pub(crate) popup_action: PopupAction,
     pub(crate) data_modified: bool,
+    pub(crate) popup_percent_x: u16,
+    pub(crate) popup_percent_y: u16,
 }
 
 impl App {
@@ -58,6 +63,8 @@ impl App {
             popup_text: String::from(""),
             popup_action: PopupAction::EditOtp,
             data_modified: false,
+            popup_percent_x: 60,
+            popup_percent_y: 20,
         }
     }
 
@@ -66,7 +73,7 @@ impl App {
         // Update progress bar
         let new_progress = percentage();
         // Check for new cycle
-        if new_progress < self.progress || force_update {
+        if force_update || new_progress < self.progress {
             // Update codes
             self.table.items.clear();
             fill_table(&mut self.table, self.database.elements_ref());
@@ -79,23 +86,7 @@ impl App {
         match &self.current_page {
             Main => self.render_main_page(frame),
             Qrcode => self.render_qrcode_page(frame),
-            Info => self.render_info_page(frame),
         }
-    }
-
-    fn render_info_page<B: Backend>(&self, frame: &mut Frame<'_, B>) {
-        let text = "Press:\n+ -> Increment the HOTP counter\n- -> Decrement the HOTP counter\n
-        k -> Show QRCode of the selected element\nEnter -> Copy the OTP Code to the clipboard\nCTRL-F -> Search codes\nCTRL-W -> Clear the search query\nq, CTRL-D, Esc -> Exit the application";
-        let paragraph = Paragraph::new(text)
-            .block(
-                Block::default()
-                    .title(self.title.as_str())
-                    .borders(Borders::ALL),
-            )
-            .style(Style::default().fg(Color::White).bg(Color::Black))
-            .alignment(Alignment::Center)
-            .wrap(Wrap { trim: true });
-        self.render_paragraph(frame, paragraph);
     }
 
     fn render_qrcode_page<B: Backend>(&self, frame: &mut Frame<'_, B>) {
@@ -140,7 +131,7 @@ impl App {
             .constraints(
                 [
                     Constraint::Length(3),              // Search bar
-                    Constraint::Length(height - 3 - 6), // Table
+                    Constraint::Length(height - 3 - 6), // Table + Info Box
                     Constraint::Length(6),              // Progress bar
                 ]
                 .as_ref(),
@@ -164,6 +155,50 @@ impl App {
             .alignment(Alignment::Center)
             .wrap(Wrap { trim: true });
 
+        let progress_label = if self.print_percentage {
+            format!("{}%", self.progress)
+        } else {
+            self.label_text.to_owned()
+        };
+        let progress_bar = Gauge::default()
+            .block(Block::default())
+            .gauge_style(
+                Style::default()
+                    .bg(Color::White)
+                    .fg(Color::Black)
+                    .add_modifier(Modifier::BOLD),
+            )
+            .percent(self.progress as u16)
+            .label(progress_label);
+
+        frame.render_widget(search_bar, rects[0]);
+        //frame.render_stateful_widget(t, rects[1], &mut self.table.state);
+        self.render_table_box(frame, rects[1]);
+        frame.render_widget(progress_bar, rects[2]);
+        if self.focus == Focus::Popup {
+            let block = Block::default().title("Alert").borders(Borders::ALL);
+            let paragraph = Paragraph::new(&*self.popup_text)
+                .block(block)
+                .alignment(Alignment::Center)
+                .wrap(Wrap { trim: true });
+            let area = centered_rect(self.popup_percent_x, self.popup_percent_y, frame.size());
+            frame.render_widget(Clear, area); //this clears out the background
+            frame.render_widget(paragraph, area);
+        }
+    }
+
+    fn render_table_box<B: Backend>(&mut self, frame: &mut Frame<'_, B>, area: Rect) {
+        // TODO If terminal is too little do not show info box
+        let constraints = if self.is_large_application(frame) {
+            vec![Constraint::Percentage(80), Constraint::Percentage(20)]
+        } else {
+            vec![Constraint::Percentage(100)]
+        };
+        let chunks = Layout::default()
+            .constraints(constraints)
+            .direction(Direction::Horizontal)
+            .split(area);
+
         let header_cells = ["Id", "Issuer", "Label", "OTP"]
             .iter()
             .map(|h| Cell::from(*h).style(Style::default().fg(Color::Black)));
@@ -185,6 +220,7 @@ impl App {
             let cells = item.iter().map(|c| Cell::from(c.as_str()));
             Row::new(cells).height(height as u16).bottom_margin(1)
         });
+
         let t = Table::new(rows)
             .header(header)
             .block(
@@ -206,34 +242,48 @@ impl App {
                 Constraint::Percentage(25),
             ]);
 
-        let progress_label = if self.print_percentage {
-            format!("{}%", self.progress)
-        } else {
-            self.label_text.to_owned()
+        let selected_element = match self.table.state.selected() {
+            Some(index) => self.database.get_element(index),
+            None => None,
         };
-        let progress_bar = Gauge::default()
-            .block(Block::default())
-            .gauge_style(
-                Style::default()
-                    .bg(Color::White)
-                    .fg(Color::Black)
-                    .add_modifier(Modifier::BOLD),
+        let mut text = if let Some(element) = selected_element {
+            format!(
+                "
+            Type: {}
+            Algorithm: {}
+            Counter: {}
+            Pin: {}
+            ",
+                element.type_,
+                element.algorithm,
+                element
+                    .counter
+                    .map(|e| e.to_string())
+                    .unwrap_or_else(|| String::from("N/A")),
+                element.pin.clone().unwrap_or_else(|| String::from("N/A"))
             )
-            .percent(self.progress as u16)
-            .label(progress_label);
+        } else {
+            String::from("")
+        };
 
-        frame.render_widget(search_bar, rects[0]);
-        frame.render_stateful_widget(t, rects[1], &mut self.table.state);
-        frame.render_widget(progress_bar, rects[2]);
-        if self.focus == Focus::Popup {
-            let block = Block::default().title("Alert").borders(Borders::ALL);
-            let paragraph = Paragraph::new(&*self.popup_text)
-                .block(block)
-                .alignment(Alignment::Center)
-                .wrap(Wrap { trim: true });
-            let area = centered_rect(60, 20, frame.size());
-            frame.render_widget(Clear, area); //this clears out the background
-            frame.render_widget(paragraph, area);
+        text.push_str(
+            "
+        
+        Press I to get help
+        ",
+        );
+        let paragraph = Paragraph::new(text)
+            .block(Block::default().title("Code info").borders(Borders::ALL))
+            .style(Style::default().fg(Color::White).bg(Color::Black))
+            .alignment(Alignment::Left)
+            .wrap(Wrap { trim: true });
+        frame.render_stateful_widget(t, chunks[0], &mut self.table.state);
+        if self.is_large_application(frame) {
+            frame.render_widget(paragraph, chunks[1]);
         }
+    }
+
+    fn is_large_application<B: Backend>(&self, frame: &mut Frame<'_, B>) -> bool {
+        frame.size().width >= LARGE_APPLICATION_WIDTH
     }
 }

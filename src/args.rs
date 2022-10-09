@@ -79,7 +79,7 @@ pub fn get_matches() -> ArgMatches {
                         .help("OTP Code digits")
                         .num_args(1)
                         .required(false)
-                        .value_parser(value_parser!(usize))
+                        .value_parser(value_parser!(u64))
                         .default_value_if("type", "STEAM", "5")
                         .default_value("6"),
                 )
@@ -90,7 +90,7 @@ pub fn get_matches() -> ArgMatches {
                         .help("OTP Code period")
                         .num_args(1)
                         .required(false)
-                        .value_parser(value_parser!(usize))
+                        .value_parser(value_parser!(u64))
                         .default_value("30"),
                 )
                 .arg(
@@ -100,7 +100,7 @@ pub fn get_matches() -> ArgMatches {
                         .help("HOTP code counter")
                         .required_if_eq("type", "HOTP")
                         .num_args(1)
-                        .value_parser(value_parser!(usize)),
+                        .value_parser(value_parser!(u64)),
                 ).arg(
                     Arg::new("pin")
                     .short('p')
@@ -154,7 +154,7 @@ pub fn get_matches() -> ArgMatches {
                         .long("digits")
                         .help("OTP Code digits")
                         .num_args(1)
-                        .value_parser(value_parser!(usize))
+                        .value_parser(value_parser!(u64))
                         .required_unless_present_any(["label", "algorithm", "issuer", "counter"]),
                 )
                 .arg(
@@ -163,7 +163,7 @@ pub fn get_matches() -> ArgMatches {
                         .long("period")
                         .help("OTP Code period")
                         .num_args(1)
-                        .value_parser(value_parser!(usize))
+                        .value_parser(value_parser!(u64))
                         .required_unless_present_any(["label", "algorithm", "issuer", "counter"]),
                 )
                 .arg(
@@ -172,7 +172,7 @@ pub fn get_matches() -> ArgMatches {
                         .long("counter")
                         .help("HOTP code counter (only for HOTP codes)")
                         .num_args(1)
-                        .value_parser(value_parser!(usize))
+                        .value_parser(value_parser!(u64))
                         .required_unless_present_any(["label", "algorithm", "issuer", "digits"]),
                 )
                 .arg(
@@ -193,7 +193,7 @@ pub fn get_matches() -> ArgMatches {
                         .long("index")
                         .help("OTP code index")
                         .num_args(1..)
-                        .value_parser(value_parser!(usize))
+                        .value_parser(value_parser!(u64))
                         .required(true)
                 ),
         )
