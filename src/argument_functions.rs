@@ -67,7 +67,7 @@ pub fn add(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, S
         secret,
         issuer: matches.get_one::<String>("issuer").unwrap().clone(),
         label: matches.get_one::<String>("label").unwrap().clone(),
-        digits: *matches.get_one::<usize>("digits").unwrap_or(&6) as u64,
+        digits: *matches.get_one("digits").unwrap_or(&6),
         type_,
         algorithm: OTPAlgorithm::from(
             matches
@@ -76,8 +76,8 @@ pub fn add(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, S
                 .to_uppercase()
                 .as_str(),
         ),
-        period: *matches.get_one::<usize>("period").unwrap_or(&6) as u64,
-        counter: matches.get_one::<u64>("counter").copied(),
+        period: *matches.get_one("period").unwrap_or(&6),
+        counter: matches.get_one("counter").copied(),
         pin: matches.get_one::<String>("pin").map(|v| v.to_owned()),
     };
 
