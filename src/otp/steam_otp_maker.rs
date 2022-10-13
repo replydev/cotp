@@ -16,10 +16,7 @@ fn to_steam_string(mut code: usize, digits: usize) -> String {
     let alphabet_len = STEAM_ALPHABET.chars().count();
 
     for _ in 0..digits {
-        let c = STEAM_ALPHABET
-            .chars()
-            .nth(code as usize % alphabet_len)
-            .unwrap();
+        let c = STEAM_ALPHABET.chars().nth(code % alphabet_len).unwrap();
         res.push(c);
         code /= alphabet_len;
     }
