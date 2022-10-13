@@ -25,7 +25,11 @@ fn init() -> Result<ReadResult, String> {
         Ok(needs_creation) => {
             if needs_creation {
                 let mut pw = utils::prompt_for_passwords("Choose a password: ", 8, true);
-                let mut database = OTPDatabase::new(CURRENT_DATABASE_VERSION, vec![]);
+                let mut database = OTPDatabase {
+                    version: CURRENT_DATABASE_VERSION,
+                    elements: vec![],
+                    ..Default::default()
+                };
                 if database.save_with_pw(&pw).is_err() {
                     return Err(String::from(
                         "An error occurred during database overwriting",

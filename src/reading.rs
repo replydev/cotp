@@ -1,6 +1,6 @@
 use crate::crypto;
 use crate::otp::otp_element::{OTPDatabase, OTPElement};
-use crate::utils::{self};
+use crate::utils;
 use std::fs::read_to_string;
 use utils::get_db_path;
 use zeroize::Zeroize;
@@ -44,15 +44,19 @@ pub fn read_from_file(password: &str) -> Result<ReadResult, String> {
         Ok((mut contents, key, salt)) => {
             let mut database: OTPDatabase = match serde_json::from_str(&contents) {
                 Ok(results) => results,
-                Err(e) => {
+                Err(_) => {
                     let elements: Vec<OTPElement> = match serde_json::from_str(&contents) {
                         Ok(r) => r,
-                        Err(_) => {
+                        Err(e) => {
                             contents.zeroize();
                             return Err(format!("Failed to deserialize database: {:?}", e));
                         }
                     };
-                    OTPDatabase::new(1, elements)
+                    OTPDatabase {
+                        version: 1,
+                        elements,
+                        needs_modification: true,
+                    }
                 }
             };
             contents.zeroize();

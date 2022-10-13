@@ -1,4 +1,4 @@
-use std::{fmt, fs::File, io::Write, path::PathBuf};
+use std::{fmt, fs::File, io::Write, path::PathBuf, vec};
 
 use crate::{
     crypto::cryptography::{argon_derive_key, encrypt_string_with_key, gen_salt},
@@ -19,6 +19,7 @@ use super::{
 pub const CURRENT_DATABASE_VERSION: u16 = 2;
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Copy)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum OTPAlgorithm {
     Sha1,
     Sha256,
@@ -44,11 +45,22 @@ impl From<&str> for OTPAlgorithm {
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Copy)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum OTPType {
+    #[serde(alias = "totp")]
+    #[serde(alias = "TOTP")]
     Totp,
+    #[serde(alias = "hotp")]
+    #[serde(alias = "HOTP")]
     Hotp,
+    #[serde(alias = "steam")]
+    #[serde(alias = "STEAM")]
     Steam,
+    #[serde(alias = "yandex")]
+    #[serde(alias = "YANDEX")]
     Yandex,
+    #[serde(alias = "motp")]
+    #[serde(alias = "MOTP")]
     Motp,
 }
 
@@ -72,23 +84,25 @@ impl From<&str> for OTPType {
 
 #[derive(Serialize, Deserialize)]
 pub struct OTPDatabase {
-    version: u16,
-    elements: Vec<OTPElement>,
+    pub(crate) version: u16,
+    pub(crate) elements: Vec<OTPElement>,
     #[serde(skip)]
-    modified: bool,
+    pub(crate) needs_modification: bool,
+}
+
+impl Default for OTPDatabase {
+    fn default() -> Self {
+        Self {
+            version: 1,
+            elements: vec![],
+            needs_modification: false,
+        }
+    }
 }
 
 impl OTPDatabase {
-    pub fn new(version: u16, elements: Vec<OTPElement>) -> OTPDatabase {
-        OTPDatabase {
-            version,
-            elements,
-            modified: false,
-        }
-    }
-
     pub fn is_modified(&self) -> bool {
-        self.modified
+        self.needs_modification
     }
 
     pub fn is_outdated(&self) -> bool {
@@ -96,7 +110,7 @@ impl OTPDatabase {
     }
 
     pub fn save(&mut self, key: &Vec<u8>, salt: &[u8]) -> Result<(), String> {
-        self.modified = false;
+        self.needs_modification = false;
         match overwrite_database_key(self, key, salt) {
             Ok(()) => Ok(()),
             Err(e) => Err(format!("{:?}", e)),
@@ -137,22 +151,22 @@ impl OTPDatabase {
     }
 
     pub fn add_all(&mut self, mut elements: Vec<OTPElement>) {
-        self.modified = true;
+        self.needs_modification = true;
         self.elements.append(&mut elements)
     }
 
     pub fn add_element(&mut self, element: OTPElement) {
-        self.modified = true;
+        self.needs_modification = true;
         self.elements.push(element)
     }
 
     pub fn edit_element(&mut self, index: usize, element: OTPElement) {
-        self.modified = true;
+        self.needs_modification = true;
         self.elements[index] = element;
     }
 
     pub fn delete_element(&mut self, index: usize) {
-        self.modified = true;
+        self.needs_modification = true;
         self.elements.remove(index);
     }
 
