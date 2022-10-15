@@ -81,7 +81,7 @@ where
 mod tests {
     use sha1::Sha1;
 
-    use crate::otp::hotp_maker::generate_hotp;
+    use crate::otp::algorithms::hotp_maker::generate_hotp;
 
     #[test]
     fn test_hotp() {

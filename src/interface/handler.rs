@@ -28,7 +28,6 @@ fn popup_handler(key_event: KeyEvent, app: &mut App) {
                     return;
                 }
                 app.focus = Focus::MainPage;
-                app.data_modified = true;
                 // Force table render
                 app.tick(true);
             }

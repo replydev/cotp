@@ -38,7 +38,6 @@ pub struct App {
     pub(crate) focus: Focus,
     pub(crate) popup_text: String,
     pub(crate) popup_action: PopupAction,
-    pub(crate) data_modified: bool,
     pub(crate) popup_percent_x: u16,
     pub(crate) popup_percent_y: u16,
 }
@@ -62,7 +61,6 @@ impl App {
             focus: Focus::MainPage,
             popup_text: String::from(""),
             popup_action: PopupAction::EditOtp,
-            data_modified: false,
             popup_percent_x: 60,
             popup_percent_y: 20,
         }

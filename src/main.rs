@@ -119,7 +119,7 @@ fn dashboard(read_result: ReadResult) -> AppResult<()> {
         }
 
         // Overwrite database if modified
-        let error: Option<String> = if app.data_modified || app.database.is_outdated() {
+        let error: Option<String> = if app.database.is_modified() {
             match app.database.save(&key, &salt) {
                 Ok(()) => None,
                 Err(e) => Some(e),
