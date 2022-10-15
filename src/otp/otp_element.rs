@@ -15,6 +15,7 @@ use super::{
         hotp_maker::hotp, motp_maker::motp, steam_otp_maker::steam, totp_maker::totp,
         yandex_otp_maker::yandex,
     },
+    migrations::migrate,
     otp_algorithm::OTPAlgorithm,
     otp_type::OTPType,
 };
@@ -44,12 +45,9 @@ impl OTPDatabase {
         self.needs_modification
     }
 
-    pub fn is_outdated(&self) -> bool {
-        self.version < CURRENT_DATABASE_VERSION
-    }
-
     pub fn save(&mut self, key: &Vec<u8>, salt: &[u8]) -> Result<(), String> {
         self.needs_modification = false;
+        migrate(self)?;
         match self.overwrite_database_key(key, salt) {
             Ok(()) => Ok(()),
             Err(e) => Err(format!("{:?}", e)),
@@ -132,7 +130,8 @@ impl OTPDatabase {
     }
 
     pub fn sort(&mut self) {
-        self.elements.sort_by(|c1, c2| c1.issuer.cmp(&c2.issuer))
+        self.elements
+            .sort_unstable_by(|c1, c2| c1.issuer.cmp(&c2.issuer))
     }
 }
 

@@ -53,7 +53,7 @@ pub fn read_from_file(password: &str) -> Result<ReadResult, String> {
                         }
                     };
                     OTPDatabase {
-                        version: 2,
+                        version: 1,
                         elements,
                         needs_modification: true,
                     }
