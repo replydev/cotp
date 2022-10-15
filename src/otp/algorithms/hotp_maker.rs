@@ -12,7 +12,7 @@ use hmac::{Hmac, Mac};
 use sha1::Sha1;
 use sha2::{Sha256, Sha512};
 
-use super::otp_element::OTPAlgorithm;
+use crate::otp::otp_algorithm::OTPAlgorithm;
 
 pub fn hotp(secret: &str, algorithm: OTPAlgorithm, counter: u64) -> Result<u32, String> {
     match algorithm.to_string().to_uppercase().as_str() {

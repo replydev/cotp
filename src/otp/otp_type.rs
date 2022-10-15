@@ -1,0 +1,41 @@
+use std::fmt;
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Copy)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum OTPType {
+    #[serde(alias = "totp")]
+    #[serde(alias = "TOTP")]
+    Totp,
+    #[serde(alias = "hotp")]
+    #[serde(alias = "HOTP")]
+    Hotp,
+    #[serde(alias = "steam")]
+    #[serde(alias = "STEAM")]
+    Steam,
+    #[serde(alias = "yandex")]
+    #[serde(alias = "YANDEX")]
+    Yandex,
+    #[serde(alias = "motp")]
+    #[serde(alias = "MOTP")]
+    Motp,
+}
+
+impl fmt::Display for OTPType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl From<&str> for OTPType {
+    fn from(s: &str) -> Self {
+        match s.to_uppercase().as_str() {
+            "HOTP" => Self::Hotp,
+            "STEAM" => Self::Steam,
+            "YANDEX" => Self::Yandex,
+            "MOTP" => Self::Motp,
+            _ => Self::Totp,
+        }
+    }
+}

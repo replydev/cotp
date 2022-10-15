@@ -1,6 +1,8 @@
 use std::time::SystemTime;
 
-use super::{hotp_maker::hotp, otp_element::OTPAlgorithm};
+use crate::otp::otp_algorithm::OTPAlgorithm;
+
+use super::hotp_maker::hotp;
 
 pub fn totp(secret: &str, algorithm: OTPAlgorithm) -> Result<u32, String> {
     let time = SystemTime::now()
@@ -22,8 +24,7 @@ fn generate_totp(
 
 #[cfg(test)]
 mod tests {
-
-    use crate::otp::{otp_element::OTPAlgorithm, totp_maker::generate_totp};
+    use crate::otp::{algorithms::totp_maker::generate_totp, otp_algorithm::OTPAlgorithm};
 
     #[test]
     fn test_totp() {

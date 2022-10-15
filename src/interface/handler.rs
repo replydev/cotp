@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::interface::app::{App, AppResult};
 use crate::interface::enums::Page::*;
-use crate::otp::otp_element::OTPType;
+use crate::otp::otp_type::OTPType;
 use crate::utils::{copy_string_to_clipboard, CopyType};
 
 use super::enums::Page;

@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 
-use crate::otp::otp_element::{OTPAlgorithm, OTPDatabase, OTPElement, OTPType};
+use crate::otp::otp_algorithm::OTPAlgorithm;
+use crate::otp::otp_element::{OTPDatabase, OTPElement};
+use crate::otp::otp_type::OTPType;
 use crate::{importers, utils};
 use clap::ArgMatches;
 use zeroize::Zeroize;

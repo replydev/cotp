@@ -1,8 +1,7 @@
-use std::{fmt, fs::File, io::Write, path::PathBuf, vec};
+use std::{fs::File, io::Write, path::PathBuf, vec};
 
 use crate::{
     crypto::cryptography::{argon_derive_key, encrypt_string_with_key, gen_salt},
-    otp::otp_element::OTPType::*,
     utils,
 };
 use data_encoding::BASE32_NOPAD;
@@ -12,75 +11,15 @@ use serde::{Deserialize, Serialize};
 use zeroize::Zeroize;
 
 use super::{
-    hotp_maker::hotp, motp_maker::motp, steam_otp_maker::steam, totp_maker::totp,
-    yandex_otp_maker::yandex,
+    algorithms::{
+        hotp_maker::hotp, motp_maker::motp, steam_otp_maker::steam, totp_maker::totp,
+        yandex_otp_maker::yandex,
+    },
+    otp_algorithm::OTPAlgorithm,
+    otp_type::OTPType,
 };
 
 pub const CURRENT_DATABASE_VERSION: u16 = 2;
-
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Copy)]
-#[serde(rename_all = "UPPERCASE")]
-pub enum OTPAlgorithm {
-    Sha1,
-    Sha256,
-    Sha512,
-    Md5,
-}
-
-impl fmt::Display for OTPAlgorithm {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl From<&str> for OTPAlgorithm {
-    fn from(s: &str) -> Self {
-        match s.to_uppercase().as_str() {
-            "SHA256" => Self::Sha256,
-            "SHA512" => Self::Sha512,
-            "MD5" => OTPAlgorithm::Md5,
-            _ => Self::Sha1,
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Copy)]
-#[serde(rename_all = "UPPERCASE")]
-pub enum OTPType {
-    #[serde(alias = "totp")]
-    #[serde(alias = "TOTP")]
-    Totp,
-    #[serde(alias = "hotp")]
-    #[serde(alias = "HOTP")]
-    Hotp,
-    #[serde(alias = "steam")]
-    #[serde(alias = "STEAM")]
-    Steam,
-    #[serde(alias = "yandex")]
-    #[serde(alias = "YANDEX")]
-    Yandex,
-    #[serde(alias = "motp")]
-    #[serde(alias = "MOTP")]
-    Motp,
-}
-
-impl fmt::Display for OTPType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl From<&str> for OTPType {
-    fn from(s: &str) -> Self {
-        match s.to_uppercase().as_str() {
-            "HOTP" => Hotp,
-            "STEAM" => Steam,
-            "YANDEX" => Yandex,
-            "MOTP" => Motp,
-            _ => Totp,
-        }
-    }
-}
 
 #[derive(Serialize, Deserialize)]
 pub struct OTPDatabase {
@@ -93,7 +32,7 @@ pub struct OTPDatabase {
 impl Default for OTPDatabase {
     fn default() -> Self {
         Self {
-            version: 1,
+            version: CURRENT_DATABASE_VERSION,
             elements: vec![],
             needs_modification: false,
         }
@@ -111,9 +50,19 @@ impl OTPDatabase {
 
     pub fn save(&mut self, key: &Vec<u8>, salt: &[u8]) -> Result<(), String> {
         self.needs_modification = false;
-        match overwrite_database_key(self, key, salt) {
+        match self.overwrite_database_key(key, salt) {
             Ok(()) => Ok(()),
             Err(e) => Err(format!("{:?}", e)),
+        }
+    }
+
+    fn overwrite_database_key(&self, key: &Vec<u8>, salt: &[u8]) -> Result<(), std::io::Error> {
+        let json: &str = &serde_json::to_string(&self)?;
+        let encrypted = encrypt_string_with_key(json.to_string(), key, salt).unwrap();
+        let mut file = File::create(utils::get_db_path())?;
+        match serde_json::to_string(&encrypted) {
+            Ok(v) => utils::write_to_file(&v, &mut file),
+            Err(e) => Err(std::io::Error::from(e)),
         }
     }
 
@@ -187,28 +136,6 @@ impl OTPDatabase {
     }
 }
 
-fn overwrite_database_key(
-    database: &OTPDatabase,
-    key: &Vec<u8>,
-    salt: &[u8],
-) -> Result<(), std::io::Error> {
-    let json_string: &str = &serde_json::to_string(&database)?;
-    overwrite_database_json_key(json_string, key, salt)
-}
-
-fn overwrite_database_json_key(
-    json: &str,
-    key: &Vec<u8>,
-    salt: &[u8],
-) -> Result<(), std::io::Error> {
-    let encrypted = encrypt_string_with_key(json.to_string(), key, salt).unwrap();
-    let mut file = File::create(utils::get_db_path())?;
-    match serde_json::to_string(&encrypted) {
-        Ok(v) => utils::write_to_file(&v, &mut file),
-        Err(e) => Err(std::io::Error::from(e)),
-    }
-}
-
 #[derive(Serialize, Deserialize, Clone)]
 pub struct OTPElement {
     pub secret: String,
@@ -245,7 +172,7 @@ impl OTPElement {
         uri.push_str(self.period.to_string().as_str());
         uri.push_str("&lock=false");
         //uri.push_str("?secret=" + self.secret());
-        if self.type_ == Hotp {
+        if self.type_ == OTPType::Hotp {
             uri.push_str("&counter=");
             uri.push_str(self.counter.unwrap_or(0).to_string().as_str());
         }
@@ -263,12 +190,12 @@ impl OTPElement {
 
     pub fn get_otp_code(&self) -> Result<String, String> {
         match self.type_ {
-            Totp => {
+            OTPType::Totp => {
                 let code = totp(&self.secret, self.algorithm)?;
 
                 Ok(self.format_code(code))
             }
-            Hotp => match self.counter {
+            OTPType::Hotp => match self.counter {
                 Some(counter) => {
                     let code = hotp(&self.secret, self.algorithm, counter)?;
 
@@ -278,8 +205,8 @@ impl OTPElement {
                     "The element is an HOTP code but there is no counter value.",
                 )),
             },
-            Steam => steam(&self.secret, self.algorithm, self.digits as usize),
-            Yandex => match &self.pin {
+            OTPType::Steam => steam(&self.secret, self.algorithm, self.digits as usize),
+            OTPType::Yandex => match &self.pin {
                 Some(pin) => yandex(
                     &self.secret,
                     pin.as_str(),
@@ -291,7 +218,7 @@ impl OTPElement {
                     "This element is a Yandex code but there is not pin value",
                 )),
             },
-            Motp => match &self.pin {
+            OTPType::Motp => match &self.pin {
                 Some(pin) => motp(
                     &self.secret,
                     pin.as_str(),

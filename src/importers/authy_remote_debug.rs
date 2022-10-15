@@ -9,7 +9,7 @@ use serde::Deserialize;
 use serde_json;
 use std::fs::read_to_string;
 
-use crate::otp::otp_element::{OTPAlgorithm, OTPElement, OTPType};
+use crate::otp::{otp_algorithm::OTPAlgorithm, otp_element::OTPElement, otp_type::OTPType};
 
 #[derive(Deserialize)]
 struct AuthyExportedJsonElement {

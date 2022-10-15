@@ -15,7 +15,9 @@ use hmac::digest::{
 use sha1::{Digest, Sha1};
 use sha2::{Sha256, Sha512};
 
-use super::{hotp_maker::hotp_hash, otp_element::OTPAlgorithm};
+use crate::otp::otp_algorithm::OTPAlgorithm;
+
+use super::hotp_maker::hotp_hash;
 
 const EN_ALPHABET_LENGTH: u64 = 26;
 const SECRET_LENGHT: usize = 16;

@@ -1,6 +1,6 @@
 use tui::widgets::TableState;
 
-use crate::otp::otp_element::{OTPElement, OTPType};
+use crate::otp::{otp_element::OTPElement, otp_type::OTPType};
 
 pub struct StatefulTable {
     pub(crate) state: TableState,
