@@ -41,18 +41,8 @@ pub fn import(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String
         }
     };
 
-    let mut pw = utils::prompt_for_passwords("Choose a password: ", 8, true);
     database.add_all(elements);
-
-    let result = match database.save_with_pw(&pw) {
-        Ok(()) => Ok(String::from("Successfully imported database")),
-        Err(e) => Err(format!(
-            "An error occurred during database overwriting: {}",
-            e
-        )),
-    };
-    pw.zeroize();
-    result
+    Ok(String::from("Successfully imported database"))
 }
 
 pub fn add(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, String> {
