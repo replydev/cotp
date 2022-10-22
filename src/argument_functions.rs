@@ -10,7 +10,9 @@ use zeroize::Zeroize;
 pub fn import(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, String> {
     let path = matches.get_one::<String>("path").unwrap();
 
-    let result = if matches.get_flag("cotp") || matches.get_flag("andotp") {
+    let result = if matches.get_flag("cotp") {
+        importers::cotp::import(path)
+    } else if matches.get_flag("andotp") {
         importers::and_otp::import(path)
     } else if matches.get_flag("aegis") {
         importers::aegis::import(path)
