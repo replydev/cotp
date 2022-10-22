@@ -17,31 +17,41 @@ impl StatefulTable {
         table
     }
     pub fn next(&mut self) {
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i >= self.items.len() - 1 {
-                    0
-                } else {
-                    i + 1
+        let selected = if self.items.is_empty() {
+            None
+        } else {
+            Some(match self.state.selected() {
+                Some(i) => {
+                    if i >= self.items.len() - 1 {
+                        0
+                    } else {
+                        i + 1
+                    }
                 }
-            }
-            None => 0,
+                None => 0,
+            })
         };
-        self.state.select(Some(i));
+        self.state.select(selected);
     }
 
     pub fn previous(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
-                    self.items.len() - 1
+                    self.items.len().checked_sub(1)
                 } else {
-                    i - 1
+                    Some(i - 1)
                 }
             }
-            None => 0,
+            None => {
+                if self.items.is_empty() {
+                    None
+                } else {
+                    Some(0)
+                }
+            }
         };
-        self.state.select(Some(i));
+        self.state.select(i);
     }
 }
 

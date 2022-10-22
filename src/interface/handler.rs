@@ -173,6 +173,12 @@ fn delete_selected_code(app: &mut App) -> Result<String, String> {
         Some(selected) => {
             if app.database.elements_ref().len() > selected {
                 app.database.delete_element(selected);
+                app.table.items.remove(selected);
+                if selected >= app.database.elements_ref().len() {
+                    app.table.previous();
+                } else if app.database.elements_ref().is_empty() {
+                    app.table.state.select(None)
+                }
                 Ok("Done".to_string())
             } else {
                 Err("Index out of bounds".to_string())
