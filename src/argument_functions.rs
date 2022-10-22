@@ -128,7 +128,7 @@ pub fn edit(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, 
 }
 
 pub fn export(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, String> {
-    match database.export(PathBuf::from(matches.get_one::<&str>("path").unwrap())) {
+    match database.export(PathBuf::from(matches.get_one::<String>("path").unwrap())) {
         Ok(export_result) => Ok(format!(
             "Database was successfully exported at {}",
             export_result.to_str().unwrap_or("**Invalid path**")
