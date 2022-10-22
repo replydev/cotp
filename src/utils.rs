@@ -4,7 +4,6 @@ use crossterm::style::Print;
 #[cfg(not(debug_assertions))]
 use dirs::home_dir;
 use std::fs::File;
-use std::io::prelude::*;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, io};
@@ -65,11 +64,6 @@ pub fn create_db_if_needed() -> Result<bool, ()> {
 
 pub fn delete_db() -> std::io::Result<()> {
     std::fs::remove_file(get_db_path())
-}
-
-pub fn write_to_file(content: &str, file: &mut File) -> Result<(), std::io::Error> {
-    file.write_all(content.as_bytes())?;
-    file.sync_all()
 }
 
 pub fn millis_before_next_step() -> u64 {

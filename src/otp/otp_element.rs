@@ -59,7 +59,11 @@ impl OTPDatabase {
         let encrypted = encrypt_string_with_key(json.to_string(), key, salt).unwrap();
         let mut file = File::create(utils::get_db_path())?;
         match serde_json::to_string(&encrypted) {
-            Ok(v) => utils::write_to_file(&v, &mut file),
+            Ok(content) => {
+                file.write_all(content.as_bytes())?;
+                file.sync_all()?;
+                Ok(())
+            }
             Err(e) => Err(std::io::Error::from(e)),
         }
     }
