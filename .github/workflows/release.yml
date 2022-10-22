@@ -171,3 +171,27 @@ jobs:
         id: extract-version
         run: |
           printf "::set-output name=%s::%s\n" tag-name "${GITHUB_REF#refs/tags/}"
+
+  publish_on_cargo_crates:
+    name: "Publish crate on crates.io"
+    needs: [dist]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+        with:
+          submodules: false
+      - name: Download rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          override: "true"
+          default: "true"
+      - name: Login
+        run: cargo login ${{ secrets.CRATE_AUTH_TOKEN }}
+
+      - name: List
+        run: cargo package --list
+
+      - name: Publish
+        run: cargo publish
