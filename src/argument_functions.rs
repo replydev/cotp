@@ -15,8 +15,7 @@ pub fn import(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String
     } else if matches.get_flag("aegis") {
         importers::aegis::import(path)
     } else if matches.get_flag("aegis-encrypted") {
-        let mut password =
-            utils::prompt_for_passwords("Insert password for DB decryption: ", 0, false);
+        let mut password = utils::prompt_for_passwords("Insert your Aegis password: ", 0, false);
         let result = importers::aegis_encrypted::import(path, password.as_str());
         password.zeroize();
         result
