@@ -13,3 +13,4 @@ pytest
 six
 toml
 wrapt
+requests

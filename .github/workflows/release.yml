@@ -195,3 +195,62 @@ jobs:
 
       - name: Publish
         run: cargo publish
+
+  aur-publish-cotp:
+    runs-on: ubuntu-latest
+    needs: [dist]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Make PKGBUILD
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: kyoh86/generate-pkgbuild-action@v1
+        with:
+          # (REQUIRED) License name
+          license: gpl3
+
+          # An email address of the author
+          email: ${{ secrets.AUR_EMAIL }}
+
+          # A description for the package
+          description: "Trustworthy, encrypted, command-line TOTP/HOTP authenticator app with import functionality."
+
+          # Call `go run -tags man ./cmd/{entrypoint} man` to generate man page
+          makeman: false
+
+      - name: Calculate tag name
+        run: |
+          name=dev
+          if [[ $GITHUB_REF == refs/tags/v* ]]; then
+            name=${GITHUB_REF:10}
+          fi
+          echo ::set-output name=val::$name
+          echo TAG=$name >> $GITHUB_ENV
+        id: tagname
+
+      - name: Generate PKGBUILDs
+        shell: bash
+        run: |
+          pip install requests
+          python ci/build_pkgbuild.py ${{env.TAG}}
+
+      - name: Publish cotp AUR package
+        uses: KSXGitHub/github-actions-deploy-aur@v2.5.0
+        with:
+          pkgname: cotp
+          pkgbuild: ./PKGBUILD-cotp
+          commit_username: ${{ secrets.AUR_USERNAME }}
+          commit_email: ${{ secrets.AUR_EMAIL }}
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: Update cotp package to version ${{env.TAG}}
+          ssh_keyscan_types: rsa,dsa,ecdsa,ed25519
+
+      - name: Publish cotp-bin AUR package
+        uses: KSXGitHub/github-actions-deploy-aur@v2.5.0
+        with:
+          pkgname: cotp-bin
+          pkgbuild: ./PKGBUILD-cotp-bin
+          commit_username: ${{ secrets.AUR_USERNAME }}
+          commit_email: ${{ secrets.AUR_EMAIL }}
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: Update cotp-bin package to version ${{env.TAG}}
+          ssh_keyscan_types: rsa,dsa,ecdsa,ed25519
