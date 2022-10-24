@@ -104,7 +104,7 @@ jobs:
           path: dist
 
   publish:
-    name: Publish
+    name: "Publish binaries to release page"
     needs: [dist]
     runs-on: ubuntu-latest
     steps:
@@ -181,12 +181,15 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: false
-      - name: Download rust toolchain
+
+      - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          override: "true"
-          default: "true"
+          toolchain: stable
+          target: x86_64-unknown-linux-gnu
+          override: true
+
       - name: Login
         run: cargo login ${{ secrets.CRATE_AUTH_TOKEN }}
 
@@ -197,8 +200,9 @@ jobs:
         run: cargo publish
 
   aur-publish-cotp:
+    name: "Publish new version to AUR"
     runs-on: ubuntu-latest
-    needs: [dist]
+    needs: [publish]
     steps:
       - uses: actions/checkout@v2
       - name: Make PKGBUILD
