@@ -8,6 +8,9 @@ import requests
 COTP_PKGBUILD_TEMPLATE_PATH = "ci/templates/PKGBUILD.cotp.template"
 COTP_BIN_PKGBUILD_TEMPLATE_PATH = "ci/templates/PKGBUILD.cotp-bin.template"
 
+COTP_PKGBUILD_PATH = "ci/templates/cotp/PKGBUILD"
+COTP_BIN_PKGBUILD_PATH = "ci/templates/cotp-bin/PKGBUILD"
+
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
@@ -51,21 +54,26 @@ def main():
         return
 
     version = match.group(1)
+    print(f"Version detected: {version}")
+    Path("ci/cotp").mkdir(exist_ok=True)
+    Path("ci/cotp-bin").mkdir(exist_ok=True)
 
     source_url = f"https://github.com/replydev/cotp/archive/v{version}.tar.gz"
     source_filename = f"{version}.tar.gz"
     download_file(source_url, source_filename)
     source_digest = file_digest(source_filename)
+    print(f"Source digest: {source_digest}")
 
     compiled_bin_url = f"https://github.com/replydev/cotp/releases/download/v{version}/cotp-v{version}-x86_64-linux.tar.xz"
     compiled_bin_filename = f"cotp-v{version}-x86_64-linux.tar.xz"
     download_file(compiled_bin_url, compiled_bin_filename)
     compiled_bin_digest = file_digest(compiled_bin_filename)
+    print(f"Binary digest: {compiled_bin_digest}")
 
-    replace(COTP_PKGBUILD_TEMPLATE_PATH, "PKGBUILD-cotp", version, source_digest)
+    replace(COTP_PKGBUILD_TEMPLATE_PATH, COTP_PKGBUILD_PATH, version, source_digest)
     replace(
         COTP_BIN_PKGBUILD_TEMPLATE_PATH,
-        "PKGBUILD-cotp-bin",
+        COTP_BIN_PKGBUILD_PATH,
         version,
         compiled_bin_digest,
     )

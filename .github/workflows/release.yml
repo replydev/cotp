@@ -222,14 +222,17 @@ jobs:
       - name: Generate PKGBUILDs
         shell: bash
         run: |
-          pip install requests
+          # requests is already installed
+          # pip install requests
           python ci/build_pkgbuild.py ${{env.TAG}}
+          cat ./ci/cotp/PKGBUILD
+          cat ./ci/cotp-bin/PKGBUILD
 
       - name: Publish cotp AUR package
         uses: KSXGitHub/github-actions-deploy-aur@v2.5.0
         with:
           pkgname: cotp
-          pkgbuild: ./PKGBUILD-cotp
+          pkgbuild: ./ci/cotp/PKGBUILD
           commit_username: ${{ secrets.AUR_USERNAME }}
           commit_email: ${{ secrets.AUR_EMAIL }}
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
@@ -240,7 +243,7 @@ jobs:
         uses: KSXGitHub/github-actions-deploy-aur@v2.5.0
         with:
           pkgname: cotp-bin
-          pkgbuild: ./PKGBUILD-cotp-bin
+          pkgbuild: ./ci/cotp-bin/PKGBUILD
           commit_username: ${{ secrets.AUR_USERNAME }}
           commit_email: ${{ secrets.AUR_EMAIL }}
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
