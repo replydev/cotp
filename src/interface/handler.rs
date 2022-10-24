@@ -42,6 +42,19 @@ fn popup_handler(key_event: KeyEvent, app: &mut App) {
             }
             _ => {}
         },
+        PopupAction::SaveBeforeQuit => match key_event.code {
+            KeyCode::Char('y') | KeyCode::Char('Y') => {
+                app.running = false;
+            }
+            KeyCode::Char('n') | KeyCode::Char('N') => {
+                app.database.needs_modification = false;
+                app.running = false;
+            }
+            KeyCode::Esc => {
+                app.focus = Focus::MainPage;
+            }
+            _ => {}
+        },
     }
 }
 
@@ -54,7 +67,7 @@ fn search_bar_handler(key_event: KeyEvent, app: &mut App) {
                         app.search_query.clear();
                         app.focus = Focus::MainPage;
                     }
-                    'c' | 'C' => app.running = false,
+                    'c' | 'C' => handle_exit(app),
                     'w' | 'W' => app.search_query.clear(),
                     _ => {}
                 }
@@ -86,25 +99,27 @@ fn main_handler(key_event: KeyEvent, app: &mut App) {
     match key_event.code {
         // exit application on ESC
         KeyCode::Esc => {
-            app.running = false;
+            handle_exit(app);
         }
         // exit application on Ctrl-D
         KeyCode::Char('d') | KeyCode::Char('D') => {
             if key_event.modifiers == KeyModifiers::CONTROL {
-                app.running = false;
+                handle_exit(app);
             } else if app.table.state.selected().is_some() {
                 // Ask the user if he wants to delete the OTP Code
-                app.focus = Focus::Popup;
-                app.popup_percent_x = 60;
-                app.popup_percent_y = 20;
-                app.popup_text = String::from("Do you want to delete the selected OTP Code? [Y/N]");
-                app.popup_action = PopupAction::DeleteOtp;
+                show_popup(
+                    String::from("Do you want to delete the selected OTP Code? [Y/N]"),
+                    60,
+                    20,
+                    PopupAction::DeleteOtp,
+                    app,
+                )
             }
         }
         // exit application on Q
         KeyCode::Char('q') | KeyCode::Char('Q') => {
             if app.focus != Focus::SearchBar {
-                app.running = false;
+                handle_exit(app);
             }
         }
 
@@ -134,11 +149,7 @@ fn main_handler(key_event: KeyEvent, app: &mut App) {
         KeyCode::Char('k') | KeyCode::Char('K') => handle_switch_page(app, Qrcode),
 
         KeyCode::Char('i') | KeyCode::Char('I') => {
-            app.focus = Focus::Popup;
-            app.popup_action = PopupAction::GeneralInfo;
-            app.popup_percent_x = 40;
-            app.popup_percent_y = 50;
-            app.popup_text = String::from(
+            let info_text = String::from(
                 "
             Press:
             + -> Increment the HOTP counter
@@ -150,6 +161,7 @@ fn main_handler(key_event: KeyEvent, app: &mut App) {
             q, CTRL-D, Esc -> Exit the application
             ",
             );
+            show_popup(info_text, 40, 50, PopupAction::GeneralInfo, app);
         }
 
         KeyCode::Char('f') | KeyCode::Char('F') => {
@@ -290,4 +302,26 @@ fn search_and_select(app: &mut App) {
         }
     }
     // TODO Handle if no search results
+}
+
+fn show_popup(text: String, percent_x: u16, percent_y: u16, action: PopupAction, app: &mut App) {
+    app.focus = Focus::Popup;
+    app.popup_percent_x = percent_x;
+    app.popup_percent_y = percent_y;
+    app.popup_text = text;
+    app.popup_action = action;
+}
+
+fn handle_exit(app: &mut App) {
+    if app.database.is_modified() {
+        show_popup(
+            String::from("Do you want to save your chages? [Y/N]"),
+            60,
+            20,
+            PopupAction::SaveBeforeQuit,
+            app,
+        )
+    } else {
+        app.running = false;
+    }
 }

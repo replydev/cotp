@@ -204,22 +204,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [publish]
     steps:
-      - uses: actions/checkout@v2
-      - name: Make PKGBUILD
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: kyoh86/generate-pkgbuild-action@v1
+      - name: Checkout sources
+        uses: actions/checkout@v2
         with:
-          # (REQUIRED) License name
-          license: gpl3
-
-          # An email address of the author
-          email: ${{ secrets.AUR_EMAIL }}
-
-          # A description for the package
-          description: "Trustworthy, encrypted, command-line TOTP/HOTP authenticator app with import functionality."
-
-          # Call `go run -tags man ./cmd/{entrypoint} man` to generate man page
-          makeman: false
+          submodules: true
 
       - name: Calculate tag name
         run: |
