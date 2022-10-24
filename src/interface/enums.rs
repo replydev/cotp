@@ -10,6 +10,7 @@ pub enum PopupAction {
     EditOtp,
     DeleteOtp,
     GeneralInfo,
+    SaveBeforeQuit,
 }
 
 #[derive(Eq, PartialEq, Debug)]
