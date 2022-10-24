@@ -8,8 +8,8 @@ import requests
 COTP_PKGBUILD_TEMPLATE_PATH = "ci/templates/PKGBUILD.cotp.template"
 COTP_BIN_PKGBUILD_TEMPLATE_PATH = "ci/templates/PKGBUILD.cotp-bin.template"
 
-COTP_PKGBUILD_PATH = "ci/templates/cotp/PKGBUILD"
-COTP_BIN_PKGBUILD_PATH = "ci/templates/cotp-bin/PKGBUILD"
+COTP_PKGBUILD_PATH = "ci/cotp/PKGBUILD"
+COTP_BIN_PKGBUILD_PATH = "ci/cotp-bin/PKGBUILD"
 
 
 def eprint(*args, **kwargs):
