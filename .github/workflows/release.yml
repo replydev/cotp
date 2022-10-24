@@ -239,6 +239,11 @@ jobs:
           commit_message: Update cotp package to version ${{env.TAG}}
           ssh_keyscan_types: rsa,dsa,ecdsa,ed25519
 
+      - name: "Clean repo dir"
+        shell: bash
+        run: |
+          rm -rf /tmp/local-repo
+
       - name: Publish cotp-bin AUR package
         uses: KSXGitHub/github-actions-deploy-aur@v2.5.0
         with:
