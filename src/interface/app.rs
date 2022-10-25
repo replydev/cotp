@@ -36,10 +36,14 @@ pub struct App {
     pub(crate) current_page: Page,
     pub(crate) search_query: String,
     pub(crate) focus: Focus,
-    pub(crate) popup_text: String,
-    pub(crate) popup_action: PopupAction,
-    pub(crate) popup_percent_x: u16,
-    pub(crate) popup_percent_y: u16,
+    pub(crate) popup: Popup,
+}
+
+pub struct Popup {
+    pub(crate) text: String,
+    pub(crate) action: PopupAction,
+    pub(crate) percent_x: u16,
+    pub(crate) percent_y: u16,
 }
 
 impl App {
@@ -59,10 +63,12 @@ impl App {
             current_page: Main,
             search_query: String::from(""),
             focus: Focus::MainPage,
-            popup_text: String::from(""),
-            popup_action: PopupAction::EditOtp,
-            popup_percent_x: 60,
-            popup_percent_y: 20,
+            popup: Popup {
+                text: String::from(""),
+                action: PopupAction::EditOtp,
+                percent_x: 60,
+                percent_y: 20,
+            },
         }
     }
 
@@ -178,19 +184,23 @@ impl App {
         self.render_table_box(frame, rects[1]);
         frame.render_widget(progress_bar, rects[2]);
         if self.focus == Focus::Popup {
-            let block = Block::default().title("Alert").borders(Borders::ALL);
-            let paragraph = Paragraph::new(&*self.popup_text)
-                .block(block)
-                .alignment(Alignment::Center)
-                .wrap(Wrap { trim: true });
-            let area = centered_rect(self.popup_percent_x, self.popup_percent_y, frame.size());
-            frame.render_widget(Clear, area); //this clears out the background
-            frame.render_widget(paragraph, area);
+            self.render_alert(frame);
         }
     }
 
+    fn render_alert<B: Backend>(&mut self, frame: &mut Frame<'_, B>) {
+        let block = Block::default().title("Alert").borders(Borders::ALL);
+        let paragraph = Paragraph::new(&*self.popup.text)
+            .block(block)
+            .alignment(Alignment::Center)
+            .wrap(Wrap { trim: true });
+        let area = centered_rect(self.popup.percent_x, self.popup.percent_y, frame.size());
+        frame.render_widget(Clear, area);
+        //this clears out the background
+        frame.render_widget(paragraph, area);
+    }
+
     fn render_table_box<B: Backend>(&mut self, frame: &mut Frame<'_, B>, area: Rect) {
-        // TODO If terminal is too little do not show info box
         let constraints = if self.is_large_application(frame) {
             vec![Constraint::Percentage(80), Constraint::Percentage(20)]
         } else {

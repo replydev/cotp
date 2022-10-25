@@ -5,6 +5,7 @@ use crate::interface::enums::Page::*;
 use crate::otp::otp_type::OTPType;
 use crate::utils::{copy_string_to_clipboard, CopyType};
 
+use super::app::Popup;
 use super::enums::Page;
 use super::enums::{Focus, PopupAction};
 
@@ -19,12 +20,12 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
 }
 
 fn popup_handler(key_event: KeyEvent, app: &mut App) {
-    match app.popup_action {
+    match app.popup.action {
         PopupAction::EditOtp => todo!(),
         PopupAction::DeleteOtp => match key_event.code {
             KeyCode::Char('y') | KeyCode::Char('Y') => {
                 if let Err(e) = delete_selected_code(app) {
-                    app.popup_text = e;
+                    app.popup.text = e;
                     return;
                 }
                 app.focus = Focus::MainPage;
@@ -108,10 +109,12 @@ fn main_handler(key_event: KeyEvent, app: &mut App) {
             } else if app.table.state.selected().is_some() {
                 // Ask the user if he wants to delete the OTP Code
                 show_popup(
-                    String::from("Do you want to delete the selected OTP Code? [Y/N]"),
-                    60,
-                    20,
-                    PopupAction::DeleteOtp,
+                    Popup {
+                        text: String::from("Do you want to delete the selected OTP Code? [Y/N]"),
+                        percent_x: 60,
+                        percent_y: 20,
+                        action: PopupAction::DeleteOtp,
+                    },
                     app,
                 )
             }
@@ -161,7 +164,15 @@ fn main_handler(key_event: KeyEvent, app: &mut App) {
             q, CTRL-D, Esc -> Exit the application
             ",
             );
-            show_popup(info_text, 40, 50, PopupAction::GeneralInfo, app);
+            show_popup(
+                Popup {
+                    text: info_text,
+                    percent_x: 40,
+                    percent_y: 50,
+                    action: PopupAction::GeneralInfo,
+                },
+                app,
+            );
         }
 
         KeyCode::Char('f') | KeyCode::Char('F') => {
@@ -304,21 +315,20 @@ fn search_and_select(app: &mut App) {
     // TODO Handle if no search results
 }
 
-fn show_popup(text: String, percent_x: u16, percent_y: u16, action: PopupAction, app: &mut App) {
+fn show_popup(popup: Popup, app: &mut App) {
     app.focus = Focus::Popup;
-    app.popup_percent_x = percent_x;
-    app.popup_percent_y = percent_y;
-    app.popup_text = text;
-    app.popup_action = action;
+    app.popup = popup;
 }
 
 fn handle_exit(app: &mut App) {
     if app.database.is_modified() {
         show_popup(
-            String::from("Do you want to save your chages? [Y/N]"),
-            60,
-            20,
-            PopupAction::SaveBeforeQuit,
+            Popup {
+                text: String::from("Do you want to save your chages? [Y/N]"),
+                percent_x: 60,
+                percent_y: 20,
+                action: PopupAction::SaveBeforeQuit,
+            },
             app,
         )
     } else {
