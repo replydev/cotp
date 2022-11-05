@@ -207,7 +207,7 @@ pub fn get_matches() -> ArgMatches {
                         .long("cotp")
                         .help("Import from cotp exported database")
                         .action(ArgAction::SetTrue)
-                        .required_unless_present_any(&[
+                        .required_unless_present_any([
                             "andotp",
                             "aegis",
                             "freeotp-plus",
@@ -218,7 +218,7 @@ pub fn get_matches() -> ArgMatches {
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ])
-                        .conflicts_with_all(&[
+                        .conflicts_with_all([
                             "andotp",
                             "aegis",
                             "freeotp-plus",
@@ -236,7 +236,7 @@ pub fn get_matches() -> ArgMatches {
                         .long("andotp")
                         .help("Import from andOTP backup")
                         .action(ArgAction::SetTrue)
-                        .required_unless_present_any(&[
+                        .required_unless_present_any([
                             "cotp",
                             "aegis",
                             "freeotp-plus",
@@ -247,7 +247,7 @@ pub fn get_matches() -> ArgMatches {
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ])
-                        .conflicts_with_all(&[
+                        .conflicts_with_all([
                             "cotp",
                             "aegis",
                             "freeotp-plus",
@@ -265,7 +265,7 @@ pub fn get_matches() -> ArgMatches {
                         .long("aegis")
                         .help("Import from Aegis backup")
                         .action(ArgAction::SetTrue)
-                        .required_unless_present_any(&[
+                        .required_unless_present_any([
                             "andotp",
                             "cotp",
                             "freeotp-plus",
@@ -276,7 +276,7 @@ pub fn get_matches() -> ArgMatches {
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ])
-                        .conflicts_with_all(&[
+                        .conflicts_with_all([
                             "andotp",
                             "cotp",
                             "freeotp-plus",
@@ -294,7 +294,7 @@ pub fn get_matches() -> ArgMatches {
                         .long("aegis-encrypted")
                         .help("Import from Aegis encrypted backup")
                         .action(ArgAction::SetTrue)
-                        .required_unless_present_any(&[
+                        .required_unless_present_any([
                             "andotp",
                             "cotp",
                             "freeotp-plus",
@@ -305,7 +305,7 @@ pub fn get_matches() -> ArgMatches {
                             "microsoft-authenticator",
                             "aegis",
                         ])
-                        .conflicts_with_all(&[
+                        .conflicts_with_all([
                             "andotp",
                             "cotp",
                             "freeotp-plus",
@@ -323,7 +323,7 @@ pub fn get_matches() -> ArgMatches {
                         .long("freeotp-plus")
                         .help("Import from FreeOTP+ backup")
                         .action(ArgAction::SetTrue)
-                        .required_unless_present_any(&[
+                        .required_unless_present_any([
                             "andotp",
                             "aegis",
                             "cotp",
@@ -334,7 +334,7 @@ pub fn get_matches() -> ArgMatches {
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ])
-                        .conflicts_with_all(&[
+                        .conflicts_with_all([
                             "andotp",
                             "aegis",
                             "cotp",
@@ -352,7 +352,7 @@ pub fn get_matches() -> ArgMatches {
                         .long("freeotp")
                         .help("Import from FreeOTP converted database")
                         .action(ArgAction::SetTrue)
-                        .required_unless_present_any(&[
+                        .required_unless_present_any([
                             "andotp",
                             "aegis",
                             "freeotp-plus",
@@ -363,7 +363,7 @@ pub fn get_matches() -> ArgMatches {
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ])
-                        .conflicts_with_all(&[
+                        .conflicts_with_all([
                             "andotp",
                             "aegis",
                             "freeotp-plus",
@@ -381,7 +381,7 @@ pub fn get_matches() -> ArgMatches {
                         .long("google-authenticator")
                         .help("Import from Google Authenticator converted database")
                         .action(ArgAction::SetTrue)
-                        .required_unless_present_any(&[
+                        .required_unless_present_any([
                             "andotp",
                             "aegis",
                             "freeotp-plus",
@@ -392,7 +392,7 @@ pub fn get_matches() -> ArgMatches {
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ])
-                        .conflicts_with_all(&[
+                        .conflicts_with_all([
                             "andotp",
                             "aegis",
                             "freeotp-plus",
@@ -410,7 +410,7 @@ pub fn get_matches() -> ArgMatches {
                         .long("authy")
                         .help("Import from Authy converted database")
                         .action(ArgAction::SetTrue)
-                        .required_unless_present_any(&[
+                        .required_unless_present_any([
                             "andotp",
                             "aegis",
                             "freeotp-plus",
@@ -421,7 +421,7 @@ pub fn get_matches() -> ArgMatches {
                             "microsoft-authenticator",
                             "aegis-encrypted",
                         ])
-                        .conflicts_with_all(&[
+                        .conflicts_with_all([
                             "andotp",
                             "aegis",
                             "freeotp-plus",
@@ -439,7 +439,7 @@ pub fn get_matches() -> ArgMatches {
                         .long("microsoft-authenticator")
                         .help("Import from Microsoft Authenticator converted database")
                         .action(ArgAction::SetTrue)
-                        .required_unless_present_any(&[
+                        .required_unless_present_any([
                             "andotp",
                             "aegis",
                             "freeotp-plus",
@@ -450,7 +450,7 @@ pub fn get_matches() -> ArgMatches {
                             "cotp",
                             "aegis-encrypted",
                         ])
-                        .conflicts_with_all(&[
+                        .conflicts_with_all([
                             "andotp",
                             "aegis",
                             "freeotp-plus",
@@ -468,7 +468,7 @@ pub fn get_matches() -> ArgMatches {
                         .long("authy-exported")
                         .help("Import from Authy Database exported following https://gist.github.com/gboudreau/94bb0c11a6209c82418d01a59d958c93")
                         .action(ArgAction::SetTrue)
-                        .required_unless_present_any(&[
+                        .required_unless_present_any([
                             "andotp",
                             "aegis",
                             "freeotp-plus",
@@ -479,7 +479,7 @@ pub fn get_matches() -> ArgMatches {
                             "cotp",
                             "aegis-encrypted",
                         ])
-                        .conflicts_with_all(&[
+                        .conflicts_with_all([
                             "andotp",
                             "aegis",
                             "freeotp-plus",
