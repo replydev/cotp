@@ -229,7 +229,7 @@ jobs:
           cat ./ci/cotp-bin/PKGBUILD
 
       - name: Publish cotp AUR package
-        uses: KSXGitHub/github-actions-deploy-aur@v2.5.0
+        uses: KSXGitHub/github-actions-deploy-aur@v2.6.0
         with:
           pkgname: cotp
           pkgbuild: ./ci/cotp/PKGBUILD
@@ -245,7 +245,7 @@ jobs:
           rm -rf /tmp/local-repo
 
       - name: Publish cotp-bin AUR package
-        uses: KSXGitHub/github-actions-deploy-aur@v2.5.0
+        uses: KSXGitHub/github-actions-deploy-aur@v2.6.0
         with:
           pkgname: cotp-bin
           pkgbuild: ./ci/cotp-bin/PKGBUILD
