@@ -929,9 +929,9 @@ dependencies = [
 
 [[package]]
 name = "sha-1"
-version = "0.10.0"
+version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "028f48d513f9678cda28f6e4064755b3fbb2af6acd672f2c209b62323f7aea0f"
+checksum = "5ef8725277a5cc8e284c625a585cbcb4e96f6d722d814a6ab7481f13ef5122cb"
 dependencies = [
  "cfg-if",
  "cpufeatures",
