@@ -30,7 +30,7 @@ strip = "symbols"
 serde_json = "1.0.89"
 serde = { version = "1.0.146", features = ["derive"] }
 dirs = "4.0.0"
-rpassword = "7.1.0"
+rpassword = "7.2.0"
 data-encoding = "2.3.2"
 crossterm = "0.25.0"
 tui = "0.19.0"
