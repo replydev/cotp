@@ -65,7 +65,7 @@ pub fn get_matches() -> ArgMatches {
                 .arg(
                     Arg::new("algorithm")
                         .short('a')
-                        .long("algoritmh")
+                        .long("algorithm")
                         .help("OTP Code algorithm")
                         .num_args(1)
                         .required(false)
@@ -142,7 +142,7 @@ pub fn get_matches() -> ArgMatches {
                 .arg(
                     Arg::new("algorithm")
                         .short('a')
-                        .long("algoritmh")
+                        .long("algorithm")
                         .help("OTP Code algorithm")
                         .num_args(1)
                         .required_unless_present_any(["label", "issuer", "digits", "counter"])
