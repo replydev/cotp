@@ -155,26 +155,14 @@ pub struct OTPElement {
 
 impl OTPElement {
     pub fn get_otpauth_uri(&self) -> String {
-        let mut uri: String = String::from("otpauth://");
-        uri.push_str(self.type_.to_string().to_lowercase().as_str());
-        uri.push('/');
-        //self.type_.to_lowercase() + String::from("/");
-        if self.issuer.chars().count() > 0 {
-            uri.push_str(&urlencoding::encode(self.issuer.as_str()));
-            uri.push(':');
-        }
-        uri.push_str(&urlencoding::encode(self.label.as_str()));
+        let otp_type = self.type_.to_string().to_lowercase();
+        let secret = &urlencoding::encode(self.secret.as_str());
+        let label = get_label(&self.issuer, &self.label);
+        let algorithm = self.algorithm.to_string().to_uppercase();
+        let digits = self.digits;
+        let period = self.period;
+        let mut uri: String = format!("otpauth://{otp_type}/{label}?secret={secret}&algorithm={algorithm}&digits={digits}&period={period}&lock=false");
 
-        uri.push_str("?secret=");
-        uri.push_str(self.secret.as_str());
-        uri.push_str("&algorithm=");
-        uri.push_str(self.algorithm.to_string().to_uppercase().as_str());
-        uri.push_str("&digits=");
-        uri.push_str(self.digits.to_string().as_str());
-        uri.push_str("&period=");
-        uri.push_str(self.period.to_string().as_str());
-        uri.push_str("&lock=false");
-        //uri.push_str("?secret=" + self.secret());
         if self.type_ == OTPType::Hotp {
             uri.push_str("&counter=");
             uri.push_str(self.counter.unwrap_or(0).to_string().as_str());
@@ -247,6 +235,15 @@ impl OTPElement {
             _ => BASE32_NOPAD.decode(self.secret.as_bytes()).is_ok(),
         }
     }
+}
+
+fn get_label(issuer: &str, label: &str) -> String {
+    let encoded_label = urlencoding::encode(label);
+    if !issuer.is_empty() {
+        let encoded_issuer = urlencoding::encode(issuer);
+        return format!("{encoded_issuer}:{encoded_label}");
+    }
+    return encoded_label.to_string();
 }
 
 #[cfg(test)]
