@@ -27,13 +27,13 @@ pub fn yandex(
     pin: &str,
     period: u64,
     digits: usize,
-    algoritmh: OTPAlgorithm,
+    algorithm: OTPAlgorithm,
 ) -> Result<String, String> {
     let seconds = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
         .as_secs();
-    match algoritmh {
+    match algorithm {
         OTPAlgorithm::Sha256 => {
             calculate_yandex_code::<Sha256>(secret, pin, period, digits, seconds)
         }
