@@ -90,7 +90,11 @@ impl App {
     fn render_qrcode_page<B: Backend>(&self, frame: &mut Frame<'_, B>) {
         let paragraph = if let Some(i) = self.table.state.selected() {
             if let Some(element) = self.database.elements_ref().get(i) {
-                let title = format!("{} - {}", &element.issuer, &element.issuer);
+                let title = if element.label.is_empty() {
+                    element.issuer.to_owned()
+                } else {
+                    format!("{} - {}", &element.issuer, &element.label)
+                };
                 Paragraph::new(element.get_qrcode())
                     .block(Block::default().title(title).borders(Borders::ALL))
                     .style(Style::default().fg(Color::White).bg(Color::Black))
