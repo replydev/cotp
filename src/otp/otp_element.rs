@@ -345,7 +345,7 @@ mod test {
     #[test]
     fn test_deserialization_otp_uri() {
         let expected = OTPElement {
-            secret: String::from("xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g"),
+            secret: "xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g".to_uppercase(),
             issuer: String::from("IssuerText"),
             label: String::from("LabelText"),
             digits: 6,
