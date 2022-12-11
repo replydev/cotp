@@ -141,7 +141,7 @@ impl OTPDatabase {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Debug)]
 pub struct OTPElement {
     pub secret: String,
     pub issuer: String,
@@ -174,7 +174,7 @@ impl FromOtpUri for OTPElement {
 
         let otp_type = get_match(&TYPE_REGEX, otp_uri)
             .map(|r| r.to_uppercase())
-            .unwrap_or("TOTP".to_string());
+            .unwrap_or_else(|_| "TOTP".to_string());
         let (issuer, label) = NAME_REGEX
             .captures(otp_uri)
             .map(|c| {
@@ -192,7 +192,7 @@ impl FromOtpUri for OTPElement {
         let secret = get_match(&SECRET_REGEX, otp_uri)?.to_uppercase();
         let algorithm = get_match(&ALGORITHM_REGEX, otp_uri)
             .map(|r| r.to_uppercase())
-            .unwrap_or("SHA1".to_string());
+            .unwrap_or_else(|_| "SHA1".to_string());
         let digits = get_match(&DIGITS_REGEX, otp_uri)
             .map(|r| r.parse::<u64>().unwrap())
             .unwrap_or(6);
@@ -315,7 +315,7 @@ fn get_label(issuer: &str, label: &str) -> String {
         let encoded_issuer = urlencoding::encode(issuer);
         return format!("{encoded_issuer}:{encoded_label}");
     }
-    return encoded_label.to_string();
+    encoded_label.to_string()
 }
 
 #[cfg(test)]
