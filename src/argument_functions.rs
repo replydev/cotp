@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::otp::otp_algorithm::OTPAlgorithm;
-use crate::otp::otp_element::{OTPDatabase, OTPElement};
+use crate::otp::otp_element::{FromOtpUri, OTPDatabase, OTPElement};
 use crate::otp::otp_type::OTPType;
 use crate::{importers, utils};
 use clap::ArgMatches;
@@ -47,7 +47,22 @@ pub fn import(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String
 }
 
 pub fn add(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, String> {
-    let secret = utils::prompt_for_passwords("Insert the secret: ", 0, false);
+    let otp_element = if matches.get_flag("otp_uri") {
+        let otp_uri = rpassword::prompt_password("Insert the otp uri: ").unwrap();
+        OTPElement::from_otp_uri(otp_uri.as_str())?
+    } else {
+        get_from_args(matches)?
+    };
+    if !otp_element.valid_secret() {
+        return Err(String::from("Invalid secret."));
+    }
+
+    database.add_element(otp_element);
+    Ok(String::from("Success."))
+}
+
+fn get_from_args(matches: &ArgMatches) -> Result<OTPElement, String> {
+    let secret = rpassword::prompt_password("Insert the secret: ").unwrap();
     let type_ = OTPType::from(
         matches
             .get_one::<String>("type")
@@ -55,7 +70,6 @@ pub fn add(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, S
             .to_uppercase()
             .as_str(),
     );
-
     let otp_element = OTPElement {
         secret,
         issuer: matches.get_one::<String>("issuer").unwrap().clone(),
@@ -73,13 +87,7 @@ pub fn add(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, S
         counter: matches.get_one("counter").copied(),
         pin: matches.get_one::<String>("pin").map(|v| v.to_owned()),
     };
-
-    if !otp_element.valid_secret() {
-        return Err(String::from("Invalid secret."));
-    }
-
-    database.add_element(otp_element);
-    Ok(String::from("Success."))
+    Ok(otp_element)
 }
 
 pub fn edit(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, String> {
