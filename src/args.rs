@@ -31,18 +31,25 @@ pub fn get_matches() -> ArgMatches {
                 .unwrap_or("replydev <commoncargo@tutanota.com>"),
         )
         .about(env!("CARGO_PKG_DESCRIPTION"))
-        //.license("GPL3")
         .subcommand(
             Command::new("add")
                 .about("Add a new OTP Code")
                 .arg_required_else_help(true)
+                .arg(
+                    Arg::new("otp_uri")
+                        .short('u')
+                        .long("otpuri")
+                        .help("Add OTP code via an OTP URI")
+                        .action(ArgAction::SetTrue)
+                        .required_unless_present("issuer")
+                )
                 .arg(
                     Arg::new("type")
                         .short('t')
                         .long("type")
                         .help("Specify the OTP code type")
                         .num_args(1)
-                        .value_parser(["TOTP", "HOTP", "STEAM","YANDEX","MOTP"])
+                        .value_parser(["TOTP", "HOTP", "STEAM", "YANDEX", "MOTP"])
                         .default_value("TOTP"),
                 )
                 .arg(
@@ -51,7 +58,7 @@ pub fn get_matches() -> ArgMatches {
                         .long("issuer")
                         .help("OTP Code issuer")
                         .num_args(1)
-                        .required(true),
+                        .required_unless_present("otp_uri"),
                 )
                 .arg(
                     Arg::new("label")
@@ -102,14 +109,14 @@ pub fn get_matches() -> ArgMatches {
                         .num_args(1)
                         .value_parser(value_parser!(u64)),
                 ).arg(
-                    Arg::new("pin")
+                Arg::new("pin")
                     .short('p')
                     .long("pin")
                     .help("Code pin (for Yandex and MOTP)")
                     .required_if_eq("type", "YANDEX")
                     .required_if_eq("type", "MOTP")
                     .num_args(1),
-                ),
+            ),
         )
         .subcommand(
             Command::new("edit")
