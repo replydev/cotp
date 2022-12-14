@@ -45,24 +45,19 @@ pub fn get_default_db_path() -> PathBuf {
     .join(".cotp/db.cotp")
 }
 
-pub fn create_db_if_needed() -> Result<bool, ()> {
+pub fn init_app() -> Result<bool, ()> {
     let db_path = get_db_path();
     let db_dir = db_path.parent().unwrap();
     if !db_dir.exists() {
-        if let Err(_e) = std::fs::create_dir(db_dir) {
+        if let Err(_e) = std::fs::create_dir_all(db_dir) {
             return Err(());
         }
+        return Ok(true);
     }
-    if !db_path.exists() {
-        return match File::create(db_path) {
-            Ok(_f) => Ok(true),
-            Err(_e) => Err(()),
-        };
-    }
-    Ok(false)
+    Ok(!db_path.exists())
 }
 
-pub fn delete_db() -> std::io::Result<()> {
+pub fn delete_db() -> io::Result<()> {
     std::fs::remove_file(get_db_path())
 }
 
@@ -77,13 +72,13 @@ pub fn percentage() -> u16 {
     (millis_before_next_step() * 100 / 30000) as u16
 }
 
-pub fn password(message: &str, mininum_length: usize) -> String {
+pub fn password(message: &str, minimum_length: usize) -> String {
     loop {
         let password = rpassword::prompt_password(message).unwrap();
-        if password.chars().count() < mininum_length {
+        if password.chars().count() < minimum_length {
             println!(
                 "Please insert a password with at least {} digits.",
-                mininum_length
+                minimum_length
             );
             continue;
         }

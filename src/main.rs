@@ -1,4 +1,5 @@
 #![forbid(unsafe_code)]
+use crate::utils::get_db_path;
 use args::get_matches;
 use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
@@ -21,10 +22,11 @@ mod reading;
 mod utils;
 
 fn init() -> Result<ReadResult, String> {
-    match utils::create_db_if_needed() {
-        Ok(needs_creation) => {
-            if needs_creation {
-                let mut pw = utils::password("Choose a password: ", 8);
+    match utils::init_app() {
+        Ok(first_run) => {
+            if first_run {
+                // Let's initialize the database file
+                let mut pw = utils::verified_password("Choose a password: ", 8);
                 let mut database = OTPDatabase {
                     version: CURRENT_DATABASE_VERSION,
                     elements: vec![],
