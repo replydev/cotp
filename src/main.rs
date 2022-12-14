@@ -24,7 +24,7 @@ fn init() -> Result<ReadResult, String> {
     match utils::create_db_if_needed() {
         Ok(needs_creation) => {
             if needs_creation {
-                let mut pw = utils::prompt_for_passwords("Choose a password: ", 8, true);
+                let mut pw = utils::password("Choose a password: ", 8);
                 let mut database = OTPDatabase {
                     version: CURRENT_DATABASE_VERSION,
                     elements: vec![],

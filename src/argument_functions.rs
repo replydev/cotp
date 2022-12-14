@@ -17,7 +17,7 @@ pub fn import(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String
     } else if matches.get_flag("aegis") {
         importers::aegis::import(path)
     } else if matches.get_flag("aegis-encrypted") {
-        let mut password = utils::prompt_for_passwords("Insert your Aegis password: ", 0, false);
+        let mut password = utils::password("Insert your Aegis password: ", 0);
         let result = importers::aegis_encrypted::import(path, password.as_str());
         password.zeroize();
         result
@@ -94,7 +94,7 @@ fn get_from_args(matches: &ArgMatches) -> Result<OTPElement, String> {
 
 pub fn edit(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, String> {
     let mut secret = match matches.get_flag("change-secret") {
-        true => Some(utils::prompt_for_passwords("Insert the secret: ", 0, false)),
+        true => Some(rpassword::prompt_password("Insert the secret: ").unwrap()),
         false => None,
     };
 
@@ -150,7 +150,7 @@ pub fn export(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String
 }
 
 pub fn change_password(database: &mut OTPDatabase) -> Result<String, String> {
-    let mut new_password = utils::prompt_for_passwords("New password: ", 8, true);
+    let mut new_password = utils::verified_password("New password: ", 8);
     let r = match database.save_with_pw(&new_password) {
         Ok(()) => Ok(String::from("Password changed")),
         Err(e) => Err(format!("An error has occurred: {}", e)),
