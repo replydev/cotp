@@ -1,3 +1,4 @@
+use base64::{engine::general_purpose, Engine as _};
 use copypasta_ext::prelude::*;
 use copypasta_ext::x11_fork::ClipboardContext;
 use crossterm::style::Print;
@@ -112,7 +113,10 @@ pub fn copy_string_to_clipboard(content: String) -> Result<CopyType, ()> {
         // Check https://github.com/timvisee/rust-clipboard-ext/blob/371df19d2f961882a21c957f396d1e24548d1f28/src/osc52.rs#L92
         return match crossterm::execute!(
             io::stdout(),
-            Print(format!("\x1B]52;c;{}\x07", base64::encode(content)))
+            Print(format!(
+                "\x1B]52;c;{}\x07",
+                general_purpose::STANDARD.encode(content)
+            ))
         ) {
             Ok(_) => Ok(CopyType::OSC52),
             Err(_) => Err(()),
