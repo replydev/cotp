@@ -170,7 +170,7 @@ impl App {
                     .fg(Color::Black)
                     .add_modifier(Modifier::BOLD),
             )
-            .percent(self.progress as u16)
+            .percent(self.progress)
             .label(progress_label);
 
         frame.render_widget(search_bar, rects[0]);
