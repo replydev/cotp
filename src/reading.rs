@@ -8,7 +8,7 @@ use zeroize::Zeroize;
 pub type ReadResult = (OTPDatabase, Vec<u8>, Vec<u8>);
 
 pub fn get_elements() -> Result<ReadResult, String> {
-    let mut pw = utils::prompt_for_passwords("Password: ", 8, false);
+    let mut pw = utils::password("Password: ", 8);
     let (elements, key, salt) = match read_from_file(&pw) {
         Ok((result, key, salt)) => (result, key, salt),
         Err(e) => return Err(format!("Cannot decrypt existing database: {}", e)),

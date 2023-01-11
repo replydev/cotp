@@ -4,7 +4,6 @@ use copypasta_ext::x11_fork::ClipboardContext;
 use crossterm::style::Print;
 #[cfg(not(debug_assertions))]
 use dirs::home_dir;
-use std::fs::File;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, io};
@@ -46,24 +45,19 @@ pub fn get_default_db_path() -> PathBuf {
     .join(".cotp/db.cotp")
 }
 
-pub fn create_db_if_needed() -> Result<bool, ()> {
+pub fn init_app() -> Result<bool, ()> {
     let db_path = get_db_path();
     let db_dir = db_path.parent().unwrap();
     if !db_dir.exists() {
-        if let Err(_e) = std::fs::create_dir(db_dir) {
+        if let Err(_e) = std::fs::create_dir_all(db_dir) {
             return Err(());
         }
+        return Ok(true);
     }
-    if !db_path.exists() {
-        return match File::create(db_path) {
-            Ok(_f) => Ok(true),
-            Err(_e) => Err(()),
-        };
-    }
-    Ok(false)
+    Ok(!db_path.exists())
 }
 
-pub fn delete_db() -> std::io::Result<()> {
+pub fn delete_db() -> io::Result<()> {
     std::fs::remove_file(get_db_path())
 }
 
@@ -78,26 +72,30 @@ pub fn percentage() -> u16 {
     (millis_before_next_step() * 100 / 30000) as u16
 }
 
-pub fn prompt_for_passwords(message: &str, minimum_password_length: usize, verify: bool) -> String {
-    let mut password;
+pub fn password(message: &str, minimum_length: usize) -> String {
     loop {
-        password = rpassword::prompt_password(message).unwrap();
-        if verify {
-            let verify_password = rpassword::prompt_password("Retype the same password: ").unwrap();
-            if password != verify_password {
-                println!("Passwords do not match");
-                continue;
-            }
+        let password = rpassword::prompt_password(message).unwrap();
+        if password.chars().count() < minimum_length {
+            println!(
+                "Please insert a password with at least {} digits.",
+                minimum_length
+            );
+            continue;
         }
-        if password.chars().count() >= minimum_password_length {
-            break;
-        }
-        println!(
-            "Please insert a password with at least {} digits.",
-            minimum_password_length
-        );
+        return password;
     }
-    password
+}
+
+pub fn verified_password(message: &str, minimum_length: usize) -> String {
+    loop {
+        let password = password(message, minimum_length);
+        let verify_password = rpassword::prompt_password("Retype the same password: ").unwrap();
+        if password != verify_password {
+            println!("Passwords do not match");
+            continue;
+        }
+        return password;
+    }
 }
 
 fn in_ssh_shell() -> bool {

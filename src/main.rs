@@ -21,10 +21,11 @@ mod reading;
 mod utils;
 
 fn init() -> Result<ReadResult, String> {
-    match utils::create_db_if_needed() {
-        Ok(needs_creation) => {
-            if needs_creation {
-                let mut pw = utils::prompt_for_passwords("Choose a password: ", 8, true);
+    match utils::init_app() {
+        Ok(first_run) => {
+            if first_run {
+                // Let's initialize the database file
+                let mut pw = utils::verified_password("Choose a password: ", 8);
                 let mut database = OTPDatabase {
                     version: CURRENT_DATABASE_VERSION,
                     elements: vec![],

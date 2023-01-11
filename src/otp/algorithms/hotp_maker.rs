@@ -15,9 +15,9 @@ use sha2::{Sha256, Sha512};
 use crate::otp::otp_algorithm::OTPAlgorithm;
 
 pub fn hotp(secret: &str, algorithm: OTPAlgorithm, counter: u64) -> Result<u32, String> {
-    match algorithm.to_string().to_uppercase().as_str() {
-        "SHA256" => generate_hotp::<Sha256>(secret, counter),
-        "SHA512" => generate_hotp::<Sha512>(secret, counter),
+    match algorithm {
+        OTPAlgorithm::Sha256 => generate_hotp::<Sha256>(secret, counter),
+        OTPAlgorithm::Sha512 => generate_hotp::<Sha512>(secret, counter),
         _ => generate_hotp::<Sha1>(secret, counter),
     }
 }
