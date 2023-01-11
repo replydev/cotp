@@ -3,7 +3,6 @@ use copypasta_ext::x11_fork::ClipboardContext;
 use crossterm::style::Print;
 #[cfg(not(debug_assertions))]
 use dirs::home_dir;
-use std::fs::File;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, io};

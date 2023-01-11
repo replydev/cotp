@@ -1,5 +1,4 @@
 #![forbid(unsafe_code)]
-use crate::utils::get_db_path;
 use args::get_matches;
 use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
