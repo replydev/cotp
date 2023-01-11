@@ -243,7 +243,7 @@ impl OTPElement {
     }
 
     pub fn get_qrcode(&self) -> String {
-        QrCode::new(&self.get_otpauth_uri())
+        QrCode::new(self.get_otpauth_uri())
             .unwrap()
             .render::<unicode::Dense1x2>()
             .dark_color(unicode::Dense1x2::Light)
@@ -285,7 +285,7 @@ impl OTPElement {
                 Some(pin) => motp(
                     &self.secret,
                     pin.as_str(),
-                    self.period as u64,
+                    self.period,
                     self.digits as usize,
                 ),
                 None => Err(String::from(
