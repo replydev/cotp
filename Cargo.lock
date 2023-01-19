@@ -245,9 +245,9 @@ dependencies = [
 
 [[package]]
 name = "copypasta-ext"
-version = "0.3.9"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af4c1c3f959cd8047b935d503c30e8bdfc9f7539493962ec3e45b9f0d305cbcc"
+checksum = "da0b56990fbbd41071ff7bb673c267c0f2b889ad29e2ca713ce0afd44bce619d"
 dependencies = [
  "copypasta",
  "libc",
