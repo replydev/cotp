@@ -24,7 +24,7 @@ pub enum OTPType {
 
 impl fmt::Display for OTPType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 

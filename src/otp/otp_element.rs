@@ -52,7 +52,7 @@ impl OTPDatabase {
         migrate(self)?;
         match self.overwrite_database_key(key, salt) {
             Ok(()) => Ok(()),
-            Err(e) => Err(format!("{:?}", e)),
+            Err(e) => Err(format!("{e:?}")),
         }
     }
 
@@ -99,7 +99,7 @@ impl OTPDatabase {
                 contents.zeroize();
                 Ok(exported_path)
             }
-            Err(e) => Err(format!("{:?}", e)),
+            Err(e) => Err(format!("{e:?}")),
         }
     }
 

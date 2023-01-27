@@ -11,7 +11,7 @@ pub fn get_elements() -> Result<ReadResult, String> {
     let mut pw = utils::password("Password: ", 8);
     let (elements, key, salt) = match read_from_file(&pw) {
         Ok((result, key, salt)) => (result, key, salt),
-        Err(e) => return Err(format!("Cannot decrypt existing database: {}", e)),
+        Err(e) => return Err(format!("Cannot decrypt existing database: {e}")),
     };
     pw.zeroize();
     Ok((elements, key, salt))
@@ -22,7 +22,7 @@ pub fn read_decrypted_text(password: &str) -> Result<(String, Vec<u8>, Vec<u8>),
         Ok(result) => result,
         Err(e) => {
             // no need to zeroize since contents are encrypted
-            return Err(format!("Error during file reading: {:?}", e));
+            return Err(format!("Error during file reading: {e:?}"));
         }
     };
     if encrypted_contents.is_empty() {
@@ -49,7 +49,7 @@ pub fn read_from_file(password: &str) -> Result<ReadResult, String> {
                         Ok(r) => r,
                         Err(e) => {
                             contents.zeroize();
-                            return Err(format!("Failed to deserialize database: {:?}", e));
+                            return Err(format!("Failed to deserialize database: {e:?}"));
                         }
                     };
                     OTPDatabase {

@@ -32,8 +32,7 @@ pub fn argon_derive_key(password_bytes: &[u8], salt: &[u8]) -> Result<Vec<u8>, S
 pub fn gen_salt() -> Result<[u8; ARGON2ID_SALT_LENGTH], String> {
     let mut salt: [u8; ARGON2ID_SALT_LENGTH] = [0; ARGON2ID_SALT_LENGTH];
     if let Err(e) = getrandom::getrandom(&mut salt) {
-        //return Err(format!("Error during salt generation: {}", e));
-        return Err(format!("Error during salt generation: {}", e));
+        return Err(format!("Error during salt generation: {e}"));
     }
     Ok(salt)
 }
@@ -49,7 +48,7 @@ pub fn encrypt_string_with_key(
     let mut nonce_bytes: [u8; XCHACHA20_POLY1305_NONCE_LENGTH] =
         [0; XCHACHA20_POLY1305_NONCE_LENGTH];
     if let Err(e) = getrandom::getrandom(&mut nonce_bytes) {
-        return Err(format!("Error during nonce generation: {}", e));
+        return Err(format!("Error during nonce generation: {e}"));
     }
     let nonce = XNonce::from_slice(&nonce_bytes);
     let cipher_text = aead
@@ -72,8 +71,7 @@ pub fn decrypt_string(
         Ok(result) => result,
         Err(e) => {
             return Err(format!(
-                "Error during encrypted database deserialization: {}",
-                e
+                "Error during encrypted database deserialization: {e}"
             ))
         }
     };
@@ -100,7 +98,7 @@ pub fn decrypt_string(
     };
     match String::from_utf8(decrypted) {
         Ok(result) => Ok((result, key, salt)),
-        Err(e) => Err(format!("Error during UTF-8 string conversion: {}", e)),
+        Err(e) => Err(format!("Error during UTF-8 string conversion: {e}")),
     }
 }
 

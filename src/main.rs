@@ -51,7 +51,7 @@ fn main() -> AppResult<()> {
     let mut result = match init() {
         Ok(v) => v,
         Err(e) => {
-            println!("{}", e);
+            println!("{e}");
             std::process::exit(-1);
         }
     };
@@ -78,7 +78,7 @@ fn main() -> AppResult<()> {
                 std::process::exit(0)
             }
             Err(e) => {
-                eprintln!("{}", e);
+                eprintln!("{e}");
                 std::process::exit(-2);
             }
         },

@@ -20,13 +20,13 @@ struct ConvertedJson {
 pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
     let file_to_import_contents = match read_to_string(filepath) {
         Ok(result) => result,
-        Err(e) => return Err(format!("Error during file reading: {:?}", e)),
+        Err(e) => return Err(format!("Error during file reading: {e:?}")),
     };
     let result: Result<Vec<ConvertedJson>, serde_json::Error> =
         serde_json::from_str(&file_to_import_contents);
     let vector: Vec<ConvertedJson> = match result {
         Ok(r) => r,
-        Err(e) => return Err(format!("{}", e)),
+        Err(e) => return Err(format!("{e}")),
     };
 
     Ok(vector
