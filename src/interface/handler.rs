@@ -227,7 +227,7 @@ fn copy_selected_code_to_clipboard(app: &mut App) -> String {
                 }
                 None => "Cannot get OTP Code column".to_string(),
             },
-            None => format!("Cannot fetch element from index: {}", selected),
+            None => format!("Cannot fetch element from index: {selected}"),
         },
         None => "No code selected".to_string(),
     }

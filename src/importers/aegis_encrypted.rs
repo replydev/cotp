@@ -49,12 +49,12 @@ struct AegisEncryptedSlot {
 pub fn import(filepath: &str, password: &str) -> Result<Vec<OTPElement>, String> {
     let file_to_import_contents = match read_to_string(filepath) {
         Ok(result) => result,
-        Err(e) => return Err(format!("Error during file reading: {:?}", e)),
+        Err(e) => return Err(format!("Error during file reading: {e:?}")),
     };
     let aegis_encrypted: AegisEncryptedDatabase =
         match serde_json::from_str(&file_to_import_contents) {
             Ok(result) => result,
-            Err(e) => return Err(format!("Error during deserialization: {:?}", e)),
+            Err(e) => return Err(format!("Error during deserialization: {e:?}")),
         };
 
     let mut master_key: Option<Vec<u8>> = None;
@@ -70,7 +70,7 @@ pub fn import(filepath: &str, password: &str) -> Result<Vec<OTPElement>, String>
                 master_key = Some(value);
                 break;
             }
-            Err(e) => println!("{}", e),
+            Err(e) => println!("{e}"),
         }
     }
 
@@ -78,7 +78,7 @@ pub fn import(filepath: &str, password: &str) -> Result<Vec<OTPElement>, String>
         Some(mut master_key) => {
             let content = match BASE64.decode(aegis_encrypted.db.as_bytes()) {
                 Ok(result) => result,
-                Err(e) => return Err(format!("Error during base64 decoding: {:?}", e)),
+                Err(e) => return Err(format!("Error during base64 decoding: {e:?}")),
             };
 
             let key = GenericArray::clone_from_slice(master_key.as_slice());
@@ -100,12 +100,12 @@ pub fn import(filepath: &str, password: &str) -> Result<Vec<OTPElement>, String>
                 .as_slice(),
             ) {
                 Ok(result) => result,
-                Err(e) => return Err(format!("Failed to derive master key: {:?}", e)),
+                Err(e) => return Err(format!("Failed to derive master key: {e:?}")),
             };
 
             let json = match String::from_utf8(decrypted_db) {
                 Ok(result) => result,
-                Err(e) => return Err(format!("Failed to decode from utf-8 bytes: {:?}", e)),
+                Err(e) => return Err(format!("Failed to decode from utf-8 bytes: {e:?}")),
             };
 
             aegis::import_from_string(json.as_str())
@@ -121,7 +121,7 @@ fn get_params(slot: &AegisEncryptedSlot) -> Result<Params, String> {
 
     match Params::new((n as f32).log2() as u8, r, p) {
         Ok(result) => Ok(result),
-        Err(e) => Err(format!("Error during scrypt params creation: {:?}", e)),
+        Err(e) => Err(format!("Error during scrypt params creation: {e:?}")),
     }
 }
 
@@ -139,7 +139,7 @@ fn get_master_key(slot: &AegisEncryptedSlot, password: &str) -> Result<Vec<u8>, 
         &params,
         output.as_mut_slice(),
     ) {
-        return Err(format!("Error during scrypt key derivation: {:?}", e));
+        return Err(format!("Error during scrypt key derivation: {e:?}"));
     }
     let key = GenericArray::clone_from_slice(output.as_slice());
     output.zeroize();
@@ -160,6 +160,6 @@ fn get_master_key(slot: &AegisEncryptedSlot, password: &str) -> Result<Vec<u8>, 
         cipher_text.as_slice(),
     ) {
         Ok(result) => Ok(result),
-        Err(e) => Err(format!("Failed to derive master key: {:?}", e)),
+        Err(e) => Err(format!("Failed to derive master key: {e:?}")),
     }
 }

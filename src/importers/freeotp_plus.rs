@@ -31,12 +31,12 @@ struct FreeOTPElement {
 pub fn import(file_path: &str) -> Result<Vec<OTPElement>, String> {
     let json = match read_to_string(file_path) {
         Ok(r) => r,
-        Err(e) => return Err(format!("{:?}", e)),
+        Err(e) => return Err(format!("{e:?}")),
     };
 
     let freeotp: FreeOTPPlusJson = match serde_json::from_str(json.as_str()) {
         Ok(r) => r,
-        Err(e) => return Err(format!("Error during deserializing: {:?}", e)),
+        Err(e) => return Err(format!("Error during deserializing: {e:?}")),
     };
 
     Ok(freeotp

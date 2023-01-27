@@ -38,7 +38,7 @@ pub fn import(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String
     let elements = match result {
         Ok(result) => result,
         Err(e) => {
-            return Err(format!("An error occurred: {}", e));
+            return Err(format!("An error occurred: {e}"));
         }
     };
 
@@ -132,7 +132,7 @@ pub fn edit(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, 
             }
             database.edit_element(index, element);
         }
-        None => return Err(format!("No element found at index {}", index)),
+        None => return Err(format!("No element found at index {index}")),
     }
 
     secret.zeroize();
@@ -145,7 +145,7 @@ pub fn export(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String
             "Database was successfully exported at {}",
             export_result.to_str().unwrap_or("**Invalid path**")
         )),
-        Err(e) => Err(format!("An error occurred while exporting database: {}", e)),
+        Err(e) => Err(format!("An error occurred while exporting database: {e}")),
     }
 }
 
@@ -153,7 +153,7 @@ pub fn change_password(database: &mut OTPDatabase) -> Result<String, String> {
     let mut new_password = utils::verified_password("New password: ", 8);
     let r = match database.save_with_pw(&new_password) {
         Ok(()) => Ok(String::from("Password changed")),
-        Err(e) => Err(format!("An error has occurred: {}", e)),
+        Err(e) => Err(format!("An error has occurred: {e}")),
     };
     new_password.zeroize();
     r

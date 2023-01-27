@@ -21,7 +21,7 @@ fn get_motp_code(
     // TODO MOTP Secrets are hex encoded, so do not use BASE32 at all
     let hex_secret = secret;
     let counter = seconds / period;
-    let data = format!("{}{}{}", counter, hex_secret, pin);
+    let data = format!("{counter}{hex_secret}{pin}");
 
     let mut md5_hasher = Md5::new();
     md5_hasher.update(data.as_bytes());

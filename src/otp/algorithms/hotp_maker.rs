@@ -37,7 +37,7 @@ where
     // decode the base32 secret
     let secret_decoded = match BASE32_NOPAD.decode(secret.as_bytes()) {
         Ok(result) => result,
-        Err(e) => return Err(format!("{:?}", e)),
+        Err(e) => return Err(format!("{e:?}")),
     };
 
     let hash = hotp_hash::<D>(&secret_decoded, counter);

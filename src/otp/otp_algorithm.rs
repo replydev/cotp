@@ -13,7 +13,7 @@ pub enum OTPAlgorithm {
 
 impl fmt::Display for OTPAlgorithm {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 

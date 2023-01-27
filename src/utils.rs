@@ -35,7 +35,7 @@ pub fn get_default_db_path() -> PathBuf {
         None => {
             let current_dir = PathBuf::from(".");
             if let Some(str_dir) = current_dir.to_str() {
-                eprintln!("Cannot get home folder, using: {}", str_dir);
+                eprintln!("Cannot get home folder, using: {str_dir}");
             } else {
                 eprintln!("Cannot get home folder, using");
             }
@@ -76,10 +76,7 @@ pub fn password(message: &str, minimum_length: usize) -> String {
     loop {
         let password = rpassword::prompt_password(message).unwrap();
         if password.chars().count() < minimum_length {
-            println!(
-                "Please insert a password with at least {} digits.",
-                minimum_length
-            );
+            println!("Please insert a password with at least {minimum_length} digits.");
             continue;
         }
         return password;
