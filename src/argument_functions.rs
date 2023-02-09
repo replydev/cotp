@@ -152,7 +152,7 @@ pub fn export(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String
 pub fn change_password(database: &mut OTPDatabase) -> Result<String, String> {
     let mut new_password = utils::verified_password("New password: ", 8);
     let r = match database.save_with_pw(&new_password) {
-        Ok(()) => Ok(String::from("Password changed")),
+        Ok(_) => Ok(String::from("Password changed")),
         Err(e) => Err(format!("An error has occurred: {e}")),
     };
     new_password.zeroize();
