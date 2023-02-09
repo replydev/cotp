@@ -70,10 +70,11 @@ impl OTPDatabase {
         }
     }
 
-    pub fn save_with_pw(&mut self, password: &str) -> Result<(), String> {
+    pub fn save_with_pw(&mut self, password: &str) -> Result<(Vec<u8>, [u8; 16]), String> {
         let salt = gen_salt()?;
         let key = argon_derive_key(password.as_bytes(), &salt)?;
-        self.save(&key, &salt)
+        self.save(&key, &salt)?;
+        Ok((key, salt))
     }
 
     pub fn export(&self, path: PathBuf) -> Result<PathBuf, String> {

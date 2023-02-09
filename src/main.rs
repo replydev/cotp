@@ -31,13 +31,14 @@ fn init() -> Result<ReadResult, String> {
                     elements: vec![],
                     ..Default::default()
                 };
-                if database.save_with_pw(&pw).is_err() {
-                    return Err(String::from(
-                        "An error occurred during database overwriting",
-                    ));
-                }
+                let save_result = database.save_with_pw(&pw);
                 pw.zeroize();
-                Ok((database, vec![], vec![]))
+                match save_result {
+                    Ok((key, salt)) => Ok((database, key, salt.to_vec())),
+                    Err(_) => Err(String::from(
+                        "An error occurred during database overwriting",
+                    )),
+                }
             } else {
                 get_elements()
             }
