@@ -103,20 +103,20 @@ impl App {
                 };
                 Paragraph::new(element.get_qrcode())
                     .block(Block::default().title(title).borders(Borders::ALL))
-                    .style(Style::default().fg(Color::White).bg(Color::Black))
+                    .style(Style::default().fg(Color::White).bg(Color::Reset))
                     .alignment(Alignment::Center)
                     .wrap(Wrap { trim: true })
             } else {
                 Paragraph::new("No element is selected")
                     .block(Block::default().title("Nope").borders(Borders::ALL))
-                    .style(Style::default().fg(Color::White).bg(Color::Black))
+                    .style(Style::default().fg(Color::White).bg(Color::Reset))
                     .alignment(Alignment::Center)
                     .wrap(Wrap { trim: true })
             }
         } else {
             Paragraph::new("No element is selected")
                 .block(Block::default().title("Nope").borders(Borders::ALL))
-                .style(Style::default().fg(Color::White).bg(Color::Black))
+                .style(Style::default().fg(Color::White).bg(Color::Reset))
                 .alignment(Alignment::Center)
                 .wrap(Wrap { trim: true })
         };
@@ -138,9 +138,9 @@ impl App {
             .direction(Direction::Vertical)
             .constraints(
                 [
-                    Constraint::Length(3),              // Search bar
-                    Constraint::Length(height - 3 - 6), // Table + Info Box
-                    Constraint::Length(6),              // Progress bar
+                    Constraint::Length(3),          // Search bar
+                    Constraint::Length(height - 8), // Table + Info Box
+                    Constraint::Length(1),          // Progress bar
                 ]
                 .as_ref(),
             )
@@ -159,7 +159,7 @@ impl App {
                         Color::White
                     })),
             )
-            .style(Style::default().fg(Color::White).bg(Color::Black))
+            .style(Style::default().fg(Color::White).bg(Color::Reset))
             .alignment(Alignment::Center)
             .wrap(Wrap { trim: true });
 
@@ -173,14 +173,13 @@ impl App {
             .gauge_style(
                 Style::default()
                     .bg(Color::White)
-                    .fg(Color::Black)
+                    .fg(Color::DarkGray)
                     .add_modifier(Modifier::BOLD),
             )
             .percent(self.progress)
             .label(progress_label);
 
         frame.render_widget(search_bar, rects[0]);
-        //frame.render_stateful_widget(t, rects[1], &mut self.table.state);
         self.render_table_box(frame, rects[1]);
         frame.render_widget(progress_bar, rects[2]);
         if self.focus == Focus::Popup {
@@ -286,7 +285,7 @@ impl App {
         );
         let paragraph = Paragraph::new(text)
             .block(Block::default().title("Code info").borders(Borders::ALL))
-            .style(Style::default().fg(Color::White).bg(Color::Black))
+            .style(Style::default().fg(Color::White).bg(Color::Reset))
             .alignment(Alignment::Left)
             .wrap(Wrap { trim: true });
         frame.render_stateful_widget(t, chunks[0], &mut self.table.state);
