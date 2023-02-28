@@ -70,7 +70,10 @@ pub fn fill_table(table: &mut StatefulTable, elements: &[OTPElement]) {
             (i + 1).to_string(),
             element.issuer.to_owned(),
             label,
-            element.get_otp_code().unwrap(),
+            match element.get_otp_code() {
+                Ok(result) => result,
+                Err(error) => error.to_string(),
+            },
         ]);
     }
 }

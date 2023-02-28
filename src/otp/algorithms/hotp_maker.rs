@@ -13,8 +13,9 @@ use sha1::Sha1;
 use sha2::{Sha256, Sha512};
 
 use crate::otp::otp_algorithm::OTPAlgorithm;
+use crate::otp::otp_error::OtpError;
 
-pub fn hotp(secret: &str, algorithm: OTPAlgorithm, counter: u64) -> Result<u32, String> {
+pub fn hotp(secret: &str, algorithm: OTPAlgorithm, counter: u64) -> Result<u32, OtpError> {
     match algorithm {
         OTPAlgorithm::Sha256 => generate_hotp::<Sha256>(secret, counter),
         OTPAlgorithm::Sha512 => generate_hotp::<Sha512>(secret, counter),
@@ -22,7 +23,7 @@ pub fn hotp(secret: &str, algorithm: OTPAlgorithm, counter: u64) -> Result<u32, 
     }
 }
 
-fn generate_hotp<D>(secret: &str, counter: u64) -> Result<u32, String>
+fn generate_hotp<D>(secret: &str, counter: u64) -> Result<u32, OtpError>
 where
     D: CoreProxy,
     D::Core: HashMarker
@@ -37,7 +38,7 @@ where
     // decode the base32 secret
     let secret_decoded = match BASE32_NOPAD.decode(secret.as_bytes()) {
         Ok(result) => result,
-        Err(e) => return Err(format!("{e:?}")),
+        Err(e) => return Err(OtpError::SecretEncoding(e.kind, e.position)),
     };
 
     let hash = hotp_hash::<D>(&secret_decoded, counter);
@@ -45,13 +46,13 @@ where
     // calculate offset
     let offset: usize = match hash.last() {
         Some(result) => *result & 0xf,
-        None => return Err(String::from("Invalid digest")),
+        None => return Err(OtpError::InvalidOffset),
     } as usize;
 
     // calculate code
     let code_bytes: [u8; 4] = match hash[offset..offset + 4].try_into() {
         Ok(x) => x,
-        Err(_) => return Err(String::from("Invalid digest")),
+        Err(_) => return Err(OtpError::InvalidDigest),
     };
     Ok(u32::from_be_bytes(code_bytes) & 0x7fffffff)
 }

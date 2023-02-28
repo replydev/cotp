@@ -1,10 +1,11 @@
 use std::time::SystemTime;
 
 use crate::otp::otp_algorithm::OTPAlgorithm;
+use crate::otp::otp_error::OtpError;
 
 use super::hotp_maker::hotp;
 
-pub fn totp(secret: &str, algorithm: OTPAlgorithm) -> Result<u32, String> {
+pub fn totp(secret: &str, algorithm: OTPAlgorithm) -> Result<u32, OtpError> {
     let time = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
@@ -18,7 +19,7 @@ fn generate_totp(
     time: u64,
     time_step: u64,
     skew: i64,
-) -> Result<u32, String> {
+) -> Result<u32, OtpError> {
     hotp(secret, algorithm, ((time as i64 + skew) as u64) / time_step)
 }
 

@@ -1,12 +1,13 @@
 // Ported from https://github.com/beemdevelopment/Aegis/blob/master/app/src/main/java/com/beemdevelopment/aegis/crypto/otp/OTP.java
 
 use crate::otp::otp_algorithm::OTPAlgorithm;
+use crate::otp::otp_error::OtpError;
 
 use super::totp_maker::totp;
 
 const STEAM_ALPHABET: &str = "23456789BCDFGHJKMNPQRTVWXY";
 
-pub fn steam(secret: &str, algorithm: OTPAlgorithm, digits: usize) -> Result<String, String> {
+pub fn steam(secret: &str, algorithm: OTPAlgorithm, digits: usize) -> Result<String, OtpError> {
     match totp(secret, algorithm) {
         Ok(v) => Ok(to_steam_string(v as usize, digits)),
         Err(e) => Err(e),

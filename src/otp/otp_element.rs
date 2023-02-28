@@ -1,5 +1,6 @@
 use std::{fs::File, io::Write, path::PathBuf, vec};
 
+use crate::otp::otp_error::OtpError;
 use crate::{
     crypto::cryptography::{argon_derive_key, encrypt_string_with_key, gen_salt},
     utils,
@@ -252,7 +253,7 @@ impl OTPElement {
             .build()
     }
 
-    pub fn get_otp_code(&self) -> Result<String, String> {
+    pub fn get_otp_code(&self) -> Result<String, OtpError> {
         match self.type_ {
             OTPType::Totp => {
                 let code = totp(&self.secret, self.algorithm)?;
@@ -265,9 +266,7 @@ impl OTPElement {
 
                     Ok(self.format_code(code))
                 }
-                None => Err(String::from(
-                    "The element is an HOTP code but there is no counter value.",
-                )),
+                None => Err(OtpError::MissingCounter),
             },
             OTPType::Steam => steam(&self.secret, self.algorithm, self.digits as usize),
             OTPType::Yandex => match &self.pin {
@@ -278,9 +277,7 @@ impl OTPElement {
                     self.digits as usize,
                     self.algorithm,
                 ),
-                None => Err(String::from(
-                    "This element is a Yandex code but there is not pin value",
-                )),
+                None => Err(OtpError::MissingPin),
             },
             OTPType::Motp => match &self.pin {
                 Some(pin) => motp(
@@ -289,9 +286,7 @@ impl OTPElement {
                     self.period,
                     self.digits as usize,
                 ),
-                None => Err(String::from(
-                    "This element is an MOTP code but the is not pin value",
-                )),
+                None => Err(OtpError::MissingPin),
             },
         }
     }
