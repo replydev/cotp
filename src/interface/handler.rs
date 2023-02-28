@@ -214,7 +214,7 @@ fn delete_selected_code(app: &mut App) -> Result<String, String> {
 fn copy_selected_code_to_clipboard(app: &mut App) -> String {
     match app.table.state.selected() {
         Some(selected) => match app.table.items.get(selected) {
-            Some(element) => match element.get(3) {
+            Some(element) => match element.values.get(3) {
                 Some(otp_code) => {
                     if let Ok(result) = copy_string_to_clipboard(otp_code.to_owned()) {
                         match result {
@@ -261,9 +261,10 @@ fn handle_switch_page(app: &mut App, page: Page) {
 
 fn search_and_select(app: &mut App) {
     // Check for issuer
-    for row in app.table.items.iter().enumerate() {
-        let (index, values) = row;
-        if values
+    for iter in app.table.items.iter().enumerate() {
+        let (index, row) = iter;
+        if row
+            .values
             .get(1)
             .unwrap()
             .to_lowercase()
@@ -274,9 +275,10 @@ fn search_and_select(app: &mut App) {
         }
     }
     // Check for label
-    for row in app.table.items.iter().enumerate() {
-        let (index, values) = row;
-        if values
+    for iter in app.table.items.iter().enumerate() {
+        let (index, row) = iter;
+        if row
+            .values
             .get(2)
             .unwrap()
             .to_lowercase()
@@ -287,9 +289,10 @@ fn search_and_select(app: &mut App) {
         }
     }
     // Check if issuer contains the query
-    for row in app.table.items.iter().enumerate() {
-        let (index, values) = row;
-        if values
+    for iter in app.table.items.iter().enumerate() {
+        let (index, row) = iter;
+        if row
+            .values
             .get(1)
             .unwrap()
             .to_lowercase()
@@ -300,9 +303,10 @@ fn search_and_select(app: &mut App) {
         }
     }
     // Check if label contains the query
-    for row in app.table.items.iter().enumerate() {
-        let (index, values) = row;
-        if values
+    for iter in app.table.items.iter().enumerate() {
+        let (index, row) = iter;
+        if row
+            .values
             .get(2)
             .unwrap()
             .to_lowercase()

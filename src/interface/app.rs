@@ -11,7 +11,7 @@ use tui::style::{Color, Modifier, Style};
 use tui::terminal::Frame;
 use tui::widgets::{Block, Borders, Cell, Clear, Gauge, Paragraph, Row, Table, Wrap};
 
-use crate::interface::table::{fill_table, StatefulTable};
+use crate::interface::stateful_table::{fill_table, StatefulTable};
 use crate::utils::percentage;
 
 use super::enums::PopupAction;
@@ -20,7 +20,7 @@ use super::popup::centered_rect;
 const LARGE_APPLICATION_WIDTH: u16 = 75;
 
 /// Application result type.
-pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
+pub type AppResult<T> = Result<T, Box<dyn error::Error>>;
 
 /// Application.
 pub struct App {
@@ -222,14 +222,9 @@ impl App {
             .height(1)
             .bottom_margin(1);
         let rows = self.table.items.iter().map(|item| {
-            let height = item
-                .iter()
-                .map(|content| content.chars().filter(|c| *c == '\n').count())
-                .max()
-                .unwrap_or(0)
-                + 1;
-            let cells = item.iter().map(|c| Cell::from(c.as_str()));
-            Row::new(cells).height(height as u16).bottom_margin(1)
+            Row::new(item.cells())
+                .height(item.height())
+                .bottom_margin(1)
         });
 
         let t = Table::new(rows)

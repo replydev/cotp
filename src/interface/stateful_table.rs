@@ -1,10 +1,11 @@
+use crate::interface::row::Row;
 use tui::widgets::TableState;
 
 use crate::otp::{otp_element::OTPElement, otp_type::OTPType};
 
 pub struct StatefulTable {
     pub(crate) state: TableState,
-    pub(crate) items: Vec<Vec<String>>,
+    pub(crate) items: Vec<Row>,
 }
 
 impl StatefulTable {
@@ -66,14 +67,20 @@ pub fn fill_table(table: &mut StatefulTable, elements: &[OTPElement]) {
             },
             _ => element.label.to_owned(),
         };
-        table.items.push(vec![
-            (i + 1).to_string(),
-            element.issuer.to_owned(),
-            label,
-            match element.get_otp_code() {
-                Ok(result) => result,
-                Err(error) => error.to_string(),
-            },
-        ]);
+        let result = element.get_otp_code();
+
+        let error = result.is_err();
+        table.items.push(Row::new(
+            vec![
+                (i + 1).to_string(),
+                element.issuer.to_owned(),
+                label,
+                match result {
+                    Ok(code) => code,
+                    Err(e) => e.to_string(),
+                },
+            ],
+            error,
+        ));
     }
 }
