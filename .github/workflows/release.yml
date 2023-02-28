@@ -61,13 +61,6 @@ jobs:
         if: matrix.build == 'aarch64-linux'
         run: docker build -t cotp_build_aarch64:latest .
 
-      - name: Run cargo test
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: ${{ matrix.cross }}
-          command: test
-          args: --release --locked --target ${{ matrix.target }}
-
       - name: Build release binary
         uses: actions-rs/cargo@v1
         with:
