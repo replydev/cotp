@@ -16,6 +16,7 @@ use sha1::{Digest, Sha1};
 use sha2::{Sha256, Sha512};
 
 use crate::otp::otp_algorithm::OTPAlgorithm;
+use crate::otp::otp_error::OtpError;
 
 use super::hotp_maker::hotp_hash;
 
@@ -28,7 +29,7 @@ pub fn yandex(
     period: u64,
     digits: usize,
     algorithm: OTPAlgorithm,
-) -> Result<String, String> {
+) -> Result<String, OtpError> {
     let seconds = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
@@ -52,7 +53,7 @@ fn calculate_yandex_code<D>(
     period: u64,
     digits: usize,
     seconds: u64,
-) -> Result<String, String>
+) -> Result<String, OtpError>
 where
     D: CoreProxy,
     D::Core: HashMarker
@@ -66,7 +67,7 @@ where
 {
     let decoded_secret = match BASE32_NOPAD.decode(secret.as_bytes()) {
         Ok(r) => r,
-        Err(_) => return Err(String::from("Error during secret parsing")),
+        Err(e) => return Err(OtpError::SecretEncoding(e.kind, e.position)),
     };
 
     let parsed_secret = &decoded_secret.as_slice()[0..SECRET_LENGHT];
@@ -89,7 +90,7 @@ where
     // calculate offset
     let offset: usize = match period_hash.last() {
         Some(result) => *result & 0xf,
-        None => return Err(String::from("Invalid digest")),
+        None => return Err(OtpError::InvalidOffset),
     } as usize;
 
     period_hash[offset] &= 0x7f;
@@ -97,7 +98,7 @@ where
     // calculate code
     let code_bytes: [u8; 8] = match period_hash[offset..offset + 8].try_into() {
         Ok(x) => x,
-        Err(_) => return Err(String::from("Invalid digest")),
+        Err(_) => return Err(OtpError::InvalidDigest),
     };
 
     let code = u64::from_be_bytes(code_bytes);

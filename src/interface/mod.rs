@@ -3,5 +3,6 @@ mod enums;
 pub mod event;
 pub mod handler;
 mod popup;
-pub mod table;
+mod row;
+pub mod stateful_table;
 pub mod ui;

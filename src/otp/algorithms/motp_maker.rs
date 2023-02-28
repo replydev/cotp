@@ -1,8 +1,9 @@
 use std::time::SystemTime;
 
+use crate::otp::otp_error::OtpError;
 use md5::{Digest, Md5};
 
-pub fn motp(secret: &str, pin: &str, period: u64, digits: usize) -> Result<String, String> {
+pub fn motp(secret: &str, pin: &str, period: u64, digits: usize) -> Result<String, OtpError> {
     let seconds = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
@@ -17,7 +18,7 @@ fn get_motp_code(
     period: u64,
     digits: usize,
     seconds: u64,
-) -> Result<String, String> {
+) -> Result<String, OtpError> {
     // TODO MOTP Secrets are hex encoded, so do not use BASE32 at all
     let hex_secret = secret;
     let counter = seconds / period;
