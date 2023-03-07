@@ -1,12 +1,8 @@
 name: Release
 on:
-  # schedule:
-  # - cron: '0 0 * * *' # midnight UTC
-
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
-    ## - release
 
 env:
   BIN_NAME: cotp
@@ -118,7 +114,7 @@ jobs:
           if [[ $GITHUB_REF == refs/tags/v* ]]; then
             name=${GITHUB_REF:10}
           fi
-          echo ::set-output name=val::$name
+          echo val=$name >> $GITHUB_OUTPUT
           echo TAG=$name >> $GITHUB_ENV
         id: tagname
 
@@ -163,7 +159,7 @@ jobs:
       - name: Extract version
         id: extract-version
         run: |
-          printf "::set-output name=%s::%s\n" tag-name "${GITHUB_REF#refs/tags/}"
+          printf "%s=%s >> $GITHUB_OUTPUT\n" tag-name "${GITHUB_REF#refs/tags/}"
 
   publish_on_cargo_crates:
     name: "Publish crate on crates.io"
@@ -208,7 +204,7 @@ jobs:
           if [[ $GITHUB_REF == refs/tags/v* ]]; then
             name=${GITHUB_REF:10}
           fi
-          echo ::set-output name=val::$name
+          echo val=$name >> $GITHUB_OUTPUT
           echo TAG=$name >> $GITHUB_ENV
         id: tagname
 
