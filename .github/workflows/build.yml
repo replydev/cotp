@@ -13,14 +13,13 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        rust: [stable]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
 
       - name: Install stable toolchain
-        uses: dtolnay/rust-toolchain@${{ matrix.rust }}
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install dependencies
         run: |
