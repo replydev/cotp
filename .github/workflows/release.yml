@@ -1,12 +1,8 @@
 name: Release
 on:
-  # schedule:
-  # - cron: '0 0 * * *' # midnight UTC
-
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
-    ## - release
 
 env:
   BIN_NAME: cotp
@@ -24,36 +20,28 @@ jobs:
         include:
           - build: x86_64-linux
             os: ubuntu-20.04
-            rust: stable
             target: x86_64-unknown-linux-gnu
-            cross: false
           - build: aarch64-linux
             os: ubuntu-20.04
-            rust: stable
             target: aarch64-unknown-linux-gnu
-            cross: true
           - build: x86_64-win-gnu
             os: windows-2019
-            rust: stable
             target: x86_64-pc-windows-gnu
-            cross: false
 
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
-        with:
-          submodules: true
 
-      - name: Install ${{ matrix.rust }} toolchain
-        uses: actions-rs/toolchain@v1
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
           target: ${{ matrix.target }}
-          override: true
 
-      - name: Install Dependencies
-        # if: matrix.build == 'x86_64-linux' || matrix.build == 'aarch64-linux'
+      - name: Install cross for arm64 compilation
+        if: matrix.build == 'aarch64-linux'
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Install Dependencies for Linux x86_64
         if: matrix.build == 'x86_64-linux'
         run: sudo apt update && sudo apt install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev
 
@@ -61,32 +49,13 @@ jobs:
         if: matrix.build == 'aarch64-linux'
         run: docker build -t cotp_build_aarch64:latest .
 
-      - name: Run cargo test
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: ${{ matrix.cross }}
-          command: test
-          args: --release --locked --target ${{ matrix.target }}
-
-      - name: Build release binary
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: ${{ matrix.cross }}
-          command: build
-          args: --release --locked --target ${{ matrix.target }}
-
-      - name: Strip release binary (linux and macos)
-        if: matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos'
-        run: strip "target/${{ matrix.target }}/release/$BIN_NAME"
-
-      - name: Strip release binary (arm)
+      - name: Build release binary (arm64)
         if: matrix.build == 'aarch64-linux'
-        run: |
-          docker run --rm -v \
-            "$PWD/target:/target:Z" \
-            rustembedded/cross:${{ matrix.target }} \
-            aarch64-linux-gnu-strip \
-            /target/${{ matrix.target }}/release/$BIN_NAME
+        run: cross build --release --locked --target ${{ matrix.target }}
+
+      - name: Build release binary (x86_64)
+        if: matrix.build != 'aarch64-linux'
+        run: cargo build --release --locked --target ${{ matrix.target }}
 
       - name: Build archive
         shell: bash
@@ -125,7 +94,7 @@ jobs:
           if [[ $GITHUB_REF == refs/tags/v* ]]; then
             name=${GITHUB_REF:10}
           fi
-          echo ::set-output name=val::$name
+          echo val=$name >> $GITHUB_OUTPUT
           echo TAG=$name >> $GITHUB_ENV
         id: tagname
 
@@ -170,7 +139,7 @@ jobs:
       - name: Extract version
         id: extract-version
         run: |
-          printf "::set-output name=%s::%s\n" tag-name "${GITHUB_REF#refs/tags/}"
+          printf "%s=%s >> $GITHUB_OUTPUT\n" tag-name "${GITHUB_REF#refs/tags/}"
 
   publish_on_cargo_crates:
     name: "Publish crate on crates.io"
@@ -183,12 +152,7 @@ jobs:
           submodules: false
 
       - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          target: x86_64-unknown-linux-gnu
-          override: true
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Login
         run: cargo login ${{ secrets.CRATE_AUTH_TOKEN }}
@@ -215,7 +179,7 @@ jobs:
           if [[ $GITHUB_REF == refs/tags/v* ]]; then
             name=${GITHUB_REF:10}
           fi
-          echo ::set-output name=val::$name
+          echo val=$name >> $GITHUB_OUTPUT
           echo TAG=$name >> $GITHUB_ENV
         id: tagname
 
