@@ -1,6 +1,5 @@
 name: Release
 on:
-  pull_request:
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
@@ -91,7 +90,10 @@ jobs:
 
       - name: Calculate tag name
         run: |
-          name=1.2.4
+          name=dev
+          if [[ $GITHUB_REF == refs/tags/v* ]]; then
+            name=${GITHUB_REF:10}
+          fi
           echo val=$name >> $GITHUB_OUTPUT
           echo TAG=$name >> $GITHUB_ENV
         id: tagname
@@ -137,7 +139,7 @@ jobs:
       - name: Extract version
         id: extract-version
         run: |
-          printf "%s=%s >> $GITHUB_OUTPUT\n" tag-name "1.2.4"
+          printf "%s=%s >> $GITHUB_OUTPUT\n" tag-name "${GITHUB_REF#refs/tags/}"
 
   publish_on_cargo_crates:
     name: "Publish crate on crates.io"
@@ -159,7 +161,7 @@ jobs:
         run: cargo package --list
 
       - name: Publish
-        run: cargo publish --dry-run
+        run: cargo publish
 
   aur-publish-cotp:
     name: "Publish new version to AUR"
@@ -173,7 +175,10 @@ jobs:
 
       - name: Calculate tag name
         run: |
-          name=1.2.4
+          name=dev
+          if [[ $GITHUB_REF == refs/tags/v* ]]; then
+            name=${GITHUB_REF:10}
+          fi
           echo val=$name >> $GITHUB_OUTPUT
           echo TAG=$name >> $GITHUB_ENV
         id: tagname
@@ -194,7 +199,7 @@ jobs:
           pkgbuild: ./ci/cotp/PKGBUILD
           commit_username: ${{ secrets.AUR_USERNAME }}
           commit_email: ${{ secrets.AUR_EMAIL }}
-          ssh_private_key: temp
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
           commit_message: Update cotp package to version ${{env.TAG}}
           ssh_keyscan_types: rsa,dsa,ecdsa,ed25519
 
@@ -210,6 +215,6 @@ jobs:
           pkgbuild: ./ci/cotp-bin/PKGBUILD
           commit_username: ${{ secrets.AUR_USERNAME }}
           commit_email: ${{ secrets.AUR_EMAIL }}
-          ssh_private_key: temp
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
           commit_message: Update cotp-bin package to version ${{env.TAG}}
           ssh_keyscan_types: rsa,dsa,ecdsa,ed25519
