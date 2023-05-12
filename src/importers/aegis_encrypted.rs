@@ -119,7 +119,12 @@ fn get_params(slot: &AegisEncryptedSlot) -> Result<Params, String> {
     let p = slot.p.unwrap();
     let r = slot.r.unwrap();
 
-    match Params::new((n as f32).log2() as u8, r, p, scrypt::Params::RECOMMENDED_LEN) {
+    match Params::new(
+        (n as f32).log2() as u8,
+        r,
+        p,
+        scrypt::Params::RECOMMENDED_LEN,
+    ) {
         Ok(result) => Ok(result),
         Err(e) => Err(format!("Error during scrypt params creation: {e:?}")),
     }
