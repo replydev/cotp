@@ -119,7 +119,12 @@ fn get_params(slot: &AegisEncryptedSlot) -> Result<Params, String> {
     let p = slot.p.unwrap();
     let r = slot.r.unwrap();
 
-    match Params::new((n as f32).log2() as u8, r, p) {
+    match Params::new(
+        (n as f32).log2() as u8,
+        r,
+        p,
+        scrypt::Params::RECOMMENDED_LEN,
+    ) {
         Ok(result) => Ok(result),
         Err(e) => Err(format!("Error during scrypt params creation: {e:?}")),
     }
@@ -128,10 +133,7 @@ fn get_params(slot: &AegisEncryptedSlot) -> Result<Params, String> {
 fn get_master_key(slot: &AegisEncryptedSlot, password: &str) -> Result<Vec<u8>, String> {
     let salt = Vec::from_hex(slot.salt.as_ref().unwrap()).expect("Failed to parse hex salt");
     let mut output: [u8; 32] = [0; 32];
-    let params = match get_params(slot) {
-        Ok(result) => result,
-        Err(e) => return Err(e),
-    };
+    let params = get_params(slot)?;
 
     if let Err(e) = scrypt(
         password.as_bytes(),
