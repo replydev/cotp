@@ -2,7 +2,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crossterm::event::{self, Event as CrosstermEvent, KeyEvent, MouseEvent};
+use crossterm::event::{self, Event as CrosstermEvent, KeyEvent, KeyEventKind, MouseEvent};
 
 use crate::interface::app::AppResult;
 
@@ -50,7 +50,15 @@ impl EventHandler {
 
                 if event::poll(timeout).expect("no events available") {
                     match event::read().expect("unable to read event") {
-                        CrosstermEvent::Key(e) => sender.send(Event::Key(e)),
+                        CrosstermEvent::Key(e) => {
+                            // Workaround to fix double input on Windows
+                            // Please check https://github.com/crossterm-rs/crossterm/issues/752
+                            if e.kind == KeyEventKind::Press {
+                                sender.send(Event::Key(e))
+                            } else {
+                                Ok(())
+                            }
+                        }
                         CrosstermEvent::Mouse(e) => sender.send(Event::Mouse(e)),
                         CrosstermEvent::Resize(w, h) => sender.send(Event::Resize(w, h)),
                         CrosstermEvent::FocusGained => sender.send(Event::FocusGained()),
