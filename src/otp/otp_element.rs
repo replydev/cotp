@@ -138,8 +138,11 @@ impl OTPDatabase {
     }
 
     pub fn sort(&mut self) {
-        self.elements
-            .sort_unstable_by(|c1, c2| c1.issuer.cmp(&c2.issuer))
+        self.elements.sort_unstable_by(|c1, c2| {
+            c1.issuer
+                .to_ascii_lowercase()
+                .cmp(&c2.issuer.to_ascii_lowercase())
+        })
     }
 }
 
