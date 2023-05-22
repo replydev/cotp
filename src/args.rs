@@ -137,7 +137,7 @@ pub fn get_matches() -> ArgMatches {
                         .long("issuer")
                         .help("OTP Code issuer")
                         .num_args(1)
-                        .required_unless_present_any(["label", "algorithm", "digits", "counter"]),
+                        .required_unless_present_any(["label", "algorithm", "digits", "counter", "pin", "change-secret"]),
                 )
                 .arg(
                     Arg::new("label")
@@ -145,7 +145,7 @@ pub fn get_matches() -> ArgMatches {
                         .long("label")
                         .help("OTP Code label")
                         .num_args(1)
-                        .required_unless_present_any(["issuer", "algorithm", "digits", "counter"]),
+                        .required_unless_present_any(["issuer", "algorithm", "digits", "counter", "pin", "change-secret"]),
                 )
                 .arg(
                     Arg::new("algorithm")
@@ -153,7 +153,7 @@ pub fn get_matches() -> ArgMatches {
                         .long("algorithm")
                         .help("OTP Code algorithm")
                         .num_args(1)
-                        .required_unless_present_any(["label", "issuer", "digits", "counter"])
+                        .required_unless_present_any(["label", "issuer", "digits", "counter", "pin", "change-secret"])
                         .value_parser(["SHA1", "SHA256", "SHA512"]),
                 )
                 .arg(
@@ -163,7 +163,7 @@ pub fn get_matches() -> ArgMatches {
                         .help("OTP Code digits")
                         .num_args(1)
                         .value_parser(value_parser!(u64))
-                        .required_unless_present_any(["label", "algorithm", "issuer", "counter"]),
+                        .required_unless_present_any(["label", "algorithm", "issuer", "counter", "pin", "change-secret"]),
                 )
                 .arg(
                     Arg::new("period")
@@ -172,7 +172,7 @@ pub fn get_matches() -> ArgMatches {
                         .help("OTP Code period")
                         .num_args(1)
                         .value_parser(value_parser!(u64))
-                        .required_unless_present_any(["label", "algorithm", "issuer", "counter"]),
+                        .required_unless_present_any(["label", "algorithm", "issuer", "counter", "pin", "change-secret"]),
                 )
                 .arg(
                     Arg::new("counter")
@@ -181,7 +181,7 @@ pub fn get_matches() -> ArgMatches {
                         .help("HOTP code counter (only for HOTP codes)")
                         .num_args(1)
                         .value_parser(value_parser!(u64))
-                        .required_unless_present_any(["label", "algorithm", "issuer", "digits"]),
+                        .required_unless_present_any(["label", "algorithm", "issuer", "digits", "pin", "change-secret"]),
                 )
                 .arg(
                     Arg::new("pin")
@@ -189,13 +189,15 @@ pub fn get_matches() -> ArgMatches {
                         .long("pin")
                         .help("Code pin (for Yandex and MOTP)")
                         .num_args(1)
+                        .required_unless_present_any(["label", "algorithm", "issuer", "digits", "counter", "change-secret"]),
                 )
                 .arg(
                     Arg::new("change-secret")
                         .short('k')
                         .long("change-secret")
                         .help("Change the OTP code secret")
-                        .action(ArgAction::SetTrue),
+                        .action(ArgAction::SetTrue)
+                        .required_unless_present_any(["label", "algorithm", "issuer", "digits", "counter", "pin"]),
                 ),
         )
         .subcommand(
