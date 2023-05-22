@@ -128,6 +128,7 @@ pub fn get_matches() -> ArgMatches {
                         .long("index")
                         .help("OTP Code index")
                         .num_args(1)
+                        .value_parser(value_parser!(usize))
                         .required(true),
                 )
                 .arg(
