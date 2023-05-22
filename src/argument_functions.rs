@@ -99,11 +99,16 @@ pub fn edit(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, 
     };
 
     let index = *matches.get_one::<usize>("index").unwrap();
+
+    if index <= 0 || index > database.elements_ref().len() {
+        return Err(format!("{index} is an invalid index"));
+    }
+
     let otp_element: Option<&OTPElement> = database.get_element(index);
 
     let issuer = matches.get_one::<String>("issuer").cloned();
     let label = matches.get_one::<String>("label").cloned();
-    let digits = matches.get_one::<u64>("usize").copied();
+    let digits = matches.get_one::<u64>("digits").copied();
     let period = matches.get_one::<u64>("period").copied();
     let counter = matches.get_one::<u64>("counter").copied();
     let pin = matches.get_one::<String>("label").cloned();
