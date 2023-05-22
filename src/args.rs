@@ -184,6 +184,13 @@ pub fn get_matches() -> ArgMatches {
                         .required_unless_present_any(["label", "algorithm", "issuer", "digits"]),
                 )
                 .arg(
+                    Arg::new("pin")
+                        .short('p')
+                        .long("pin")
+                        .help("Code pin (for Yandex and MOTP)")
+                        .num_args(1)
+                )
+                .arg(
                     Arg::new("change-secret")
                         .short('k')
                         .long("change-secret")
