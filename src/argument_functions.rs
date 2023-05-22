@@ -139,6 +139,9 @@ pub fn edit(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, 
                 if pin.is_some() {
                     element.pin = pin;
                 }
+                if secret.is_some() {
+                    element.secret = secret.clone().unwrap();
+                }
                 database.edit_element(real_index, element);
             }
             None => return Err(format!("No element found at index {index}")),
