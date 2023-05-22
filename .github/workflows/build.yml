@@ -38,3 +38,11 @@ jobs:
 
       - name: Run cargo test
         run: cargo test
+
+      - name: Run cargo build
+        run: cargo build
+
+      - uses: actions/upload-artifact@v3.1.2
+        with:
+          name: bins-${{ matrix.os }}
+          path: target/debug/cotp*
