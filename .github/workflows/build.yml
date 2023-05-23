@@ -7,7 +7,7 @@ on:
 
 jobs:
   test:
-    name: CI on commit
+    name: Build debug artifacts
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
@@ -18,8 +18,6 @@ jobs:
 
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
 
       - name: Install dependencies
         run: |
@@ -27,12 +25,6 @@ jobs:
                 sudo apt update && sudo apt install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev
           fi
         shell: bash
-
-      - name: Run cargo fmt
-        run: cargo fmt --all -- --check
-
-      - name: Run cargo clippy
-        run: cargo clippy -- -D warnings
 
       - name: Run cargo test
         run: cargo test
