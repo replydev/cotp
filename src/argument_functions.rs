@@ -99,44 +99,59 @@ pub fn edit(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, 
     };
 
     let index = *matches.get_one::<usize>("index").unwrap();
-    let otp_element: Option<&OTPElement> = database.get_element(index);
 
-    let issuer = matches.get_one::<String>("issuer").cloned();
-    let label = matches.get_one::<String>("label").cloned();
-    let digits = matches.get_one::<u64>("usize").copied();
-    let period = matches.get_one::<u64>("period").copied();
-    let counter = matches.get_one::<u64>("counter").copied();
-    let pin = matches.get_one::<String>("label").cloned();
-
-    match otp_element {
-        Some(v) => {
-            let mut element = v.clone();
-
-            if let Some(v) = issuer {
-                element.issuer = v;
-            }
-            if let Some(v) = label {
-                element.label = v;
-            }
-            if let Some(v) = digits {
-                element.digits = v;
-            }
-            if let Some(v) = period {
-                element.period = v;
-            }
-            if counter.is_some() {
-                element.counter = counter;
-            }
-            if pin.is_some() {
-                element.pin = pin;
-            }
-            database.edit_element(index, element);
+    if let Some(real_index) = index
+        // User provides row number from dashboard which is equal to the array index plus one
+        .checked_sub(1)
+    {
+        if real_index >= database.elements_ref().len() {
+            return Err(format!("{index} is an invalid index"));
         }
-        None => return Err(format!("No element found at index {index}")),
-    }
 
-    secret.zeroize();
-    Ok(String::from("Success."))
+        let otp_element: Option<&OTPElement> = database.get_element(real_index);
+
+        let issuer = matches.get_one::<String>("issuer").cloned();
+        let label = matches.get_one::<String>("label").cloned();
+        let digits = matches.get_one::<u64>("digits").copied();
+        let period = matches.get_one::<u64>("period").copied();
+        let counter = matches.get_one::<u64>("counter").copied();
+        let pin = matches.get_one::<String>("pin").cloned();
+
+        match otp_element {
+            Some(v) => {
+                let mut element = v.clone();
+
+                if let Some(v) = issuer {
+                    element.issuer = v;
+                }
+                if let Some(v) = label {
+                    element.label = v;
+                }
+                if let Some(v) = digits {
+                    element.digits = v;
+                }
+                if let Some(v) = period {
+                    element.period = v;
+                }
+                if counter.is_some() {
+                    element.counter = counter;
+                }
+                if pin.is_some() {
+                    element.pin = pin;
+                }
+                if secret.is_some() {
+                    element.secret = secret.clone().unwrap();
+                }
+                database.edit_element(real_index, element);
+            }
+            None => return Err(format!("No element found at index {index}")),
+        }
+
+        secret.zeroize();
+        Ok(String::from("Success."))
+    } else {
+        Err(format! {"{index} is an invalid index"})
+    }
 }
 
 pub fn export(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, String> {

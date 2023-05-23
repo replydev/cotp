@@ -70,6 +70,10 @@ where
         Err(e) => return Err(OtpError::SecretEncoding(e.kind, e.position)),
     };
 
+    if decoded_secret.len() < SECRET_LENGHT {
+        return Err(OtpError::ShortSecret);
+    }
+
     let parsed_secret = &decoded_secret.as_slice()[0..SECRET_LENGHT];
 
     let mut pin_with_secret: Vec<u8> = Vec::with_capacity(pin.as_bytes().len() + SECRET_LENGHT);
