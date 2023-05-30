@@ -1,8 +1,9 @@
 use std::fmt;
 
+use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Copy, ValueEnum)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum OTPType {
     #[serde(alias = "totp")]

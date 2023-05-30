@@ -1,13 +1,197 @@
-use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
+use std::path::PathBuf;
 
-use crate::{argument_functions, otp::otp_element::OTPDatabase};
+use clap::{Args, Parser, Subcommand};
+
+use crate::{
+    argument_functions,
+    otp::{otp_algorithm::OTPAlgorithm, otp_element::OTPDatabase, otp_type::OTPType},
+};
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+pub struct CotpArgs {
+    #[command(subcommand)]
+    command: Option<CotpSubcommands>,
+}
+
+#[derive(Subcommand)]
+enum CotpSubcommands {
+    /// Add new OTP code
+    Add(AddArgs),
+    /// Edit an existing OTP Code
+    Edit(EditArgs),
+    /// Remove an OTP Code
+    Remove(RemoveArgs),
+    /// Import codes from other apps
+    Import(ImportArgs),
+    /// Export cotp database
+    Export(ExportArgs),
+    /// Change database password
+    Passwd,
+}
+
+#[derive(Args)]
+pub struct AddArgs {
+    /// Add OTP code via an OTP URI
+    #[arg(short = 'u', long = "otpuri", required_unless_present = "issuer")]
+    pub otp_uri: bool,
+
+    /// Specify the OTP code type
+    #[arg(short = 't', long = "type", default_value_t = OTPType::Totp)]
+    pub otp_type: OTPType,
+
+    /// Code issuer
+    #[arg(short, long, required_unless_present = "otp_uri")]
+    pub issuer: String,
+
+    /// Code label
+    #[arg(short, long, default_value = "")]
+    pub label: String,
+
+    /// OTP Algorithm
+    #[arg(short, long, value_enum, default_value_t = OTPAlgorithm::Sha1)]
+    pub mode: OTPAlgorithm,
+
+    /// Code digits
+    #[arg(
+        short,
+        long,
+        default_value_t = 6,
+        default_value_if("type", "STEAM", "5")
+    )]
+    pub digits: u8,
+
+    /// Code period
+    #[arg(short, long, default_value_t = 30)]
+    pub period: u64,
+
+    /// HOTP counter
+    #[arg(short, long, required_if_eq("type", "HOTP"))]
+    pub counter: Option<u64>,
+
+    /// Yandex / MOTP pin
+    #[arg(
+        short,
+        long,
+        required_if_eq("type", "YANDEX"),
+        required_if_eq("type", "MOTP")
+    )]
+    pub pin: Option<String>,
+}
+
+#[derive(Args)]
+pub struct EditArgs {
+    /// Code Index
+    #[arg(short, long, required = true)]
+    index: u64,
+
+    /// Code issuer
+    #[arg(short = 's', long)]
+    issuer: Option<String>,
+
+    /// Code label
+    #[arg(short, long)]
+    label: Option<String>,
+
+    /// OTP algorithm
+    #[arg(short, long, value_enum)]
+    mode: Option<OTPAlgorithm>,
+
+    /// Code digits
+    #[arg(short, long)]
+    digits: Option<u8>,
+
+    /// Code period
+    #[arg(short, long)]
+    period: Option<u64>,
+
+    /// HOTP counter
+    #[arg(short, long)]
+    counter: Option<u64>,
+
+    /// Yandex / MOTP pin
+    #[arg(short, long)]
+    pin: Option<String>,
+
+    /// Change code secret
+    #[arg(short = 'k', long = "change-secret")]
+    change_secret: bool,
+}
+
+#[derive(Args)]
+pub struct RemoveArgs {
+    /// Code Index
+    #[arg(short, long, required = true)]
+    index: u64,
+}
+
+#[derive(Args)]
+pub struct ImportArgs {
+    #[command(flatten)]
+    backup_type: BackupType,
+
+    /// Backup file path
+    #[arg(short, long, required = true)]
+    path: PathBuf,
+}
+
+#[derive(Args)]
+pub struct ExportArgs {
+    /// Export file path
+    #[arg(short, long, default_value = ".")]
+    path: PathBuf,
+}
+
+#[derive(Args)]
+#[group(required = true, multiple = false)]
+struct BackupType {
+    /// Import from cotp backup
+    #[arg(short, long)]
+    cotp: bool,
+
+    /// Import from andOTP backup
+    #[arg(short = 'e', long)]
+    andotp: bool,
+
+    /// Import from Aegis backup
+    #[arg(short, long)]
+    aegis: bool,
+
+    /// Import from Aegis Encrypted backup
+    #[arg(short = 'k', long = "aegis-encrypted")]
+    aegis_encrypted: bool,
+
+    /// Import from FreeOTP+ backup
+    #[arg(short, long = "freeotp-plus")]
+    freeotp_plus: bool,
+
+    /// Import from FreeOTP backup
+    #[arg(short = 'r', long)]
+    freeotp: bool,
+
+    /// Import from Google Authenticator backup
+    #[arg(short, long = "google-authenticator")]
+    google_authenticator: bool,
+
+    /// Import from Authy backup
+    #[arg(short = 't', long)]
+    authy: bool,
+
+    /// Import from Authy Database exported following this guide https://gist.github.com/gboudreau/94bb0c11a6209c82418d01a59d958c93
+    #[arg(short = 'u', long = "authy-exported")]
+    authy_exported: bool,
+
+    /// Import from Microsoft Authenticator
+    #[arg(short = 'm', long = "microsoft-authenticator")]
+    microsoft_authenticator: bool,
+}
 
 pub fn args_parser(
-    matches: ArgMatches,
+    matches: CotpArgs,
     database: &mut OTPDatabase,
 ) -> Option<Result<String, String>> {
-    match matches.subcommand() {
-        Some(("add", add_matches)) => Some(argument_functions::add(add_matches, database)),
+    match matches.command {
+        Some(CotpSubcommands::Add(args)) => Some(argument_functions::add(args, database)),
         Some(("edit", edit_matches)) => Some(argument_functions::edit(edit_matches, database)),
         Some(("import", import_matches)) => {
             Some(argument_functions::import(import_matches, database))
@@ -21,513 +205,8 @@ pub fn args_parser(
     }
 }
 
-pub fn get_matches() -> ArgMatches {
-    Command::new(env!("CARGO_PKG_NAME"))
-        .version(env!("CARGO_PKG_VERSION"))
-        .author(
-            env!("CARGO_PKG_AUTHORS")
-                .split(',')
-                .next()
-                .unwrap_or("replydev <commoncargo@tutanota.com>"),
-        )
-        .about(env!("CARGO_PKG_DESCRIPTION"))
-        .subcommand(
-            Command::new("add")
-                .about("Add a new OTP Code")
-                .arg_required_else_help(true)
-                .arg(
-                    Arg::new("otp_uri")
-                        .short('u')
-                        .long("otpuri")
-                        .help("Add OTP code via an OTP URI")
-                        .action(ArgAction::SetTrue)
-                        .required_unless_present("issuer")
-                )
-                .arg(
-                    Arg::new("type")
-                        .short('t')
-                        .long("type")
-                        .help("Specify the OTP code type")
-                        .num_args(1)
-                        .value_parser(["TOTP", "HOTP", "STEAM", "YANDEX", "MOTP"])
-                        .default_value("TOTP"),
-                )
-                .arg(
-                    Arg::new("issuer")
-                        .short('i')
-                        .long("issuer")
-                        .help("OTP Code issuer")
-                        .num_args(1)
-                        .required_unless_present("otp_uri"),
-                )
-                .arg(
-                    Arg::new("label")
-                        .short('l')
-                        .long("label")
-                        .help("OTP Code label")
-                        .num_args(1)
-                        .required(false)
-                        .default_value(""),
-                )
-                .arg(
-                    Arg::new("algorithm")
-                        .short('a')
-                        .long("algorithm")
-                        .help("OTP Code algorithm")
-                        .num_args(1)
-                        .required(false)
-                        .value_parser(["SHA1", "SHA256", "SHA512"])
-                        .default_value("SHA1"),
-                )
-                .arg(
-                    Arg::new("digits")
-                        .short('d')
-                        .long("digits")
-                        .help("OTP Code digits")
-                        .num_args(1)
-                        .required(false)
-                        .value_parser(value_parser!(u64))
-                        .default_value_if("type", "STEAM", "5")
-                        .default_value("6"),
-                )
-                .arg(
-                    Arg::new("period")
-                        .short('e')
-                        .long("period")
-                        .help("OTP Code period")
-                        .num_args(1)
-                        .required(false)
-                        .value_parser(value_parser!(u64))
-                        .default_value("30"),
-                )
-                .arg(
-                    Arg::new("counter")
-                        .short('c')
-                        .long("counter")
-                        .help("HOTP code counter")
-                        .required_if_eq("type", "HOTP")
-                        .num_args(1)
-                        .value_parser(value_parser!(u64)),
-                ).arg(
-                Arg::new("pin")
-                    .short('p')
-                    .long("pin")
-                    .help("Code pin (for Yandex and MOTP)")
-                    .required_if_eq("type", "YANDEX")
-                    .required_if_eq("type", "MOTP")
-                    .num_args(1),
-            ),
-        )
-        .subcommand(
-            Command::new("edit")
-                .about("Edit an OTP code")
-                .arg_required_else_help(true)
-                .arg(
-                    Arg::new("index")
-                        .short('i')
-                        .long("index")
-                        .help("OTP Code index")
-                        .num_args(1)
-                        .value_parser(value_parser!(usize))
-                        .required(true),
-                )
-                .arg(
-                    Arg::new("issuer")
-                        .short('s')
-                        .long("issuer")
-                        .help("OTP Code issuer")
-                        .num_args(1)
-                        .required_unless_present_any(["label", "algorithm", "digits", "counter", "pin", "change-secret"]),
-                )
-                .arg(
-                    Arg::new("label")
-                        .short('l')
-                        .long("label")
-                        .help("OTP Code label")
-                        .num_args(1)
-                        .required_unless_present_any(["issuer", "algorithm", "digits", "counter", "pin", "change-secret"]),
-                )
-                .arg(
-                    Arg::new("algorithm")
-                        .short('a')
-                        .long("algorithm")
-                        .help("OTP Code algorithm")
-                        .num_args(1)
-                        .required_unless_present_any(["label", "issuer", "digits", "counter", "pin", "change-secret"])
-                        .value_parser(["SHA1", "SHA256", "SHA512"]),
-                )
-                .arg(
-                    Arg::new("digits")
-                        .short('d')
-                        .long("digits")
-                        .help("OTP Code digits")
-                        .num_args(1)
-                        .value_parser(value_parser!(u64))
-                        .required_unless_present_any(["label", "algorithm", "issuer", "counter", "pin", "change-secret"]),
-                )
-                .arg(
-                    Arg::new("period")
-                        .short('e')
-                        .long("period")
-                        .help("OTP Code period")
-                        .num_args(1)
-                        .value_parser(value_parser!(u64))
-                        .required_unless_present_any(["label", "algorithm", "issuer", "counter", "pin", "change-secret"]),
-                )
-                .arg(
-                    Arg::new("counter")
-                        .short('c')
-                        .long("counter")
-                        .help("HOTP code counter (only for HOTP codes)")
-                        .num_args(1)
-                        .value_parser(value_parser!(u64))
-                        .required_unless_present_any(["label", "algorithm", "issuer", "digits", "pin", "change-secret"]),
-                )
-                .arg(
-                    Arg::new("pin")
-                        .short('p')
-                        .long("pin")
-                        .help("Code pin (for Yandex and MOTP)")
-                        .num_args(1)
-                        .required_unless_present_any(["label", "algorithm", "issuer", "digits", "counter", "change-secret"]),
-                )
-                .arg(
-                    Arg::new("change-secret")
-                        .short('k')
-                        .long("change-secret")
-                        .help("Change the OTP code secret")
-                        .action(ArgAction::SetTrue)
-                        .required_unless_present_any(["label", "algorithm", "issuer", "digits", "counter", "pin"]),
-                ),
-        )
-        .subcommand(
-            Command::new("remove")
-                .about("Remove an OTP code")
-                .arg_required_else_help(true)
-                .arg(
-                    Arg::new("index")
-                        .short('i')
-                        .long("index")
-                        .help("OTP code index")
-                        .num_args(1..)
-                        .value_parser(value_parser!(u64))
-                        .required(true)
-                ),
-        )
-        .subcommand(
-            Command::new("import")
-                .about("Import from backups")
-                .arg_required_else_help(true)
-                .arg(
-                    Arg::new("cotp")
-                        .short('c')
-                        .long("cotp")
-                        .help("Import from cotp exported database")
-                        .action(ArgAction::SetTrue)
-                        .required_unless_present_any([
-                            "andotp",
-                            "aegis",
-                            "freeotp-plus",
-                            "freeotp",
-                            "google-authenticator",
-                            "authy",
-                            "authy-exported",
-                            "microsoft-authenticator",
-                            "aegis-encrypted",
-                        ])
-                        .conflicts_with_all([
-                            "andotp",
-                            "aegis",
-                            "freeotp-plus",
-                            "freeotp",
-                            "google-authenticator",
-                            "authy",
-                            "authy-exported",
-                            "microsoft-authenticator",
-                            "aegis-encrypted",
-                        ]),
-                )
-                .arg(
-                    Arg::new("andotp")
-                        .short('e')
-                        .long("andotp")
-                        .help("Import from andOTP backup")
-                        .action(ArgAction::SetTrue)
-                        .required_unless_present_any([
-                            "cotp",
-                            "aegis",
-                            "freeotp-plus",
-                            "freeotp",
-                            "google-authenticator",
-                            "authy",
-                            "authy-exported",
-                            "microsoft-authenticator",
-                            "aegis-encrypted",
-                        ])
-                        .conflicts_with_all([
-                            "cotp",
-                            "aegis",
-                            "freeotp-plus",
-                            "freeotp",
-                            "google-authenticator",
-                            "authy",
-                            "authy-exported",
-                            "microsoft-authenticator",
-                            "aegis-encrypted",
-                        ]),
-                )
-                .arg(
-                    Arg::new("aegis")
-                        .short('a')
-                        .long("aegis")
-                        .help("Import from Aegis backup")
-                        .action(ArgAction::SetTrue)
-                        .required_unless_present_any([
-                            "andotp",
-                            "cotp",
-                            "freeotp-plus",
-                            "freeotp",
-                            "google-authenticator",
-                            "authy",
-                            "authy-exported",
-                            "microsoft-authenticator",
-                            "aegis-encrypted",
-                        ])
-                        .conflicts_with_all([
-                            "andotp",
-                            "cotp",
-                            "freeotp-plus",
-                            "freeotp",
-                            "google-authenticator",
-                            "authy",
-                            "authy-exported",
-                            "microsoft-authenticator",
-                            "aegis-encrypted",
-                        ]),
-                )
-                .arg(
-                    Arg::new("aegis-encrypted")
-                        .short('k')
-                        .long("aegis-encrypted")
-                        .help("Import from Aegis encrypted backup")
-                        .action(ArgAction::SetTrue)
-                        .required_unless_present_any([
-                            "andotp",
-                            "cotp",
-                            "freeotp-plus",
-                            "freeotp",
-                            "google-authenticator",
-                            "authy",
-                            "authy-exported",
-                            "microsoft-authenticator",
-                            "aegis",
-                        ])
-                        .conflicts_with_all([
-                            "andotp",
-                            "cotp",
-                            "freeotp-plus",
-                            "freeotp",
-                            "google-authenticator",
-                            "authy",
-                            "authy-exported",
-                            "microsoft-authenticator",
-                            "aegis",
-                        ]),
-                )
-                .arg(
-                    Arg::new("freeotp-plus")
-                        .short('f')
-                        .long("freeotp-plus")
-                        .help("Import from FreeOTP+ backup")
-                        .action(ArgAction::SetTrue)
-                        .required_unless_present_any([
-                            "andotp",
-                            "aegis",
-                            "cotp",
-                            "freeotp",
-                            "google-authenticator",
-                            "authy",
-                            "authy-exported",
-                            "microsoft-authenticator",
-                            "aegis-encrypted",
-                        ])
-                        .conflicts_with_all([
-                            "andotp",
-                            "aegis",
-                            "cotp",
-                            "freeotp",
-                            "google-authenticator",
-                            "authy",
-                            "authy-exported",
-                            "microsoft-authenticator",
-                            "aegis-encrypted",
-                        ]),
-                )
-                .arg(
-                    Arg::new("freeotp")
-                        .short('r')
-                        .long("freeotp")
-                        .help("Import from FreeOTP converted database")
-                        .action(ArgAction::SetTrue)
-                        .required_unless_present_any([
-                            "andotp",
-                            "aegis",
-                            "freeotp-plus",
-                            "cotp",
-                            "google-authenticator",
-                            "authy",
-                            "authy-exported",
-                            "microsoft-authenticator",
-                            "aegis-encrypted",
-                        ])
-                        .conflicts_with_all([
-                            "andotp",
-                            "aegis",
-                            "freeotp-plus",
-                            "cotp",
-                            "google-authenticator",
-                            "authy",
-                            "authy-exported",
-                            "microsoft-authenticator",
-                            "aegis-encrypted",
-                        ]),
-                )
-                .arg(
-                    Arg::new("google-authenticator")
-                        .short('g')
-                        .long("google-authenticator")
-                        .help("Import from Google Authenticator converted database")
-                        .action(ArgAction::SetTrue)
-                        .required_unless_present_any([
-                            "andotp",
-                            "aegis",
-                            "freeotp-plus",
-                            "freeotp",
-                            "cotp",
-                            "authy",
-                            "authy-exported",
-                            "microsoft-authenticator",
-                            "aegis-encrypted",
-                        ])
-                        .conflicts_with_all([
-                            "andotp",
-                            "aegis",
-                            "freeotp-plus",
-                            "freeotp",
-                            "cotp",
-                            "authy",
-                            "authy-exported",
-                            "microsoft-authenticator",
-                            "aegis-encrypted",
-                        ]),
-                )
-                .arg(
-                    Arg::new("authy")
-                        .short('t')
-                        .long("authy")
-                        .help("Import from Authy converted database")
-                        .action(ArgAction::SetTrue)
-                        .required_unless_present_any([
-                            "andotp",
-                            "aegis",
-                            "freeotp-plus",
-                            "freeotp",
-                            "google-authenticator",
-                            "cotp",
-                            "authy-exported",
-                            "microsoft-authenticator",
-                            "aegis-encrypted",
-                        ])
-                        .conflicts_with_all([
-                            "andotp",
-                            "aegis",
-                            "freeotp-plus",
-                            "freeotp",
-                            "google-authenticator",
-                            "cotp",
-                            "authy-exported",
-                            "microsoft-authenticator",
-                            "aegis-encrypted",
-                        ]),
-                )
-                .arg(
-                    Arg::new("microsoft-authenticator")
-                        .short('m')
-                        .long("microsoft-authenticator")
-                        .help("Import from Microsoft Authenticator converted database")
-                        .action(ArgAction::SetTrue)
-                        .required_unless_present_any([
-                            "andotp",
-                            "aegis",
-                            "freeotp-plus",
-                            "freeotp",
-                            "google-authenticator",
-                            "authy",
-                            "authy-exported",
-                            "cotp",
-                            "aegis-encrypted",
-                        ])
-                        .conflicts_with_all([
-                            "andotp",
-                            "aegis",
-                            "freeotp-plus",
-                            "freeotp",
-                            "google-authenticator",
-                            "authy",
-                            "authy-exported",
-                            "cotp",
-                            "aegis-encrypted",
-                        ]),
-                )
-                .arg(
-                    Arg::new("authy-exported")
-                        .short('u')
-                        .long("authy-exported")
-                        .help("Import from Authy Database exported following https://gist.github.com/gboudreau/94bb0c11a6209c82418d01a59d958c93")
-                        .action(ArgAction::SetTrue)
-                        .required_unless_present_any([
-                            "andotp",
-                            "aegis",
-                            "freeotp-plus",
-                            "freeotp",
-                            "google-authenticator",
-                            "authy",
-                            "microsoft-authenticator",
-                            "cotp",
-                            "aegis-encrypted",
-                        ])
-                        .conflicts_with_all([
-                            "andotp",
-                            "aegis",
-                            "freeotp-plus",
-                            "freeotp",
-                            "google-authenticator",
-                            "authy",
-                            "microsoft-authenticator",
-                            "cotp",
-                            "aegis-encrypted",
-                        ]),
-                )
-                .arg(
-                    Arg::new("path")
-                        .short('p')
-                        .long("path")
-                        .help("Backup path")
-                        .num_args(1)
-                        .required(true),
-                ),
-        )
-        .subcommand(
-            Command::new("export").about("Export your database").arg(
-                Arg::new("path")
-                    .short('p')
-                    .long("path")
-                    .help("Export file path")
-                    .num_args(1)
-                    .required(false)
-                    .default_value("."),
-            ),
-        )
-        .subcommand(Command::new("passwd").about("Change your database password"))
-        .get_matches()
+#[test]
+fn verify_cli() {
+    use clap::CommandFactory;
+    CotpArgs::command().debug_assert()
 }
