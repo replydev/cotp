@@ -117,8 +117,8 @@ pub fn edit(matches: EditArgs, database: &mut OTPDatabase) -> Result<String, Str
                 if matches.pin.is_some() {
                     element.pin = matches.pin;
                 }
-                if secret.is_some() {
-                    element.secret = secret.unwrap();
+                if let Some(s) = secret {
+                    element.secret = s;
                 }
                 database.mark_modified();
             }
