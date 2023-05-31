@@ -108,6 +108,9 @@ pub fn edit(matches: EditArgs, database: &mut OTPDatabase) -> Result<String, Str
                 if let Some(v) = matches.period {
                     element.period = v;
                 }
+                if let Some(v) = matches.algorithm {
+                    element.algorithm = v;
+                }
                 if matches.counter.is_some() {
                     element.counter = matches.counter;
                 }

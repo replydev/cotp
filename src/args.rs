@@ -93,7 +93,7 @@ pub struct EditArgs {
 
     /// OTP algorithm
     #[arg(short, long, value_enum)]
-    pub mode: Option<OTPAlgorithm>,
+    pub algorithm: Option<OTPAlgorithm>,
 
     /// Code digits
     #[arg(short, long)]
