@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
-use args::get_matches;
+use args::CotpArgs;
+use clap::Parser;
 use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
 use interface::handler::handle_key_events;
@@ -48,7 +49,7 @@ fn init() -> Result<ReadResult, String> {
 }
 
 fn main() -> AppResult<()> {
-    let matches = get_matches();
+    let cotp_args = CotpArgs::parse();
     let mut result = match init() {
         Ok(v) => v,
         Err(e) => {
@@ -56,7 +57,7 @@ fn main() -> AppResult<()> {
             std::process::exit(-1);
         }
     };
-    match args::args_parser(matches, &mut result.0) {
+    match args::args_parser(cotp_args, &mut result.0) {
         // no args, show dashboard
         None => match dashboard(result) {
             Ok(()) => std::process::exit(0),

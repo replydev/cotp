@@ -20,8 +20,6 @@ enum CotpSubcommands {
     Add(AddArgs),
     /// Edit an existing OTP Code
     Edit(EditArgs),
-    /// Remove an OTP Code
-    Remove(RemoveArgs),
     /// Import codes from other apps
     Import(ImportArgs),
     /// Export cotp database
@@ -37,12 +35,12 @@ pub struct AddArgs {
     pub otp_uri: bool,
 
     /// Specify the OTP code type
-    #[arg(short = 't', long = "type", default_value_t = OTPType::Totp)]
+    #[arg(short = 't', long = "type", default_value = "totp")]
     pub otp_type: OTPType,
 
     /// Code issuer
     #[arg(short, long, required_unless_present = "otp_uri")]
-    pub issuer: String,
+    pub issuer: Option<String>,
 
     /// Code label
     #[arg(short, long, default_value = "")]
@@ -50,7 +48,7 @@ pub struct AddArgs {
 
     /// OTP Algorithm
     #[arg(short, long, value_enum, default_value_t = OTPAlgorithm::Sha1)]
-    pub mode: OTPAlgorithm,
+    pub algorithm: OTPAlgorithm,
 
     /// Code digits
     #[arg(
@@ -59,22 +57,22 @@ pub struct AddArgs {
         default_value_t = 6,
         default_value_if("type", "STEAM", "5")
     )]
-    pub digits: u8,
+    pub digits: u64,
 
     /// Code period
-    #[arg(short, long, default_value_t = 30)]
+    #[arg(short = 'e', long, default_value_t = 30)]
     pub period: u64,
 
     /// HOTP counter
-    #[arg(short, long, required_if_eq("type", "HOTP"))]
+    #[arg(short, long, required_if_eq("otp_type", "HOTP"))]
     pub counter: Option<u64>,
 
     /// Yandex / MOTP pin
     #[arg(
         short,
         long,
-        required_if_eq("type", "YANDEX"),
-        required_if_eq("type", "MOTP")
+        required_if_eq("otp_type", "YANDEX"),
+        required_if_eq("otp_type", "MOTP")
     )]
     pub pin: Option<String>,
 }
@@ -82,108 +80,101 @@ pub struct AddArgs {
 #[derive(Args)]
 pub struct EditArgs {
     /// Code Index
-    #[arg(short, long, required = true)]
-    index: u64,
+    #[arg(short, long)]
+    pub index: usize,
 
     /// Code issuer
     #[arg(short = 's', long)]
-    issuer: Option<String>,
+    pub issuer: Option<String>,
 
     /// Code label
     #[arg(short, long)]
-    label: Option<String>,
+    pub label: Option<String>,
 
     /// OTP algorithm
     #[arg(short, long, value_enum)]
-    mode: Option<OTPAlgorithm>,
+    pub mode: Option<OTPAlgorithm>,
 
     /// Code digits
     #[arg(short, long)]
-    digits: Option<u8>,
+    pub digits: Option<u64>,
 
     /// Code period
-    #[arg(short, long)]
-    period: Option<u64>,
+    #[arg(short = 'e', long)]
+    pub period: Option<u64>,
 
     /// HOTP counter
     #[arg(short, long)]
-    counter: Option<u64>,
+    pub counter: Option<u64>,
 
     /// Yandex / MOTP pin
     #[arg(short, long)]
-    pin: Option<String>,
+    pub pin: Option<String>,
 
     /// Change code secret
     #[arg(short = 'k', long = "change-secret")]
-    change_secret: bool,
-}
-
-#[derive(Args)]
-pub struct RemoveArgs {
-    /// Code Index
-    #[arg(short, long, required = true)]
-    index: u64,
+    pub change_secret: bool,
 }
 
 #[derive(Args)]
 pub struct ImportArgs {
     #[command(flatten)]
-    backup_type: BackupType,
+    pub backup_type: BackupType,
 
     /// Backup file path
-    #[arg(short, long, required = true)]
-    path: PathBuf,
+    #[arg(short, long)]
+    pub path: PathBuf,
 }
 
 #[derive(Args)]
 pub struct ExportArgs {
     /// Export file path
     #[arg(short, long, default_value = ".")]
-    path: PathBuf,
+    pub path: PathBuf,
 }
 
 #[derive(Args)]
 #[group(required = true, multiple = false)]
-struct BackupType {
+pub struct BackupType {
     /// Import from cotp backup
     #[arg(short, long)]
-    cotp: bool,
+    pub cotp: bool,
 
     /// Import from andOTP backup
     #[arg(short = 'e', long)]
-    andotp: bool,
+    pub andotp: bool,
 
     /// Import from Aegis backup
     #[arg(short, long)]
-    aegis: bool,
+    pub aegis: bool,
 
     /// Import from Aegis Encrypted backup
     #[arg(short = 'k', long = "aegis-encrypted")]
-    aegis_encrypted: bool,
+    pub aegis_encrypted: bool,
 
     /// Import from FreeOTP+ backup
     #[arg(short, long = "freeotp-plus")]
-    freeotp_plus: bool,
+    pub freeotp_plus: bool,
 
     /// Import from FreeOTP backup
     #[arg(short = 'r', long)]
-    freeotp: bool,
+    pub freeotp: bool,
 
     /// Import from Google Authenticator backup
     #[arg(short, long = "google-authenticator")]
-    google_authenticator: bool,
+    pub google_authenticator: bool,
 
     /// Import from Authy backup
     #[arg(short = 't', long)]
-    authy: bool,
+    pub authy: bool,
 
     /// Import from Authy Database exported following this guide https://gist.github.com/gboudreau/94bb0c11a6209c82418d01a59d958c93
     #[arg(short = 'u', long = "authy-exported")]
-    authy_exported: bool,
+    pub authy_exported: bool,
 
     /// Import from Microsoft Authenticator
     #[arg(short = 'm', long = "microsoft-authenticator")]
-    microsoft_authenticator: bool,
+    pub microsoft_authenticator: bool,
 }
 
 pub fn args_parser(
@@ -192,15 +183,10 @@ pub fn args_parser(
 ) -> Option<Result<String, String>> {
     match matches.command {
         Some(CotpSubcommands::Add(args)) => Some(argument_functions::add(args, database)),
-        Some(("edit", edit_matches)) => Some(argument_functions::edit(edit_matches, database)),
-        Some(("import", import_matches)) => {
-            Some(argument_functions::import(import_matches, database))
-        }
-        Some(("export", export_matches)) => {
-            Some(argument_functions::export(export_matches, database))
-        }
-        Some(("passwd", _)) => Some(argument_functions::change_password(database)),
-        Some((_, _)) => Some(Err(String::from("Invalid args"))),
+        Some(CotpSubcommands::Edit(args)) => Some(argument_functions::edit(args, database)),
+        Some(CotpSubcommands::Import(args)) => Some(argument_functions::import(args, database)),
+        Some(CotpSubcommands::Export(args)) => Some(argument_functions::export(args, database)),
+        Some(CotpSubcommands::Passwd) => Some(argument_functions::change_password(database)),
         None => None,
     }
 }

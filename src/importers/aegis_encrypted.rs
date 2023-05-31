@@ -6,6 +6,7 @@ use hex::FromHex;
 use serde::Deserialize;
 use serde_json;
 use std::fs::read_to_string;
+use std::path::PathBuf;
 use zeroize::Zeroize;
 
 use crate::otp::otp_element::OTPElement;
@@ -46,7 +47,7 @@ struct AegisEncryptedSlot {
     //repaired: Option<bool>,
 }
 
-pub fn import(filepath: &str, password: &str) -> Result<Vec<OTPElement>, String> {
+pub fn import(filepath: PathBuf, password: &str) -> Result<Vec<OTPElement>, String> {
     let file_to_import_contents = match read_to_string(filepath) {
         Ok(result) => result,
         Err(e) => return Err(format!("Error during file reading: {e:?}")),

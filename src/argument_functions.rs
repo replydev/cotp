@@ -1,34 +1,32 @@
-use std::path::PathBuf;
-
-use crate::otp::otp_algorithm::OTPAlgorithm;
+use crate::args::{AddArgs, EditArgs, ExportArgs, ImportArgs};
 use crate::otp::otp_element::{FromOtpUri, OTPDatabase, OTPElement};
-use crate::otp::otp_type::OTPType;
 use crate::{importers, utils};
-use clap::ArgMatches;
 use zeroize::Zeroize;
 
-pub fn import(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, String> {
-    let path = matches.get_one::<String>("path").unwrap();
+pub fn import(matches: ImportArgs, database: &mut OTPDatabase) -> Result<String, String> {
+    let path = matches.path;
 
-    let result = if matches.get_flag("cotp") {
+    let backup_type = matches.backup_type;
+
+    let result = if backup_type.cotp {
         importers::cotp::import(path)
-    } else if matches.get_flag("andotp") {
+    } else if backup_type.andotp {
         importers::and_otp::import(path)
-    } else if matches.get_flag("aegis") {
+    } else if backup_type.aegis {
         importers::aegis::import(path)
-    } else if matches.get_flag("aegis-encrypted") {
+    } else if backup_type.aegis_encrypted {
         let mut password = utils::password("Insert your Aegis password: ", 0);
         let result = importers::aegis_encrypted::import(path, password.as_str());
         password.zeroize();
         result
-    } else if matches.get_flag("freeotp-plus") {
+    } else if backup_type.freeotp_plus {
         importers::freeotp_plus::import(path)
-    } else if matches.get_flag("authy-exported") {
+    } else if backup_type.authy_exported {
         importers::authy_remote_debug::import(path)
-    } else if matches.get_flag("google-authenticator")
-        || matches.get_flag("authy")
-        || matches.get_flag("microsoft-authenticator")
-        || matches.get_flag("freeotp")
+    } else if backup_type.google_authenticator
+        || backup_type.authy
+        || backup_type.microsoft_authenticator
+        || backup_type.freeotp
     {
         importers::converted::import(path)
     } else {
@@ -46,8 +44,8 @@ pub fn import(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String
     Ok(String::from("Successfully imported database"))
 }
 
-pub fn add(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, String> {
-    let otp_element = if matches.get_flag("otp_uri") {
+pub fn add(matches: AddArgs, database: &mut OTPDatabase) -> Result<String, String> {
+    let otp_element = if matches.otp_uri {
         let mut otp_uri = rpassword::prompt_password("Insert the otp uri: ").unwrap();
         let result = OTPElement::from_otp_uri(otp_uri.as_str());
         otp_uri.zeroize();
@@ -63,99 +61,74 @@ pub fn add(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, S
     Ok(String::from("Success."))
 }
 
-fn get_from_args(matches: &ArgMatches) -> Result<OTPElement, String> {
-    let secret = rpassword::prompt_password("Insert the secret: ").unwrap();
-    let type_ = OTPType::from(
-        matches
-            .get_one::<String>("type")
-            .unwrap()
-            .to_uppercase()
-            .as_str(),
-    );
-    let otp_element = OTPElement {
-        secret,
-        issuer: matches.get_one::<String>("issuer").unwrap().clone(),
-        label: matches.get_one::<String>("label").unwrap().clone(),
-        digits: *matches.get_one("digits").unwrap_or(&6),
-        type_,
-        algorithm: OTPAlgorithm::from(
-            matches
-                .get_one::<String>("algorithm")
-                .unwrap()
-                .to_uppercase()
-                .as_str(),
-        ),
-        period: *matches.get_one("period").unwrap_or(&6),
-        counter: matches.get_one("counter").copied(),
-        pin: matches.get_one::<String>("pin").map(|v| v.to_owned()),
-    };
-    Ok(otp_element)
+fn get_from_args(matches: AddArgs) -> Result<OTPElement, String> {
+    let secret = rpassword::prompt_password("Insert the secret: ")
+        .map_err(|e| format!("Error during password insertion: {:?}", e))?;
+    Ok(map_args_to_code(secret, matches))
 }
 
-pub fn edit(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, String> {
-    let mut secret = match matches.get_flag("change-secret") {
-        true => Some(rpassword::prompt_password("Insert the secret: ").unwrap()),
-        false => None,
-    };
+fn map_args_to_code(secret: String, matches: AddArgs) -> OTPElement {
+    OTPElement {
+        secret,
+        issuer: matches.issuer.unwrap(),
+        label: matches.label,
+        digits: matches.digits,
+        type_: matches.otp_type,
+        algorithm: matches.algorithm,
+        period: matches.period,
+        counter: matches.counter,
+        pin: matches.pin,
+    }
+}
 
-    let index = *matches.get_one::<usize>("index").unwrap();
+pub fn edit(matches: EditArgs, database: &mut OTPDatabase) -> Result<String, String> {
+    let secret = matches
+        .change_secret
+        .then(|| rpassword::prompt_password("Insert the secret: ").unwrap());
 
-    if let Some(real_index) = index
-        // User provides row number from dashboard which is equal to the array index plus one
-        .checked_sub(1)
-    {
+    // User provides row number from dashboard which is equal to the array index plus one
+    let index = matches.index;
+
+    if let Some(real_index) = index.checked_sub(1) {
         if real_index >= database.elements_ref().len() {
             return Err(format!("{index} is an invalid index"));
         }
 
-        let otp_element: Option<&OTPElement> = database.get_element(real_index);
-
-        let issuer = matches.get_one::<String>("issuer").cloned();
-        let label = matches.get_one::<String>("label").cloned();
-        let digits = matches.get_one::<u64>("digits").copied();
-        let period = matches.get_one::<u64>("period").copied();
-        let counter = matches.get_one::<u64>("counter").copied();
-        let pin = matches.get_one::<String>("pin").cloned();
-
-        match otp_element {
-            Some(v) => {
-                let mut element = v.clone();
-
-                if let Some(v) = issuer {
+        match database.mut_element(real_index) {
+            Some(element) => {
+                if let Some(v) = matches.issuer {
                     element.issuer = v;
                 }
-                if let Some(v) = label {
+                if let Some(v) = matches.label {
                     element.label = v;
                 }
-                if let Some(v) = digits {
+                if let Some(v) = matches.digits {
                     element.digits = v;
                 }
-                if let Some(v) = period {
+                if let Some(v) = matches.period {
                     element.period = v;
                 }
-                if counter.is_some() {
-                    element.counter = counter;
+                if matches.counter.is_some() {
+                    element.counter = matches.counter;
                 }
-                if pin.is_some() {
-                    element.pin = pin;
+                if matches.pin.is_some() {
+                    element.pin = matches.pin;
                 }
                 if secret.is_some() {
-                    element.secret = secret.clone().unwrap();
+                    element.secret = secret.unwrap();
                 }
-                database.edit_element(real_index, element);
+                database.mark_modified();
             }
             None => return Err(format!("No element found at index {index}")),
         }
-
-        secret.zeroize();
         Ok(String::from("Success."))
     } else {
         Err(format! {"{index} is an invalid index"})
     }
 }
 
-pub fn export(matches: &ArgMatches, database: &mut OTPDatabase) -> Result<String, String> {
-    match database.export(PathBuf::from(matches.get_one::<String>("path").unwrap())) {
+pub fn export(matches: ExportArgs, database: &mut OTPDatabase) -> Result<String, String> {
+    match database.export(matches.path) {
         Ok(export_result) => Ok(format!(
             "Database was successfully exported at {}",
             export_result.to_str().unwrap_or("**Invalid path**")
