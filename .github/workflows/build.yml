@@ -49,5 +49,5 @@ jobs:
 
       - uses: actions/upload-artifact@v3.1.2
         with:
-          name: bins-${{ matrix.os }}
+          name: bins-${{ matrix.build }}
           path: target/debug/cotp*
