@@ -7,7 +7,7 @@ For more information see https://gist.github.com/gboudreau/94bb0c11a6209c82418d0
 
 use serde::Deserialize;
 use serde_json;
-use std::fs::read_to_string;
+use std::{fs::read_to_string, path::PathBuf};
 
 use crate::otp::{otp_algorithm::OTPAlgorithm, otp_element::OTPElement, otp_type::OTPType};
 
@@ -64,7 +64,7 @@ impl AuthyExportedJsonElement {
     }
 }
 
-pub fn import(file_path: &str) -> Result<Vec<OTPElement>, String> {
+pub fn import(file_path: PathBuf) -> Result<Vec<OTPElement>, String> {
     let json = match read_to_string(file_path) {
         Ok(r) => r,
         Err(e) => return Err(format!("{e:?}")),

@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false # don't fail other jobs if one fails
       matrix:
-        build: [x86_64-linux, aarch64-linux, x86_64-win-gnu] #, x86_64-windows, win32-msvc
+        build: [x86_64-linux, aarch64-linux, x86_64-macos, x86_64-win-gnu] #, x86_64-windows, win32-msvc
         include:
           - build: x86_64-linux
             os: ubuntu-20.04
@@ -24,6 +24,9 @@ jobs:
           - build: aarch64-linux
             os: ubuntu-20.04
             target: aarch64-unknown-linux-gnu
+          - build: x86_64-macos
+            os: macos-latest
+            target: x86_64-apple-darwin
           - build: x86_64-win-gnu
             os: windows-2019
             target: x86_64-pc-windows-gnu
@@ -44,10 +47,6 @@ jobs:
       - name: Install Dependencies for Linux x86_64
         if: matrix.build == 'x86_64-linux'
         run: sudo apt update && sudo apt install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev
-
-      - name: Build Docker image for aarch64 compilation
-        if: matrix.build == 'aarch64-linux'
-        run: docker build -t cotp_build_aarch64:latest .
 
       - name: Build release binary (arm64)
         if: matrix.build == 'aarch64-linux'

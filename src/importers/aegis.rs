@@ -1,4 +1,4 @@
-use std::fs::read_to_string;
+use std::{fs::read_to_string, path::PathBuf};
 
 use serde::Deserialize;
 use serde_json;
@@ -44,7 +44,7 @@ struct AegisInfo {
     counter: Option<u64>,
 }
 
-pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
+pub fn import(filepath: PathBuf) -> Result<Vec<OTPElement>, String> {
     let file_to_import_contents = match read_to_string(filepath) {
         Ok(result) => result,
         Err(e) => return Err(format!("Error during file reading: {e:?}")),

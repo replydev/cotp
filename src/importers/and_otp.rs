@@ -1,9 +1,9 @@
-use std::fs::read_to_string;
+use std::{fs::read_to_string, path::PathBuf};
 
 use crate::otp::otp_element::OTPElement;
 
 //no need to declare andOTP json struct cause it's the same as OTP element
-pub fn import(filepath: &str) -> Result<Vec<OTPElement>, String> {
+pub fn import(filepath: PathBuf) -> Result<Vec<OTPElement>, String> {
     let file_to_import_contents = match read_to_string(filepath) {
         Ok(result) => result,
         Err(e) => return Err(format!("Error during file reading: {e:?}")),

@@ -1,4 +1,4 @@
-use std::fs::read_to_string;
+use std::{fs::read_to_string, path::PathBuf};
 
 use data_encoding::BASE32_NOPAD;
 use serde::Deserialize;
@@ -28,7 +28,7 @@ struct FreeOTPElement {
     _type: String,
 }
 
-pub fn import(file_path: &str) -> Result<Vec<OTPElement>, String> {
+pub fn import(file_path: PathBuf) -> Result<Vec<OTPElement>, String> {
     let json = match read_to_string(file_path) {
         Ok(r) => r,
         Err(e) => return Err(format!("{e:?}")),

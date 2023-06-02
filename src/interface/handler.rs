@@ -155,6 +155,7 @@ fn main_handler(key_event: KeyEvent, app: &mut App) {
             let info_text = String::from(
                 "
             Press:
+            d -> Delete selected code
             + -> Increment the HOTP counter
             - -> Decrement the HOTP counter
             k -> Show QRCode of the selected element

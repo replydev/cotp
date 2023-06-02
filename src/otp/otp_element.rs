@@ -25,7 +25,7 @@ use super::{
 
 pub const CURRENT_DATABASE_VERSION: u16 = 2;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Hash)]
 pub struct OTPDatabase {
     pub(crate) version: u16,
     pub(crate) elements: Vec<OTPElement>,
@@ -106,22 +106,21 @@ impl OTPDatabase {
     }
 
     pub fn add_all(&mut self, mut elements: Vec<OTPElement>) {
-        self.needs_modification = true;
+        self.mark_modified();
         self.elements.append(&mut elements)
     }
 
     pub fn add_element(&mut self, element: OTPElement) {
-        self.needs_modification = true;
+        self.mark_modified();
         self.elements.push(element)
     }
 
-    pub fn edit_element(&mut self, index: usize, element: OTPElement) {
+    pub fn mark_modified(&mut self) {
         self.needs_modification = true;
-        self.elements[index] = element;
     }
 
     pub fn delete_element(&mut self, index: usize) {
-        self.needs_modification = true;
+        self.mark_modified();
         self.elements.remove(index);
     }
 
@@ -146,7 +145,7 @@ impl OTPDatabase {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Debug)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Debug, Hash)]
 pub struct OTPElement {
     pub secret: String,
     pub issuer: String,
