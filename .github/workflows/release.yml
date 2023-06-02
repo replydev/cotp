@@ -48,10 +48,6 @@ jobs:
         if: matrix.build == 'x86_64-linux'
         run: sudo apt update && sudo apt install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev
 
-      - name: Build Docker image for aarch64 compilation
-        if: matrix.build == 'aarch64-linux'
-        run: docker build -t cotp_build_aarch64:latest .
-
       - name: Build release binary (arm64)
         if: matrix.build == 'aarch64-linux'
         run: cross build --release --locked --target ${{ matrix.target }}
