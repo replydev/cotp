@@ -34,17 +34,28 @@ jobs:
         with:
           target: ${{ matrix.target }}
 
-      - name: Install dependencies
-        run: |
-          if [ "$RUNNER_OS" == "Linux" ]; then
-                sudo apt update && sudo apt install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev
-          fi
-        shell: bash
+      - name: Install cross for arm64 compilation
+        if: matrix.build == 'aarch64-linux'
+        run: cargo install cross --git https://github.com/cross-rs/cross
 
-      - name: Run cargo test
+      - name: Install Dependencies for Linux x86_64
+        if: matrix.build == 'x86_64-linux'
+        run: sudo apt update && sudo apt install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev
+
+      - name: Run tests (arm64)
+        if: matrix.build == 'aarch64-linux'
+        run: cross test --locked --target ${{ matrix.target }}
+
+      - name: Build debug binary (arm64)
+        if: matrix.build == 'aarch64-linux'
+        run: cross build --locked --target ${{ matrix.target }}
+
+      - name: Run tests (x86_64)
+        if: matrix.build != 'aarch64-linux'
         run: cargo test
 
-      - name: Run cargo build
+      - name: Build debug binary (x86_64)
+        if: matrix.build != 'aarch64-linux'
         run: cargo build
 
       - uses: actions/upload-artifact@v3.1.2
