@@ -10,7 +10,20 @@ jobs:
     name: Build debug artifacts
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        build: [x86_64-linux, aarch64-linux, x86_64-macos, x86_64-win-gnu]
+        include:
+          - build: x86_64-linux
+            os: ubuntu-20.04
+            target: x86_64-unknown-linux-gnu
+          - build: aarch64-linux
+            os: ubuntu-20.04
+            target: aarch64-unknown-linux-gnu
+          - build: x86_64-macos
+            os: macos-latest
+            target: x86_64-apple-darwin
+          - build: x86_64-win-gnu
+            os: windows-2019
+            target: x86_64-pc-windows-gnu
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
@@ -18,6 +31,8 @@ jobs:
 
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.target }}
 
       - name: Install dependencies
         run: |
