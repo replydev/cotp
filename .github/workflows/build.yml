@@ -32,7 +32,7 @@ jobs:
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: ${{ matrix.target }}
+          target: ${{ matrix.target }}
 
       - name: Install dependencies
         run: |
