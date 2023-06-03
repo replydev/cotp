@@ -4,25 +4,20 @@ use serde::Deserialize;
 
 use crate::otp::otp_element::OTPElement;
 
-enum ImportError {}
-
-pub struct Importer {
-    path: PathBuf,
+pub fn import_from_path<T>(path: PathBuf) -> Result<Vec<OTPElement>, Box<dyn Error>>
+where
+    T: for<'a> Deserialize<'a> + Into<OTPElement>,
+{
+    let json = read_to_string(path)?;
+    import_from_string::<T>(&json)
 }
 
-impl Importer {
-    pub fn new(path: PathBuf) -> Importer {
-        Importer { path }
-    }
-
-    /// Common logic for all the importers
-    pub fn import<T>(&self) -> Result<Vec<OTPElement>, Box<dyn Error>>
-    where
-        T: for<'a> Deserialize<'a> + Into<OTPElement>,
-    {
-        let json = read_to_string(self.path)?;
-        let deserialized: Vec<T> = serde_json::from_str(json.as_str())?;
-        let mapped: Vec<OTPElement> = deserialized.into_iter().map(|e| e.into()).collect();
-        Ok(mapped)
-    }
+/// Common logic for all the importers
+pub fn import_from_string<T>(json: &str) -> Result<Vec<OTPElement>, Box<dyn Error>>
+where
+    T: for<'a> Deserialize<'a> + Into<OTPElement>,
+{
+    let deserialized: Vec<T> = serde_json::from_str(json)?;
+    let mapped: Vec<OTPElement> = deserialized.into_iter().map(|e| e.into()).collect();
+    Ok(mapped)
 }
