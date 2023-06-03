@@ -89,7 +89,7 @@ impl TryFrom<AegisEncryptedDatabase> for Vec<OTPElement> {
     }
 }
 
-fn get_master_key(aegis_encrypted: &AegisEncryptedDatabase, password: &String) -> Option<Vec<u8>> {
+fn get_master_key(aegis_encrypted: &AegisEncryptedDatabase, password: &str) -> Option<Vec<u8>> {
     let mut master_key: Option<Vec<u8>> = None;
     for slot in aegis_encrypted
         .header
@@ -97,7 +97,7 @@ fn get_master_key(aegis_encrypted: &AegisEncryptedDatabase, password: &String) -
         .iter()
         .filter(|item| item._type == 1)
     {
-        match calc_master_key(slot, password.as_str()) {
+        match calc_master_key(slot, password) {
             Ok(value) => {
                 master_key = Some(value);
                 break;

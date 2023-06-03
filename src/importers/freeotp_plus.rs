@@ -57,7 +57,6 @@ impl TryFrom<FreeOTPPlusJson> for Vec<OTPElement> {
                 token._label = freeotp
                     .token_order
                     .get(i)
-                    .clone()
                     .unwrap_or(&String::from("No Label"))
                     .to_owned();
                 token
