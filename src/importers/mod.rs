@@ -5,3 +5,4 @@ pub mod authy_remote_debug;
 pub mod converted;
 pub mod cotp;
 pub mod freeotp_plus;
+pub mod importer;
