@@ -1,15 +1,10 @@
 /*
-
 Import from JSON file exported from a script executed from remote debugging.
 For more information see https://gist.github.com/gboudreau/94bb0c11a6209c82418d01a59d958c93
-
 */
 
-use serde::Deserialize;
-use serde_json;
-use std::{fs::read_to_string, path::PathBuf};
-
 use crate::otp::{otp_algorithm::OTPAlgorithm, otp_element::OTPElement, otp_type::OTPType};
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 struct AuthyExportedJsonElement {
@@ -17,6 +12,11 @@ struct AuthyExportedJsonElement {
     secret: String,
     uri: String,
 }
+
+// Newtype pattern to bypass compiler check for impl From for Vec<AuthyExportedJsonElement>
+// https://rust-unofficial.github.io/patterns/patterns/behavioural/newtype.html
+#[derive(Deserialize)]
+pub struct AuthyExportedList(Vec<AuthyExportedJsonElement>);
 
 impl AuthyExportedJsonElement {
     pub fn get_type(&self) -> String {
@@ -64,37 +64,31 @@ impl AuthyExportedJsonElement {
     }
 }
 
-pub fn import(file_path: PathBuf) -> Result<Vec<OTPElement>, String> {
-    let json = match read_to_string(file_path) {
-        Ok(r) => r,
-        Err(e) => return Err(format!("{e:?}")),
-    };
-    let elements: Vec<AuthyExportedJsonElement> = match serde_json::from_str(json.as_str()) {
-        Ok(r) => r,
-        Err(e) => return Err(format!("Error during deserializing: {e:?}")),
-    };
+impl From<AuthyExportedJsonElement> for OTPElement {
+    fn from(input: AuthyExportedJsonElement) -> Self {
+        let type_ = OTPType::from(input.get_type().as_str());
+        let counter: Option<u64> = if type_ == OTPType::Hotp {
+            Some(0)
+        } else {
+            None
+        };
+        let digits = input.get_digits();
+        OTPElement {
+            secret: input.secret.to_uppercase().replace('=', ""),
+            issuer: input.get_issuer(),
+            label: input.name,
+            digits,
+            type_,
+            algorithm: OTPAlgorithm::Sha1,
+            period: 30,
+            counter,
+            pin: None,
+        }
+    }
+}
 
-    Ok(elements
-        .into_iter()
-        .map(|e| {
-            let type_ = OTPType::from(e.get_type().as_str());
-            let counter: Option<u64> = if type_ == OTPType::Hotp {
-                Some(0)
-            } else {
-                None
-            };
-            let digits = e.get_digits();
-            OTPElement {
-                secret: e.secret.to_uppercase().replace('=', ""),
-                issuer: e.get_issuer(),
-                label: e.name,
-                digits,
-                type_,
-                algorithm: OTPAlgorithm::Sha1,
-                period: 30,
-                counter,
-                pin: None,
-            }
-        })
-        .collect())
+impl From<AuthyExportedList> for Vec<OTPElement> {
+    fn from(exported_list: AuthyExportedList) -> Self {
+        exported_list.0.into_iter().map(|e| e.into()).collect()
+    }
 }

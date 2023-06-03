@@ -4,18 +4,16 @@ use aes_gcm::{Aes256Gcm, KeyInit, Nonce}; // Or `Aes128Gcm`
 use data_encoding::BASE64;
 use hex::FromHex;
 use serde::Deserialize;
-use serde_json;
-use std::fs::read_to_string;
-use std::path::PathBuf;
 use zeroize::Zeroize;
 
 use crate::otp::otp_element::OTPElement;
-
-use crate::importers::aegis;
+use crate::utils;
 use scrypt::{scrypt, Params};
 
+use super::aegis::AegisDb;
+
 #[derive(Deserialize)]
-struct AegisEncryptedDatabase {
+pub struct AegisEncryptedDatabase {
     //version: u32,
     header: AegisEncryptedHeader,
     db: String,
@@ -47,26 +45,59 @@ struct AegisEncryptedSlot {
     //repaired: Option<bool>,
 }
 
-pub fn import(filepath: PathBuf, password: &str) -> Result<Vec<OTPElement>, String> {
-    let file_to_import_contents = match read_to_string(filepath) {
-        Ok(result) => result,
-        Err(e) => return Err(format!("Error during file reading: {e:?}")),
-    };
-    let aegis_encrypted: AegisEncryptedDatabase =
-        match serde_json::from_str(&file_to_import_contents) {
-            Ok(result) => result,
-            Err(e) => return Err(format!("Error during deserialization: {e:?}")),
-        };
+impl TryFrom<AegisEncryptedDatabase> for Vec<OTPElement> {
+    type Error = String;
 
+    fn try_from(aegis_encrypted: AegisEncryptedDatabase) -> Result<Self, Self::Error> {
+        let mut password = utils::password("Insert your Aegis password: ", 0);
+        let master_key: Option<Vec<u8>> = get_master_key(&aegis_encrypted, &password);
+        password.zeroize();
+
+        match master_key {
+            Some(mut master_key) => {
+                let content = match BASE64.decode(aegis_encrypted.db.as_bytes()) {
+                    Ok(result) => result,
+                    Err(e) => return Err(format!("Error during base64 decoding: {e:?}")),
+                };
+
+                let key = GenericArray::clone_from_slice(master_key.as_slice());
+                master_key.zeroize();
+                let cipher = Aes256Gcm::new(&key);
+
+                let decrypted_db = match cipher.decrypt(
+                    Nonce::from_slice(
+                        Vec::from_hex(&aegis_encrypted.header.params.nonce)
+                            .expect("Failed to parse hex nonce")
+                            .as_slice(),
+                    ),
+                    [
+                        content,
+                        Vec::from_hex(&aegis_encrypted.header.params.tag)
+                            .expect("Failed to parse hex tag"),
+                    ]
+                    .concat()
+                    .as_slice(),
+                ) {
+                    Ok(result) => result,
+                    Err(e) => return Err(format!("Failed to derive master key: {e:?}")),
+                };
+
+                map_results(decrypted_db)
+            }
+            None => Err("Failed to derive master key".to_string()),
+        }
+    }
+}
+
+fn get_master_key(aegis_encrypted: &AegisEncryptedDatabase, password: &String) -> Option<Vec<u8>> {
     let mut master_key: Option<Vec<u8>> = None;
-
     for slot in aegis_encrypted
         .header
         .slots
         .iter()
         .filter(|item| item._type == 1)
     {
-        match get_master_key(slot, password) {
+        match calc_master_key(slot, password.as_str()) {
             Ok(value) => {
                 master_key = Some(value);
                 break;
@@ -74,45 +105,18 @@ pub fn import(filepath: PathBuf, password: &str) -> Result<Vec<OTPElement>, Stri
             Err(e) => println!("{e}"),
         }
     }
+    master_key
+}
 
-    match master_key {
-        Some(mut master_key) => {
-            let content = match BASE64.decode(aegis_encrypted.db.as_bytes()) {
-                Ok(result) => result,
-                Err(e) => return Err(format!("Error during base64 decoding: {e:?}")),
-            };
+fn map_results(decrypted_db: Vec<u8>) -> Result<Vec<OTPElement>, String> {
+    let json = match String::from_utf8(decrypted_db) {
+        Ok(result) => result,
+        Err(e) => return Err(format!("Failed to decode from utf-8 bytes: {e:?}")),
+    };
 
-            let key = GenericArray::clone_from_slice(master_key.as_slice());
-            master_key.zeroize();
-            let cipher = Aes256Gcm::new(&key);
-
-            let decrypted_db = match cipher.decrypt(
-                Nonce::from_slice(
-                    Vec::from_hex(&aegis_encrypted.header.params.nonce)
-                        .expect("Failed to parse hex nonce")
-                        .as_slice(),
-                ),
-                [
-                    content,
-                    Vec::from_hex(&aegis_encrypted.header.params.tag)
-                        .expect("Failed to parse hex tag"),
-                ]
-                .concat()
-                .as_slice(),
-            ) {
-                Ok(result) => result,
-                Err(e) => return Err(format!("Failed to derive master key: {e:?}")),
-            };
-
-            let json = match String::from_utf8(decrypted_db) {
-                Ok(result) => result,
-                Err(e) => return Err(format!("Failed to decode from utf-8 bytes: {e:?}")),
-            };
-
-            aegis::import_from_string(json.as_str())
-        }
-        None => Err("Failed to derive master key".to_string()),
-    }
+    serde_json::from_str::<AegisDb>(json.as_str())
+        .map_err(|e| e.to_string())
+        .and_then(|e| e.try_into())
 }
 
 fn get_params(slot: &AegisEncryptedSlot) -> Result<Params, String> {
@@ -131,7 +135,7 @@ fn get_params(slot: &AegisEncryptedSlot) -> Result<Params, String> {
     }
 }
 
-fn get_master_key(slot: &AegisEncryptedSlot, password: &str) -> Result<Vec<u8>, String> {
+fn calc_master_key(slot: &AegisEncryptedSlot, password: &str) -> Result<Vec<u8>, String> {
     let salt = Vec::from_hex(slot.salt.as_ref().unwrap()).expect("Failed to parse hex salt");
     let mut output: [u8; 32] = [0; 32];
     let params = get_params(slot)?;

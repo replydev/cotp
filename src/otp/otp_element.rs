@@ -33,6 +33,12 @@ pub struct OTPDatabase {
     pub(crate) needs_modification: bool,
 }
 
+impl From<OTPDatabase> for Vec<OTPElement> {
+    fn from(value: OTPDatabase) -> Self {
+        value.elements
+    }
+}
+
 impl Default for OTPDatabase {
     fn default() -> Self {
         Self {
