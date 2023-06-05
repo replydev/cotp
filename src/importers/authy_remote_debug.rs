@@ -67,11 +67,7 @@ impl AuthyExportedJsonElement {
 impl From<AuthyExportedJsonElement> for OTPElement {
     fn from(input: AuthyExportedJsonElement) -> Self {
         let type_ = OTPType::from(input.get_type().as_str());
-        let counter: Option<u64> = if type_ == OTPType::Hotp {
-            Some(0)
-        } else {
-            None
-        };
+        let counter: Option<u64> = (type_ == OTPType::Hotp).then_some(0);
         let digits = input.get_digits();
         OTPElement {
             secret: input.secret.to_uppercase().replace('=', ""),

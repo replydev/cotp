@@ -16,11 +16,8 @@ struct ConvertedJson {
 
 impl From<ConvertedJson> for OTPElement {
     fn from(converted_json: ConvertedJson) -> Self {
-        let counter: Option<u64> = if converted_json.type_.to_uppercase().as_str() == "HOTP" {
-            Some(converted_json.counter)
-        } else {
-            None
-        };
+        let counter: Option<u64> = (OTPType::from(converted_json.type_.as_str()) == OTPType::Hotp)
+            .then_some(converted_json.counter);
         OTPElement {
             secret: converted_json.secret,
             issuer: converted_json.issuer.unwrap_or_default(),
