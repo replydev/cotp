@@ -39,6 +39,17 @@ impl From<OTPDatabase> for Vec<OTPElement> {
     }
 }
 
+impl Into<OTPDatabase> for Vec<OTPElement> {
+    /// Build the first version of OTPDatabase, which was only a vector of OTPElements
+    fn into(self) -> OTPDatabase {
+        OTPDatabase {
+            version: 1,
+            elements: self,
+            needs_modification: true,
+        }
+    }
+}
+
 impl Default for OTPDatabase {
     fn default() -> Self {
         Self {
