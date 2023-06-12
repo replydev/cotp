@@ -35,12 +35,7 @@ pub fn import(matches: ImportArgs, database: &mut OTPDatabase) -> Result<String,
         return Err(String::from("Invalid arguments provided"));
     };
 
-    let elements = match result {
-        Ok(result) => result,
-        Err(e) => {
-            return Err(format!("An error occurred: {e}"));
-        }
-    };
+    let elements = result.map_err(|e| format!("An error occurred: {e}"))?;
 
     database.add_all(elements);
     Ok(String::from("Successfully imported database"))

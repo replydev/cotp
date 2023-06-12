@@ -55,32 +55,30 @@ impl TryFrom<AegisEncryptedDatabase> for Vec<OTPElement> {
 
         match master_key {
             Some(mut master_key) => {
-                let content = match BASE64.decode(aegis_encrypted.db.as_bytes()) {
-                    Ok(result) => result,
-                    Err(e) => return Err(format!("Error during base64 decoding: {e:?}")),
-                };
+                let content = BASE64
+                    .decode(aegis_encrypted.db.as_bytes())
+                    .map_err(|e| format!("Error during base64 decoding: {e:?}"))?;
 
                 let key = GenericArray::clone_from_slice(master_key.as_slice());
                 master_key.zeroize();
                 let cipher = Aes256Gcm::new(&key);
 
-                let decrypted_db = match cipher.decrypt(
-                    Nonce::from_slice(
-                        Vec::from_hex(&aegis_encrypted.header.params.nonce)
-                            .expect("Failed to parse hex nonce")
-                            .as_slice(),
-                    ),
-                    [
-                        content,
-                        Vec::from_hex(&aegis_encrypted.header.params.tag)
-                            .expect("Failed to parse hex tag"),
-                    ]
-                    .concat()
-                    .as_slice(),
-                ) {
-                    Ok(result) => result,
-                    Err(e) => return Err(format!("Failed to derive master key: {e:?}")),
-                };
+                let decrypted_db = cipher
+                    .decrypt(
+                        Nonce::from_slice(
+                            Vec::from_hex(&aegis_encrypted.header.params.nonce)
+                                .expect("Failed to parse hex nonce")
+                                .as_slice(),
+                        ),
+                        [
+                            content,
+                            Vec::from_hex(&aegis_encrypted.header.params.tag)
+                                .expect("Failed to parse hex tag"),
+                        ]
+                        .concat()
+                        .as_slice(),
+                    )
+                    .map_err(|e| format!("Failed to derive master key: {e:?}"))?;
 
                 map_results(decrypted_db)
             }
@@ -109,10 +107,8 @@ fn get_master_key(aegis_encrypted: &AegisEncryptedDatabase, password: &str) -> O
 }
 
 fn map_results(decrypted_db: Vec<u8>) -> Result<Vec<OTPElement>, String> {
-    let json = match String::from_utf8(decrypted_db) {
-        Ok(result) => result,
-        Err(e) => return Err(format!("Failed to decode from utf-8 bytes: {e:?}")),
-    };
+    let json = String::from_utf8(decrypted_db)
+        .map_err(|e| format!("Failed to decode from utf-8 bytes: {e:?}"))?;
 
     serde_json::from_str::<AegisDb>(json.as_str())
         .map_err(|e| e.to_string())
@@ -124,15 +120,13 @@ fn get_params(slot: &AegisEncryptedSlot) -> Result<Params, String> {
     let p = slot.p.unwrap();
     let r = slot.r.unwrap();
 
-    match Params::new(
+    Params::new(
         (n as f32).log2() as u8,
         r,
         p,
         scrypt::Params::RECOMMENDED_LEN,
-    ) {
-        Ok(result) => Ok(result),
-        Err(e) => Err(format!("Error during scrypt params creation: {e:?}")),
-    }
+    )
+    .map_err(|e| format!("Error during scrypt params creation: {e:?}"))
 }
 
 fn calc_master_key(slot: &AegisEncryptedSlot, password: &str) -> Result<Vec<u8>, String> {
@@ -158,15 +152,14 @@ fn calc_master_key(slot: &AegisEncryptedSlot, password: &str) -> Result<Vec<u8>,
     ]
     .concat();
 
-    match cipher.decrypt(
-        Nonce::from_slice(
-            Vec::from_hex(&slot.key_params.nonce)
-                .expect("Failed to parse hex nonce")
-                .as_slice(),
-        ),
-        cipher_text.as_slice(),
-    ) {
-        Ok(result) => Ok(result),
-        Err(e) => Err(format!("Failed to derive master key: {e:?}")),
-    }
+    cipher
+        .decrypt(
+            Nonce::from_slice(
+                Vec::from_hex(&slot.key_params.nonce)
+                    .expect("Failed to parse hex nonce")
+                    .as_slice(),
+            ),
+            cipher_text.as_slice(),
+        )
+        .map_err(|e| format!("Failed to derive master key: {e:?}"))
 }

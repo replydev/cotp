@@ -6,6 +6,10 @@ For more information see https://gist.github.com/gboudreau/94bb0c11a6209c82418d0
 use crate::otp::{otp_algorithm::OTPAlgorithm, otp_element::OTPElement, otp_type::OTPType};
 use serde::Deserialize;
 
+const URL_INDEX: usize = 3;
+const PARAMETERS_INDEX: usize = 1;
+const DIGITS_DEFAULT_VALUE: u64 = 6;
+
 #[derive(Deserialize)]
 struct AuthyExportedJsonElement {
     name: String,
@@ -26,25 +30,27 @@ impl AuthyExportedJsonElement {
     }
 
     pub fn get_digits(&self) -> u64 {
-        let default_value = 6;
         let args: Vec<&str> = self.uri.split('/').collect();
-        match args.get(3) {
-            Some(s) => {
-                let args: Vec<&str> = s.split('?').collect();
-                match args.get(1) {
-                    Some(s) => {
-                        let args: Vec<&str> =
-                            s.split('&').filter(|s| s.starts_with("digits=")).collect();
-                        match args.first() {
-                            Some(s) => s.parse::<u64>().unwrap_or(default_value),
-                            None => default_value,
-                        }
-                    }
-                    None => default_value,
+        args.get(URL_INDEX)
+            .and_then(|s| {
+                let mut args: Vec<&str> = s.split('?').collect();
+                if args.get(PARAMETERS_INDEX).is_some() {
+                    Some(args.swap_remove(PARAMETERS_INDEX))
+                } else {
+                    None
                 }
-            }
-            None => default_value,
-        }
+            })
+            .and_then(|s| {
+                let mut args: Vec<&str> =
+                    s.split('&').filter(|s| s.starts_with("digits=")).collect();
+                if args.first().is_some() {
+                    Some(args.swap_remove(0))
+                } else {
+                    None
+                }
+            })
+            .and_then(|s| s.parse::<u64>().ok())
+            .unwrap_or(DIGITS_DEFAULT_VALUE)
     }
 
     pub fn get_issuer(&self) -> String {

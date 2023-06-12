@@ -67,14 +67,8 @@ pub fn decrypt_string(
     password: &str,
 ) -> Result<(String, Vec<u8>, Vec<u8>), String> {
     //encrypted text is an encrypted database json serialized object
-    let encrypted_database: EncryptedDatabase = match serde_json::from_str(encrypted_text) {
-        Ok(result) => result,
-        Err(e) => {
-            return Err(format!(
-                "Error during encrypted database deserialization: {e}"
-            ))
-        }
-    };
+    let encrypted_database: EncryptedDatabase = serde_json::from_str(encrypted_text)
+        .map_err(|e| format!("Error during encrypted database deserialization: {e}"))?;
     let nonce = BASE64
         .decode(encrypted_database.nonce().as_bytes())
         .expect("Cannot decode Base64 nonce");
@@ -83,19 +77,15 @@ pub fn decrypt_string(
         .expect("Cannot decode Base64 cipher");
     let salt = BASE64.decode(encrypted_database.salt().as_bytes()).unwrap();
 
-    let key: Vec<u8> = match argon_derive_key(password.as_bytes(), salt.as_slice()) {
-        Ok(result) => result,
-        Err(e) => return Err(e),
-    };
+    let key: Vec<u8> = argon_derive_key(password.as_bytes(), salt.as_slice())?;
 
     let wrapped_key = Key::from_slice(&key);
 
     let aead = XChaCha20Poly1305::new(wrapped_key);
     let nonce = XNonce::from_slice(nonce.as_slice());
-    let decrypted = match aead.decrypt(nonce, cipher_text.as_slice()) {
-        Ok(result) => result,
-        Err(_e) => return Err(String::from("Wrong password")),
-    };
+    let decrypted = aead
+        .decrypt(nonce, cipher_text.as_slice())
+        .map_err(|_| String::from("Wrong password"))?;
     match String::from_utf8(decrypted) {
         Ok(result) => Ok((result, key, salt)),
         Err(e) => Err(format!("Error during UTF-8 string conversion: {e}")),
