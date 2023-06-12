@@ -77,10 +77,10 @@ pub fn decrypt_string(
     };
     let nonce = BASE64
         .decode(encrypted_database.nonce().as_bytes())
-        .unwrap();
+        .expect("Cannot decode Base64 nonce");
     let cipher_text = BASE64
         .decode(encrypted_database.cipher().as_bytes())
-        .unwrap();
+        .expect("Cannot decode Base64 cipher");
     let salt = BASE64.decode(encrypted_database.salt().as_bytes()).unwrap();
 
     let key: Vec<u8> = match argon_derive_key(password.as_bytes(), salt.as_slice()) {

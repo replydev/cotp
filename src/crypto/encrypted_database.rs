@@ -18,12 +18,6 @@ impl EncryptedDatabase {
         }
     }
 
-    /*
-    pub fn version(&self) -> u16 {
-        self.version
-    }
-    */
-
     pub fn nonce(&self) -> &str {
         &self.nonce
     }

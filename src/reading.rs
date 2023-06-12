@@ -18,13 +18,8 @@ pub fn get_elements() -> Result<ReadResult, String> {
 }
 
 pub fn read_decrypted_text(password: &str) -> Result<(String, Vec<u8>, Vec<u8>), String> {
-    let encrypted_contents = match read_to_string(get_db_path()) {
-        Ok(result) => result,
-        Err(e) => {
-            // no need to zeroize since contents are encrypted
-            return Err(format!("Error during file reading: {e:?}"));
-        }
-    };
+    let encrypted_contents =
+        read_to_string(get_db_path()).map_err(|e| format!("Error during file reading: {e:?}"))?;
     if encrypted_contents.is_empty() {
         return match utils::delete_db() {
             Ok(_) => Err(String::from(
