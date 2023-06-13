@@ -39,12 +39,12 @@ impl From<OTPDatabase> for Vec<OTPElement> {
     }
 }
 
-impl Into<OTPDatabase> for Vec<OTPElement> {
+impl From<Vec<OTPElement>> for OTPDatabase {
     /// Build the first version of OTPDatabase, which was only a vector of OTPElements
-    fn into(self) -> OTPDatabase {
+    fn from(val: Vec<OTPElement>) -> Self {
         OTPDatabase {
             version: 1,
-            elements: self,
+            elements: val,
             needs_modification: true,
         }
     }
