@@ -122,14 +122,11 @@ fn dashboard(read_result: ReadResult) -> AppResult<()> {
         }
 
         // Overwrite database if modified
-        let error: Option<String> = if app.database.is_modified() {
-            match app.database.save(&key, &salt) {
-                Ok(()) => None,
-                Err(e) => Some(e),
-            }
-        } else {
-            None
-        };
+        let error: Option<String> = app
+            .database
+            .is_modified()
+            .then_some(())
+            .and_then(|_| app.database.save(&key, &salt).err());
 
         // Zeroize the key
         key.zeroize();

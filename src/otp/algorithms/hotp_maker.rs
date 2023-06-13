@@ -36,10 +36,9 @@ where
     Le<<D::Core as BlockSizeUser>::BlockSize, U256>: NonZero,
 {
     // decode the base32 secret
-    let secret_decoded = match BASE32_NOPAD.decode(secret.as_bytes()) {
-        Ok(result) => result,
-        Err(e) => return Err(OtpError::SecretEncoding(e.kind, e.position)),
-    };
+    let secret_decoded = BASE32_NOPAD
+        .decode(secret.as_bytes())
+        .map_err(|e| OtpError::SecretEncoding(e.kind, e.position))?;
 
     let hash = hotp_hash::<D>(&secret_decoded, counter);
 

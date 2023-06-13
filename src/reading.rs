@@ -18,13 +18,8 @@ pub fn get_elements() -> Result<ReadResult, String> {
 }
 
 pub fn read_decrypted_text(password: &str) -> Result<(String, Vec<u8>, Vec<u8>), String> {
-    let encrypted_contents = match read_to_string(get_db_path()) {
-        Ok(result) => result,
-        Err(e) => {
-            // no need to zeroize since contents are encrypted
-            return Err(format!("Error during file reading: {e:?}"));
-        }
-    };
+    let encrypted_contents =
+        read_to_string(get_db_path()).map_err(|e| format!("Error during file reading: {e:?}"))?;
     if encrypted_contents.is_empty() {
         return match utils::delete_db() {
             Ok(_) => Err(String::from(
@@ -42,23 +37,9 @@ pub fn read_decrypted_text(password: &str) -> Result<(String, Vec<u8>, Vec<u8>),
 pub fn read_from_file(password: &str) -> Result<ReadResult, String> {
     match read_decrypted_text(password) {
         Ok((mut contents, key, salt)) => {
-            let mut database: OTPDatabase = match serde_json::from_str(&contents) {
-                Ok(results) => results,
-                Err(_) => {
-                    let elements: Vec<OTPElement> = match serde_json::from_str(&contents) {
-                        Ok(r) => r,
-                        Err(e) => {
-                            contents.zeroize();
-                            return Err(format!("Failed to deserialize database: {e:?}"));
-                        }
-                    };
-                    OTPDatabase {
-                        version: 1,
-                        elements,
-                        needs_modification: true,
-                    }
-                }
-            };
+            let mut database: OTPDatabase = serde_json::from_str(&contents)
+                .or_else(|_| serde_json::from_str::<Vec<OTPElement>>(&contents).map(|r| r.into()))
+                .map_err(|e| format!("Failed to deserialize database: {e:?}"))?;
             contents.zeroize();
             database.sort();
             Ok((database, key, salt))

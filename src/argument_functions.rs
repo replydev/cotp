@@ -1,4 +1,9 @@
 use crate::args::{AddArgs, EditArgs, ExportArgs, ImportArgs};
+use crate::importers::aegis::AegisJson;
+use crate::importers::aegis_encrypted::AegisEncryptedDatabase;
+use crate::importers::authy_remote_debug::AuthyExportedList;
+use crate::importers::converted::ConvertedJsonList;
+use crate::importers::freeotp_plus::FreeOTPPlusJson;
 use crate::otp::otp_element::{FromOtpUri, OTPDatabase, OTPElement};
 use crate::{importers, utils};
 use zeroize::Zeroize;
@@ -9,36 +14,28 @@ pub fn import(matches: ImportArgs, database: &mut OTPDatabase) -> Result<String,
     let backup_type = matches.backup_type;
 
     let result = if backup_type.cotp {
-        importers::cotp::import(path)
+        importers::importer::import_from_path::<OTPDatabase>(path)
     } else if backup_type.andotp {
-        importers::and_otp::import(path)
+        importers::importer::import_from_path::<Vec<OTPElement>>(path)
     } else if backup_type.aegis {
-        importers::aegis::import(path)
+        importers::importer::import_from_path::<AegisJson>(path)
     } else if backup_type.aegis_encrypted {
-        let mut password = utils::password("Insert your Aegis password: ", 0);
-        let result = importers::aegis_encrypted::import(path, password.as_str());
-        password.zeroize();
-        result
+        importers::importer::import_from_path::<AegisEncryptedDatabase>(path)
     } else if backup_type.freeotp_plus {
-        importers::freeotp_plus::import(path)
+        importers::importer::import_from_path::<FreeOTPPlusJson>(path)
     } else if backup_type.authy_exported {
-        importers::authy_remote_debug::import(path)
+        importers::importer::import_from_path::<AuthyExportedList>(path)
     } else if backup_type.google_authenticator
         || backup_type.authy
         || backup_type.microsoft_authenticator
         || backup_type.freeotp
     {
-        importers::converted::import(path)
+        importers::importer::import_from_path::<ConvertedJsonList>(path)
     } else {
         return Err(String::from("Invalid arguments provided"));
     };
 
-    let elements = match result {
-        Ok(result) => result,
-        Err(e) => {
-            return Err(format!("An error occurred: {e}"));
-        }
-    };
+    let elements = result.map_err(|e| format!("An error occurred: {e}"))?;
 
     database.add_all(elements);
     Ok(String::from("Successfully imported database"))

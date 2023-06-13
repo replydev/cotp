@@ -1,13 +1,10 @@
-use std::{fs::read_to_string, path::PathBuf};
-
 use data_encoding::BASE32_NOPAD;
 use serde::Deserialize;
-use serde_json;
 
 use crate::otp::{otp_algorithm::OTPAlgorithm, otp_element::OTPElement, otp_type::OTPType};
 
 #[derive(Deserialize)]
-struct FreeOTPPlusJson {
+pub struct FreeOTPPlusJson {
     #[serde(rename = "tokenOrder")]
     token_order: Vec<String>,
     tokens: Vec<FreeOTPElement>,
@@ -28,44 +25,45 @@ struct FreeOTPElement {
     _type: String,
 }
 
-pub fn import(file_path: PathBuf) -> Result<Vec<OTPElement>, String> {
-    let json = match read_to_string(file_path) {
-        Ok(r) => r,
-        Err(e) => return Err(format!("{e:?}")),
-    };
+impl From<FreeOTPElement> for OTPElement {
+    fn from(token: FreeOTPElement) -> Self {
+        let counter: Option<u64> = if token.algo.to_uppercase().as_str() == "HOTP" {
+            Some(token.counter)
+        } else {
+            None
+        };
+        OTPElement {
+            counter,
+            secret: encode_secret(&token.secret),
+            issuer: token.issuer_ext,
+            label: token._label,
+            digits: token.digits,
+            type_: OTPType::from(token._type.as_str()),
+            algorithm: OTPAlgorithm::from(token.algo.as_str()),
+            period: token.period,
+            pin: None,
+        }
+    }
+}
 
-    let freeotp: FreeOTPPlusJson = match serde_json::from_str(json.as_str()) {
-        Ok(r) => r,
-        Err(e) => return Err(format!("Error during deserializing: {e:?}")),
-    };
-
-    Ok(freeotp
-        .tokens
-        .into_iter()
-        .enumerate()
-        .map(|(i, token)| {
-            let counter: Option<u64> = if token.algo.to_uppercase().as_str() == "HOTP" {
-                Some(token.counter)
-            } else {
-                None
-            };
-            OTPElement {
-                counter,
-                secret: encode_secret(&token.secret),
-                issuer: token.issuer_ext,
-                label: freeotp
+impl TryFrom<FreeOTPPlusJson> for Vec<OTPElement> {
+    type Error = String;
+    fn try_from(freeotp: FreeOTPPlusJson) -> Result<Self, Self::Error> {
+        Ok(freeotp
+            .tokens
+            .into_iter()
+            .enumerate()
+            .map(|(i, mut token)| {
+                token._label = freeotp
                     .token_order
                     .get(i)
-                    .unwrap_or(&String::from("No label"))
-                    .to_owned(),
-                digits: token.digits,
-                type_: OTPType::from(token._type.as_str()),
-                algorithm: OTPAlgorithm::from(token.algo.as_str()),
-                period: token.period,
-                pin: None,
-            }
-        })
-        .collect())
+                    .unwrap_or(&String::from("No Label"))
+                    .to_owned();
+                token
+            })
+            .map(|e| e.into())
+            .collect())
+    }
 }
 
 fn encode_secret(secret: &[i8]) -> String {
