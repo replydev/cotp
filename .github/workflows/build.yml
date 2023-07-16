@@ -20,7 +20,6 @@ jobs:
       # Cache dependencies
       - uses: Swatinem/rust-cache@v2
         with:
-          prefix-key: v1-cotp-cache
           key: lint-ci
 
       - name: Install dependencies
@@ -60,11 +59,10 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           target: ${{ matrix.target }}
-      
+
       # Cache dependencies
       - uses: Swatinem/rust-cache@v2
         with:
-          prefix-key: v1-cotp-cache
           key: ${{ matrix.target }}
 
       - name: Install cross for arm64 compilation
