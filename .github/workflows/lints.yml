@@ -17,6 +17,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+      # Cache dependencies
+      - uses: Swatinem/rust-cache@v2
 
       - name: Install dependencies
         run: |
