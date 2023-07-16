@@ -40,6 +40,11 @@ jobs:
         with:
           target: ${{ matrix.target }}
 
+      # Cache dependencies
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
       - name: Install cross for arm64 compilation
         if: matrix.build == 'aarch64-linux'
         run: cargo install cross --git https://github.com/cross-rs/cross
