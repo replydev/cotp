@@ -33,6 +33,9 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           target: ${{ matrix.target }}
+      
+      # Cache dependencies
+      - uses: Swatinem/rust-cache@v2
 
       - name: Install cross for arm64 compilation
         if: matrix.build == 'aarch64-linux'
