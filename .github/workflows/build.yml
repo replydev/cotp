@@ -6,6 +6,32 @@ on:
       - master
 
 jobs:
+  lints:
+    name: Lints
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      # Cache dependencies
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: lint-ci
+
+      - name: Install dependencies
+        run: |
+          sudo apt update && sudo apt install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev
+        shell: bash
+
+      - name: Run cargo fmt
+        run: cargo fmt --all -- --check
+
+      - name: Run cargo clippy
+        run: cargo clippy -- -D warnings
   test:
     name: Build debug artifacts
     strategy:
@@ -33,6 +59,11 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           target: ${{ matrix.target }}
+
+      # Cache dependencies
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
 
       - name: Install cross for arm64 compilation
         if: matrix.build == 'aarch64-linux'
