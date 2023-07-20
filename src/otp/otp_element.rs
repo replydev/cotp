@@ -6,7 +6,6 @@ use crate::{
     utils,
 };
 use data_encoding::BASE32_NOPAD;
-use lazy_static::lazy_static;
 use qrcode::render::unicode;
 use qrcode::QrCode;
 use regex::Regex;
@@ -176,27 +175,23 @@ pub struct OTPElement {
     pub pin: Option<String>,
 }
 
+macro_rules! lazy_regex {
+    ($re:literal $(,)?) => {{
+        static RE: once_cell::sync::OnceCell<regex::Regex> = once_cell::sync::OnceCell::new();
+        RE.get_or_init(|| regex::Regex::new($re).unwrap())
+    }};
+}
+
 pub trait FromOtpUri: Sized {
     fn from_otp_uri(otp_uri: &str) -> Result<Self, String>;
 }
 
 impl FromOtpUri for OTPElement {
     fn from_otp_uri(otp_uri: &str) -> Result<Self, String> {
-        lazy_static! {
-            static ref TYPE_REGEX: Regex = Regex::new(r#"otpauth:[/][/]([a-zA-Z])[/]"#).unwrap();
-            static ref NAME_REGEX: Regex = Regex::new(r#"[a-zA-Z][/](?:(.*):)(.+)\?"#).unwrap();
-            static ref SECRET_REGEX: Regex = Regex::new(r#"[?&]secret=(.*?)(?:&|$)"#).unwrap();
-            static ref ALGORITHM_REGEX: Regex =
-                Regex::new(r#"[?&]algorithm=(.*?)(?:&|$)"#).unwrap();
-            static ref DIGITS_REGEX: Regex = Regex::new(r#"[?&]digits=(\d*?)(?:&|$)"#).unwrap();
-            static ref PERIOD_REGEX: Regex = Regex::new(r#"[?&]period=(\d*?)(?:&|$)"#).unwrap();
-            static ref COUNTER_REGEX: Regex = Regex::new(r#"[?&]counter=(\d*?)(?:&|$)"#).unwrap();
-        }
-
-        let otp_type = get_match(&TYPE_REGEX, otp_uri)
+        let otp_type = get_match(lazy_regex!(r#"otpauth:[/][/]([a-zA-Z])[/]"#), otp_uri)
             .map(|r| r.to_uppercase())
             .unwrap_or_else(|_| "TOTP".to_string());
-        let (issuer, label) = NAME_REGEX
+        let (issuer, label) = lazy_regex!(r#"[a-zA-Z][/](?:(.*):)(.+)\?"#)
             .captures(otp_uri)
             .map(|c| {
                 (
@@ -210,17 +205,17 @@ impl FromOtpUri for OTPElement {
             return Err(String::from("Issuer not found in OTP Uri"));
         }
 
-        let secret = get_match(&SECRET_REGEX, otp_uri)?.to_uppercase();
-        let algorithm = get_match(&ALGORITHM_REGEX, otp_uri)
+        let secret = get_match(lazy_regex!(r#"[?&]secret=(.*?)(?:&|$)"#), otp_uri)?.to_uppercase();
+        let algorithm = get_match(lazy_regex!(r#"[?&]algorithm=(.*?)(?:&|$)"#), otp_uri)
             .map(|r| r.to_uppercase())
             .unwrap_or_else(|_| "SHA1".to_string());
-        let digits = get_match(&DIGITS_REGEX, otp_uri)
+        let digits = get_match(lazy_regex!(r#"[?&]digits=(\d*?)(?:&|$)"#), otp_uri)
             .map(|r| r.parse::<u64>().unwrap())
             .unwrap_or(6);
-        let period = get_match(&PERIOD_REGEX, otp_uri)
+        let period = get_match(lazy_regex!(r#"[?&]period=(\d*?)(?:&|$)"#), otp_uri)
             .map(|r| r.parse::<u64>().unwrap())
             .unwrap_or(30);
-        let counter = get_match(&COUNTER_REGEX, otp_uri)
+        let counter = get_match(lazy_regex!(r#"[?&]counter=(\d*?)(?:&|$)"#), otp_uri)
             .map(|r| Some(r.parse::<u64>().unwrap()))
             .unwrap_or(None);
 
