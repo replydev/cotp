@@ -6,10 +6,8 @@ use crate::{
     utils,
 };
 use data_encoding::BASE32_NOPAD;
-use lazy_static::lazy_static;
 use qrcode::render::unicode;
 use qrcode::QrCode;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use zeroize::Zeroize;
 
@@ -176,76 +174,6 @@ pub struct OTPElement {
     pub pin: Option<String>,
 }
 
-pub trait FromOtpUri: Sized {
-    fn from_otp_uri(otp_uri: &str) -> Result<Self, String>;
-}
-
-impl FromOtpUri for OTPElement {
-    fn from_otp_uri(otp_uri: &str) -> Result<Self, String> {
-        lazy_static! {
-            static ref TYPE_REGEX: Regex = Regex::new(r#"otpauth:[/][/]([a-zA-Z])[/]"#).unwrap();
-            static ref NAME_REGEX: Regex = Regex::new(r#"[a-zA-Z][/](?:(.*):)(.+)\?"#).unwrap();
-            static ref SECRET_REGEX: Regex = Regex::new(r#"[?&]secret=(.*?)(?:&|$)"#).unwrap();
-            static ref ALGORITHM_REGEX: Regex =
-                Regex::new(r#"[?&]algorithm=(.*?)(?:&|$)"#).unwrap();
-            static ref DIGITS_REGEX: Regex = Regex::new(r#"[?&]digits=(\d*?)(?:&|$)"#).unwrap();
-            static ref PERIOD_REGEX: Regex = Regex::new(r#"[?&]period=(\d*?)(?:&|$)"#).unwrap();
-            static ref COUNTER_REGEX: Regex = Regex::new(r#"[?&]counter=(\d*?)(?:&|$)"#).unwrap();
-        }
-
-        let otp_type = get_match(&TYPE_REGEX, otp_uri)
-            .map(|r| r.to_uppercase())
-            .unwrap_or_else(|_| "TOTP".to_string());
-        let (issuer, label) = NAME_REGEX
-            .captures(otp_uri)
-            .map(|c| {
-                (
-                    c.get(1).map(|v| v.as_str().to_string()),
-                    c.get(2).map(|v| v.as_str().to_string()),
-                )
-            })
-            .unwrap_or((None, None));
-
-        if issuer.is_none() {
-            return Err(String::from("Issuer not found in OTP Uri"));
-        }
-
-        let secret = get_match(&SECRET_REGEX, otp_uri)?.to_uppercase();
-        let algorithm = get_match(&ALGORITHM_REGEX, otp_uri)
-            .map(|r| r.to_uppercase())
-            .unwrap_or_else(|_| "SHA1".to_string());
-        let digits = get_match(&DIGITS_REGEX, otp_uri)
-            .map(|r| r.parse::<u64>().unwrap())
-            .unwrap_or(6);
-        let period = get_match(&PERIOD_REGEX, otp_uri)
-            .map(|r| r.parse::<u64>().unwrap())
-            .unwrap_or(30);
-        let counter = get_match(&COUNTER_REGEX, otp_uri)
-            .map(|r| Some(r.parse::<u64>().unwrap()))
-            .unwrap_or(None);
-
-        Ok(OTPElement {
-            secret,
-            issuer: issuer.unwrap(), // Safe to wrap due to upper check
-            label: label.unwrap_or_default(),
-            digits,
-            type_: OTPType::from(otp_type.as_str()),
-            algorithm: OTPAlgorithm::from(algorithm.as_str()),
-            period,
-            counter,
-            pin: None,
-        })
-    }
-}
-
-fn get_match(regex: &Regex, value: &str) -> Result<String, String> {
-    let optional_value = regex.captures(value);
-    if optional_value.is_none() {
-        return Err(String::from("No match found"));
-    }
-    let match_str = optional_value.unwrap().get(1).unwrap();
-    Ok(match_str.as_str().to_owned())
-}
 impl OTPElement {
     pub fn get_otpauth_uri(&self) -> String {
         let otp_type = self.type_.to_string().to_lowercase();
@@ -339,7 +267,7 @@ mod test {
     use crate::otp::otp_element::OTPElement;
     use crate::otp::otp_element::OTPType::Totp;
 
-    use super::FromOtpUri;
+    use crate::otp::from_otp_uri::FromOtpUri;
 
     #[test]
     fn test_serialization_otp_uri() {

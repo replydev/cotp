@@ -4,7 +4,8 @@ use crate::importers::aegis_encrypted::AegisEncryptedDatabase;
 use crate::importers::authy_remote_debug::AuthyExportedList;
 use crate::importers::converted::ConvertedJsonList;
 use crate::importers::freeotp_plus::FreeOTPPlusJson;
-use crate::otp::otp_element::{FromOtpUri, OTPDatabase, OTPElement};
+use crate::otp::from_otp_uri::FromOtpUri;
+use crate::otp::otp_element::{OTPDatabase, OTPElement};
 use crate::{importers, utils};
 use zeroize::Zeroize;
 

@@ -9,8 +9,8 @@ homepage = "https://github.com/replydev/cotp"
 documentation = "https://github.com/replydev/cotp/blob/master/README.md"
 readme = "README.md"
 license-file = "LICENSE"
-categories = ["command-line-utilities","authentication"]
-keywords = ["cotp","totp","authenticator","google-authenticator","argon2"]
+categories = ["command-line-utilities", "authentication"]
+keywords = ["cotp", "totp", "authenticator", "google-authenticator", "argon2"]
 
 # Set bin name for CI 
 [[bin]]
@@ -23,7 +23,7 @@ opt-level = "s"
 lto = true
 codegen-units = 1
 panic = "abort"
-debug  = false
+debug = false
 strip = "symbols"
 
 [dependencies]
@@ -35,7 +35,7 @@ data-encoding = "2.4.0"
 crossterm = "0.26.1"
 tui = "0.19.0"
 copypasta-ext = "0.4.4"
-zeroize = "1.6.0"     
+zeroize = "1.6.0"
 clap = { version = "4.3.16", features = ["derive"] }
 hmac = "0.12.1"
 sha-1 = "0.10.1"
@@ -49,6 +49,6 @@ hex = "0.4.3"
 qrcode = "0.12.0"
 urlencoding = "2.1.2"
 regex = "1.9.1"
-lazy_static = "1.4.0"
+once_cell = "1.18.0"
 base64 = "0.21.2"
 md-5 = "0.10.5"
