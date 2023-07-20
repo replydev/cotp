@@ -15,6 +15,7 @@ use zeroize::Zeroize;
 mod args;
 mod argument_functions;
 mod crypto;
+mod exporters;
 mod importers;
 mod interface;
 mod otp;
