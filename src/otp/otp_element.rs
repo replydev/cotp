@@ -1,4 +1,4 @@
-use std::{fs::File, io::Write, path::PathBuf, vec};
+use std::{fs::File, io::Write, vec};
 
 use crate::otp::otp_error::OtpError;
 use crate::{
@@ -9,7 +9,6 @@ use data_encoding::BASE32_NOPAD;
 use qrcode::render::unicode;
 use qrcode::QrCode;
 use serde::{Deserialize, Serialize};
-use zeroize::Zeroize;
 
 use super::{
     algorithms::{

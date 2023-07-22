@@ -1,8 +1,8 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::otp::{otp_algorithm::OTPAlgorithm, otp_element::OTPElement, otp_type::OTPType};
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct AegisJson {
     //version: u64,
     //header: AegisHeader,
@@ -15,13 +15,13 @@ struct AegisHeader {
     //params: Option<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub(crate) struct AegisDb {
     //version: u64,
     entries: Vec<AegisElement>,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct AegisElement {
     #[serde(rename = "type")]
     _type: String,
@@ -64,7 +64,7 @@ impl TryFrom<AegisJson> for Vec<OTPElement> {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct AegisInfo {
     secret: String,
     algo: String,

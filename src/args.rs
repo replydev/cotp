@@ -3,8 +3,9 @@ use std::path::PathBuf;
 use clap::{Args, Parser, Subcommand};
 
 use crate::{
-    argument_functions,
+    argument_functions, dashboard,
     otp::{otp_algorithm::OTPAlgorithm, otp_element::OTPDatabase, otp_type::OTPType},
+    reading::ReadResult,
 };
 
 #[derive(Parser)]
@@ -202,17 +203,15 @@ impl Default for ExportFormat {
     }
 }
 
-pub fn args_parser(
-    matches: CotpArgs,
-    database: &mut OTPDatabase,
-) -> Option<Result<String, String>> {
+pub fn args_parser(matches: CotpArgs, mut read_result: OTPDatabase) -> Result<OTPDatabase, String> {
     match matches.command {
-        Some(CotpSubcommands::Add(args)) => Some(argument_functions::add(args, database)),
-        Some(CotpSubcommands::Edit(args)) => Some(argument_functions::edit(args, database)),
-        Some(CotpSubcommands::Import(args)) => Some(argument_functions::import(args, database)),
-        Some(CotpSubcommands::Export(args)) => Some(argument_functions::export(args, database)),
-        Some(CotpSubcommands::Passwd) => Some(argument_functions::change_password(database)),
-        None => None,
+        Some(CotpSubcommands::Add(args)) => argument_functions::add(args, read_result),
+        Some(CotpSubcommands::Edit(args)) => argument_functions::edit(args, read_result),
+        Some(CotpSubcommands::Import(args)) => argument_functions::import(args, read_result),
+        Some(CotpSubcommands::Export(args)) => argument_functions::export(args, read_result),
+        Some(CotpSubcommands::Passwd) => argument_functions::change_password(read_result),
+        // no args, show dashboard
+        None => dashboard(read_result).map_err(|e| format!("{:?}", e)),
     }
 }
 

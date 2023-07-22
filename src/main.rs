@@ -58,46 +58,29 @@ fn main() -> AppResult<()> {
             std::process::exit(-1);
         }
     };
-    match args::args_parser(cotp_args, &mut result.0) {
-        // no args, show dashboard
-        None => match dashboard(result) {
-            Ok(()) => std::process::exit(0),
-            Err(_) => std::process::exit(-2),
-        },
-        // args parsed, can exit
-        Some(r) => match r {
+
+    let mut database = args::args_parser(cotp_args, result.0)?;
+
+    if database.is_modified() {
+        match database.save(&result.1, &result.2) {
             Ok(_) => {
-                if result.0.is_modified() {
-                    match &result.0.save(&result.1, &result.2) {
-                        Ok(_) => {
-                            println!("Success");
-                        }
-                        Err(_) => {
-                            eprintln!("An error occurred during database overwriting");
-                            std::process::exit(-2)
-                        }
-                    }
-                }
-                std::process::exit(0)
+                println!("Success");
             }
-            Err(e) => {
-                eprintln!("{e}");
-                std::process::exit(-2);
+            Err(_) => {
+                eprintln!("An error occurred during database overwriting");
+                std::process::exit(-2)
             }
-        },
+        }
     }
+    std::process::exit(0)
 }
 
-fn dashboard(read_result: ReadResult) -> AppResult<()> {
-    let database = read_result.0;
-    let mut key = read_result.1;
-    let salt = read_result.2;
-
+fn dashboard(mut database: OTPDatabase) -> AppResult<OTPDatabase> {
     if database.elements_ref().is_empty() {
         println!("No codes, type \"cotp -h\" to get help");
     } else {
         // Create an application.
-        let mut app = interface::app::App::new(database);
+        let mut app = interface::app::App::new(&mut database);
 
         // Initialize the terminal user interface.
         let backend = CrosstermBackend::new(io::stderr());
@@ -122,24 +105,9 @@ fn dashboard(read_result: ReadResult) -> AppResult<()> {
             }
         }
 
-        // Overwrite database if modified
-        let error: Option<String> = app
-            .database
-            .is_modified()
-            .then_some(())
-            .and_then(|_| app.database.save(&key, &salt).err());
-
-        // Zeroize the key
-        key.zeroize();
-
-        // Print the error
-        if error.is_some() {
-            eprintln!("{}", error.unwrap());
-        }
-
         // Exit the user interface.
         tui.exit()?;
     }
 
-    Ok(())
+    Ok(database)
 }

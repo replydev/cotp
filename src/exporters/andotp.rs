@@ -6,3 +6,9 @@ impl From<OTPDatabase> for AndOtpDatabase {
         value.elements
     }
 }
+
+impl<'a> From<&'a OTPDatabase> for &'a AndOtpDatabase {
+    fn from(value: &'a OTPDatabase) -> Self {
+        &value.elements
+    }
+}
