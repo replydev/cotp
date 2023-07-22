@@ -51,7 +51,8 @@ impl<'a> App<'a> {
     pub fn new(database: &'a mut OTPDatabase) -> Self {
         let mut title = String::from(env!("CARGO_PKG_NAME"));
         title.push_str(" v");
-        title.push_str(env!("CARGO_PKG_VERSION"));
+        // Settings cotp version from env var defined in build.rs
+        title.push_str(env!("COTP_VERSION"));
         Self {
             running: true,
             title,
