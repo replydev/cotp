@@ -8,7 +8,7 @@ use crate::{
 };
 
 #[derive(Parser)]
-#[command(author, version, about, long_about = None)]
+#[command(author, version = env!("COTP_VERSION"), about, long_about = None)]
 pub struct CotpArgs {
     #[command(subcommand)]
     command: Option<CotpSubcommands>,
