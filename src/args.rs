@@ -131,6 +131,10 @@ pub struct ExportArgs {
     /// Export file path
     #[arg(short, long, default_value = ".")]
     pub path: PathBuf,
+
+    /// Export format
+    #[command(flatten)]
+    pub format: Option<ExportFormat>,
 }
 
 #[derive(Args)]
@@ -175,6 +179,27 @@ pub struct BackupType {
     /// Import from Microsoft Authenticator
     #[arg(short = 'm', long = "microsoft-authenticator")]
     pub microsoft_authenticator: bool,
+}
+
+#[derive(Args)]
+#[group(required = false, multiple = false)]
+pub struct ExportFormat {
+    /// Export into cotp backup
+    #[arg(short, long)]
+    pub cotp: bool,
+
+    /// Import from andOTP backup
+    #[arg(short = 'e', long)]
+    pub andotp: bool,
+}
+
+impl Default for ExportFormat {
+    fn default() -> Self {
+        Self {
+            cotp: true,
+            andotp: false,
+        }
+    }
 }
 
 pub fn args_parser(

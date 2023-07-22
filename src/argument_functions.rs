@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::args::{AddArgs, EditArgs, ExportArgs, ImportArgs};
 use crate::importers::aegis::AegisJson;
 use crate::importers::aegis_encrypted::AegisEncryptedDatabase;
@@ -129,7 +131,21 @@ pub fn edit(matches: EditArgs, database: &mut OTPDatabase) -> Result<String, Str
 }
 
 pub fn export(matches: ExportArgs, database: &mut OTPDatabase) -> Result<String, String> {
-    match database.export(matches.path) {
+    let export_format = matches.format.unwrap_or_default();
+    let exported_path = if matches.path.is_dir() {
+        matches.path.join("exported.cotp")
+    } else {
+        matches.path
+    };
+
+    let result = if export_format.cotp {
+        do_export(database, exported_path)
+    } else if export_format.andotp {
+        let andotp: Vec<OTPElement> = database.into();
+        do_export(&andotp, exported_path)
+    };
+
+    match result {
         Ok(export_result) => Ok(format!(
             "Database was successfully exported at {}",
             export_result.to_str().unwrap_or("**Invalid path**")
@@ -146,4 +162,21 @@ pub fn change_password(database: &mut OTPDatabase) -> Result<String, String> {
     };
     new_password.zeroize();
     r
+}
+fn do_export<T>(to_be_saved: &T, exported_path: PathBuf) -> Result<PathBuf, String>
+where
+    T: ?Sized + Serialize,
+{
+    match serde_json::to_string(to_be_saved) {
+        Ok(mut contents) => {
+            if contents == "[]" {}
+            let mut file = File::create(&exported_path).expect("Cannot create file");
+            let contents_bytes = contents.as_bytes();
+            file.write_all(contents_bytes)
+                .expect("Failed to write contents");
+            contents.zeroize();
+            Ok(exported_path)
+        }
+        Err(e) => Err(format!("{e:?}")),
+    }
 }
