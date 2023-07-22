@@ -51,7 +51,7 @@ fn init() -> Result<ReadResult, String> {
 
 fn main() -> AppResult<()> {
     let cotp_args = CotpArgs::parse();
-    let mut result = match init() {
+    let (database, key, salt) = match init() {
         Ok(v) => v,
         Err(e) => {
             println!("{e}");
@@ -59,16 +59,22 @@ fn main() -> AppResult<()> {
         }
     };
 
-    let mut database = args::args_parser(cotp_args, result.0)?;
+    let mut reowned_database = match args::args_parser(cotp_args, database) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("An error occurred: {e}");
+            std::process::exit(-2)
+        }
+    };
 
-    if database.is_modified() {
-        match database.save(&result.1, &result.2) {
+    if reowned_database.is_modified() {
+        match reowned_database.save(&key, &salt) {
             Ok(_) => {
                 println!("Success");
             }
             Err(_) => {
                 eprintln!("An error occurred during database overwriting");
-                std::process::exit(-2)
+                std::process::exit(-3)
             }
         }
     }

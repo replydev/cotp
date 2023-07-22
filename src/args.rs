@@ -5,7 +5,6 @@ use clap::{Args, Parser, Subcommand};
 use crate::{
     argument_functions, dashboard,
     otp::{otp_algorithm::OTPAlgorithm, otp_element::OTPDatabase, otp_type::OTPType},
-    reading::ReadResult,
 };
 
 #[derive(Parser)]
@@ -203,7 +202,7 @@ impl Default for ExportFormat {
     }
 }
 
-pub fn args_parser(matches: CotpArgs, mut read_result: OTPDatabase) -> Result<OTPDatabase, String> {
+pub fn args_parser(matches: CotpArgs, read_result: OTPDatabase) -> Result<OTPDatabase, String> {
     match matches.command {
         Some(CotpSubcommands::Add(args)) => argument_functions::add(args, read_result),
         Some(CotpSubcommands::Edit(args)) => argument_functions::edit(args, read_result),
