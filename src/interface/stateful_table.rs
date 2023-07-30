@@ -1,5 +1,5 @@
 use crate::interface::row::Row;
-use tui::widgets::TableState;
+use ratatui::widgets::TableState;
 
 use crate::otp::{otp_element::OTPElement, otp_type::OTPType};
 
