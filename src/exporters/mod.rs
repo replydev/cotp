@@ -11,7 +11,9 @@ where
 {
     match serde_json::to_string(to_be_saved) {
         Ok(mut contents) => {
-            if contents == "[]" {}
+            if contents == "[]" {
+                return Err("No contents to export, skipping...".to_owned());
+            }
             let mut file = File::create(&exported_path).expect("Cannot create file");
             let contents_bytes = contents.as_bytes();
             file.write_all(contents_bytes)
