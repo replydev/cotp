@@ -6,10 +6,10 @@ use interface::event::{Event, EventHandler};
 use interface::handler::handle_key_events;
 use interface::ui::Tui;
 use otp::otp_element::{OTPDatabase, CURRENT_DATABASE_VERSION};
+use ratatui::prelude::CrosstermBackend;
+use ratatui::Terminal;
 use reading::{get_elements, ReadResult};
 use std::{io, vec};
-use tui::backend::CrosstermBackend;
-use tui::Terminal;
 use zeroize::Zeroize;
 
 mod args;

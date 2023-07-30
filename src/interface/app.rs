@@ -4,12 +4,12 @@ use crate::interface::enums::Focus;
 use crate::interface::enums::Page;
 use crate::interface::enums::Page::{Main, Qrcode};
 use crate::otp::otp_element::OTPDatabase;
-use tui::backend::Backend;
-use tui::layout::Rect;
-use tui::layout::{Alignment, Constraint, Direction, Layout};
-use tui::style::{Color, Modifier, Style};
-use tui::terminal::Frame;
-use tui::widgets::{Block, Borders, Cell, Clear, Gauge, Paragraph, Row, Table, Wrap};
+use ratatui::backend::Backend;
+use ratatui::layout::Rect;
+use ratatui::layout::{Alignment, Constraint, Direction, Layout};
+use ratatui::style::{Color, Modifier, Style};
+use ratatui::terminal::Frame;
+use ratatui::widgets::{Block, Borders, Cell, Clear, Gauge, Paragraph, Row, Table, Wrap};
 
 use crate::interface::stateful_table::{fill_table, StatefulTable};
 use crate::utils::percentage;

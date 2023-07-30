@@ -2,8 +2,8 @@ use std::io;
 
 use crossterm::event::{DisableMouseCapture, EnableMouseCapture};
 use crossterm::terminal::{self, EnterAlternateScreen, LeaveAlternateScreen};
-use tui::backend::Backend;
-use tui::Terminal;
+use ratatui::prelude::Backend;
+use ratatui::Terminal;
 
 use crate::interface::app::{App, AppResult};
 use crate::interface::event::EventHandler;

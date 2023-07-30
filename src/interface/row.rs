@@ -1,6 +1,6 @@
-use tui::style::Color::{Black, Yellow};
-use tui::style::Style;
-use tui::widgets::Cell;
+use ratatui::style::Color::{Black, Yellow};
+use ratatui::style::Style;
+use ratatui::widgets::Cell;
 
 pub(crate) struct Row {
     pub(crate) values: Vec<String>,
