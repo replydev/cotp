@@ -1,4 +1,4 @@
-use std::{fs::File, io::Write, path::PathBuf, vec};
+use std::{fs::File, io::Write, vec};
 
 use crate::otp::otp_error::OtpError;
 use crate::{
@@ -9,7 +9,6 @@ use data_encoding::BASE32_NOPAD;
 use qrcode::render::unicode;
 use qrcode::QrCode;
 use serde::{Deserialize, Serialize};
-use zeroize::Zeroize;
 
 use super::{
     algorithms::{
@@ -29,12 +28,6 @@ pub struct OTPDatabase {
     pub(crate) elements: Vec<OTPElement>,
     #[serde(skip)]
     pub(crate) needs_modification: bool,
-}
-
-impl From<OTPDatabase> for Vec<OTPElement> {
-    fn from(value: OTPDatabase) -> Self {
-        value.elements
-    }
 }
 
 impl From<Vec<OTPElement>> for OTPDatabase {
@@ -91,33 +84,6 @@ impl OTPDatabase {
         let key = argon_derive_key(password.as_bytes(), &salt)?;
         self.save(&key, &salt)?;
         Ok((key, salt))
-    }
-
-    pub fn export(&self, path: PathBuf) -> Result<PathBuf, String> {
-        if self.elements.is_empty() {
-            return Err(String::from(
-                "there are no elements in your database, type \"cotp -h\" to get help",
-            ));
-        }
-
-        let exported_path = if path.is_dir() {
-            path.join("exported.cotp")
-        } else {
-            path
-        };
-
-        match serde_json::to_string(self) {
-            Ok(mut contents) => {
-                if contents == "[]" {}
-                let mut file = File::create(&exported_path).expect("Cannot create file");
-                let contents_bytes = contents.as_bytes();
-                file.write_all(contents_bytes)
-                    .expect("Failed to write contents");
-                contents.zeroize();
-                Ok(exported_path)
-            }
-            Err(e) => Err(format!("{e:?}")),
-        }
     }
 
     pub fn add_all(&mut self, mut elements: Vec<OTPElement>) {

@@ -23,12 +23,12 @@ const LARGE_APPLICATION_WIDTH: u16 = 75;
 pub type AppResult<T> = Result<T, Box<dyn error::Error>>;
 
 /// Application.
-pub struct App {
+pub struct App<'a> {
     /// Is the application running?
     pub running: bool,
     title: String,
     pub(crate) table: StatefulTable,
-    pub(crate) database: OTPDatabase,
+    pub(crate) database: &'a mut OTPDatabase,
     progress: u16,
     /// Text to print replacing the percentage
     pub(crate) label_text: String,
@@ -46,9 +46,9 @@ pub struct Popup {
     pub(crate) percent_y: u16,
 }
 
-impl App {
+impl<'a> App<'a> {
     /// Constructs a new instance of [`App`].
-    pub fn new(database: OTPDatabase) -> Self {
+    pub fn new(database: &'a mut OTPDatabase) -> Self {
         let mut title = String::from(env!("CARGO_PKG_NAME"));
         title.push_str(" v");
         // Settings cotp version from env var defined in build.rs
