@@ -77,6 +77,8 @@ fn main() -> AppResult<()> {
                 std::process::exit(-3)
             }
         }
+    } else {
+        println!("Success");
     }
     std::process::exit(0)
 }
