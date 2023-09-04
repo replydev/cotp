@@ -18,7 +18,7 @@ impl FromOtpUri for OTPElement {
         let otp_type = get_match(lazy_regex!(r#"otpauth:[/][/]([a-zA-Z])[/]"#), otp_uri)
             .map(|r| r.to_uppercase())
             .unwrap_or_else(|_| "TOTP".to_string());
-        let (issuer, label) = lazy_regex!(r#"[a-zA-Z][/](?:(.*):)(.+)\?"#)
+        let (issuer, label) = lazy_regex!(r"[a-zA-Z][/](?:(.*):)(.+)\?")
             .captures(otp_uri)
             .map(|c| {
                 (
@@ -36,13 +36,13 @@ impl FromOtpUri for OTPElement {
         let algorithm = get_match(lazy_regex!(r#"[?&]algorithm=(.*?)(?:&|$)"#), otp_uri)
             .map(|r| r.to_uppercase())
             .unwrap_or_else(|_| "SHA1".to_string());
-        let digits = get_match(lazy_regex!(r#"[?&]digits=(\d*?)(?:&|$)"#), otp_uri)
+        let digits = get_match(lazy_regex!(r"[?&]digits=(\d*?)(?:&|$)"), otp_uri)
             .map(|r| r.parse::<u64>().unwrap())
             .unwrap_or(6);
-        let period = get_match(lazy_regex!(r#"[?&]period=(\d*?)(?:&|$)"#), otp_uri)
+        let period = get_match(lazy_regex!(r"[?&]period=(\d*?)(?:&|$)"), otp_uri)
             .map(|r| r.parse::<u64>().unwrap())
             .unwrap_or(30);
-        let counter = get_match(lazy_regex!(r#"[?&]counter=(\d*?)(?:&|$)"#), otp_uri)
+        let counter = get_match(lazy_regex!(r"[?&]counter=(\d*?)(?:&|$)"), otp_uri)
             .map(|r| Some(r.parse::<u64>().unwrap()))
             .unwrap_or(None);
 
