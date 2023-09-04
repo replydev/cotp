@@ -1,4 +1,4 @@
-use argon2::{Config, ThreadMode, Variant, Version};
+use argon2::{Config, Variant, Version};
 use chacha20poly1305::aead::Aead;
 use chacha20poly1305::{Key, KeyInit, XChaCha20Poly1305, XNonce};
 use data_encoding::BASE64;
@@ -14,7 +14,6 @@ const KEY_DERIVATION_CONFIG: Config = Config {
     mem_cost: 32768,
     time_cost: 4,
     lanes: 4,
-    thread_mode: ThreadMode::Parallel,
     secret: &[],
     ad: &[],
     hash_length: XCHACHA20_POLY1305_KEY_LENGTH as u32,
