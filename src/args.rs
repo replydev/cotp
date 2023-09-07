@@ -188,9 +188,13 @@ pub struct ExportFormat {
     #[arg(short, long)]
     pub cotp: bool,
 
-    /// Import from andOTP backup
+    /// Export into andOTP backup
     #[arg(short = 'e', long)]
     pub andotp: bool,
+
+    /// Export into an OTP URI
+    #[arg(short = 'u', long)]
+    pub otpuri: bool,
 }
 
 impl Default for ExportFormat {
