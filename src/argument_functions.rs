@@ -1,13 +1,15 @@
 use crate::args::{AddArgs, EditArgs, ExportArgs, ImportArgs};
 use crate::exporters::do_export;
+use crate::exporters::otp_uri::OtpUriList;
 use crate::importers::aegis::AegisJson;
 use crate::importers::aegis_encrypted::AegisEncryptedDatabase;
 use crate::importers::authy_remote_debug::AuthyExportedList;
 use crate::importers::converted::ConvertedJsonList;
 use crate::importers::freeotp_plus::FreeOTPPlusJson;
+use crate::importers::importer::import_from_path;
 use crate::otp::from_otp_uri::FromOtpUri;
 use crate::otp::otp_element::{OTPDatabase, OTPElement};
-use crate::{importers, utils};
+use crate::utils;
 use zeroize::Zeroize;
 
 pub fn import(matches: ImportArgs, mut database: OTPDatabase) -> Result<OTPDatabase, String> {
@@ -16,23 +18,25 @@ pub fn import(matches: ImportArgs, mut database: OTPDatabase) -> Result<OTPDatab
     let backup_type = matches.backup_type;
 
     let result = if backup_type.cotp {
-        importers::importer::import_from_path::<OTPDatabase>(path)
+        import_from_path::<OTPDatabase>(path)
     } else if backup_type.andotp {
-        importers::importer::import_from_path::<Vec<OTPElement>>(path)
+        import_from_path::<Vec<OTPElement>>(path)
     } else if backup_type.aegis {
-        importers::importer::import_from_path::<AegisJson>(path)
+        import_from_path::<AegisJson>(path)
     } else if backup_type.aegis_encrypted {
-        importers::importer::import_from_path::<AegisEncryptedDatabase>(path)
+        import_from_path::<AegisEncryptedDatabase>(path)
     } else if backup_type.freeotp_plus {
-        importers::importer::import_from_path::<FreeOTPPlusJson>(path)
+        import_from_path::<FreeOTPPlusJson>(path)
     } else if backup_type.authy_exported {
-        importers::importer::import_from_path::<AuthyExportedList>(path)
+        import_from_path::<AuthyExportedList>(path)
     } else if backup_type.google_authenticator
         || backup_type.authy
         || backup_type.microsoft_authenticator
         || backup_type.freeotp
     {
-        importers::importer::import_from_path::<ConvertedJsonList>(path)
+        import_from_path::<ConvertedJsonList>(path)
+    } else if backup_type.otp_uri {
+        import_from_path::<OtpUriList>(path)
     } else {
         return Err(String::from("Invalid arguments provided"));
     };
