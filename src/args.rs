@@ -179,6 +179,10 @@ pub struct BackupType {
     /// Import from Microsoft Authenticator
     #[arg(short = 'm', long = "microsoft-authenticator")]
     pub microsoft_authenticator: bool,
+
+    /// Import from OTP Uri batch
+    #[arg(long = "otp-uri")]
+    pub otp_uri: bool,
 }
 
 #[derive(Args)]
