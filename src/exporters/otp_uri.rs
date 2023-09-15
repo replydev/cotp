@@ -1,7 +1,7 @@
 use crate::otp::otp_element::OTPDatabase;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct OtpUriList {
     pub items: Vec<String>,
 }
