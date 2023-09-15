@@ -6,12 +6,10 @@ impl TryFrom<OtpUriList> for Vec<OTPElement> {
     type Error = String;
 
     fn try_from(value: OtpUriList) -> Result<Self, Self::Error> {
-        Ok(value
+        value
             .items
             .into_iter()
             .map(|e| OTPElement::from_otp_uri(e.as_str()))
-            .filter(|e| e.is_ok())
-            .map(|e| e.unwrap())
-            .collect())
+            .collect()
     }
 }
