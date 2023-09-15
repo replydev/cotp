@@ -206,6 +206,7 @@ impl Default for ExportFormat {
         Self {
             cotp: true,
             andotp: false,
+            otpuri: false,
         }
     }
 }
