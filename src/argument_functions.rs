@@ -146,7 +146,7 @@ pub fn export(matches: ExportArgs, database: OTPDatabase) -> Result<OTPDatabase,
     } else if export_format.andotp {
         let andotp: &Vec<OTPElement> = (&database).into();
         do_export(&andotp, exported_path)
-    } else if export_format.otpuri {
+    } else if export_format.otp_uri {
         let otp_uri_list: OtpUriList = (&database).into();
         do_export(&otp_uri_list, exported_path)
     } else {

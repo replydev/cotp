@@ -181,7 +181,7 @@ pub struct BackupType {
     pub microsoft_authenticator: bool,
 
     /// Import from OTP Uri batch
-    #[arg(long = "otp-uri")]
+    #[arg(short, long = "otp-uri")]
     pub otp_uri: bool,
 }
 
@@ -197,8 +197,8 @@ pub struct ExportFormat {
     pub andotp: bool,
 
     /// Export into an OTP URI
-    #[arg(short = 'u', long)]
-    pub otpuri: bool,
+    #[arg(short, long = "otp-uri")]
+    pub otp_uri: bool,
 }
 
 impl Default for ExportFormat {
@@ -206,7 +206,7 @@ impl Default for ExportFormat {
         Self {
             cotp: true,
             andotp: false,
-            otpuri: false,
+            otp_uri: false,
         }
     }
 }
