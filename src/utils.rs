@@ -2,7 +2,6 @@ use base64::{engine::general_purpose, Engine as _};
 use copypasta_ext::prelude::*;
 use copypasta_ext::x11_fork::ClipboardContext;
 use crossterm::style::Print;
-#[cfg(not(debug_assertions))]
 use dirs::home_dir;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -20,29 +19,24 @@ pub fn get_db_path() -> PathBuf {
     }
 }
 
+pub fn is_portable_mode() -> bool {
+    PathBuf::from("db.cotp").exists()
+}
+
 // Pushing an absolute path to a PathBuf replaces the entire PathBuf: https://doc.rust-lang.org/std/path/struct.PathBuf.html#method.push
 pub fn get_default_db_path() -> PathBuf {
-    let result: Option<PathBuf> = {
-        #[cfg(not(debug_assertions))]
-        {
-            home_dir()
-        }
-        #[cfg(debug_assertions)]
-        Some(PathBuf::from("."))
-    };
-    match result {
-        Some(home) => home,
-        None => {
-            let current_dir = PathBuf::from(".");
-            if let Some(str_dir) = current_dir.to_str() {
-                eprintln!("Cannot get home folder, using: {str_dir}");
-            } else {
-                eprintln!("Cannot get home folder, using");
-            }
-            current_dir
-        }
+    let db_from_current_dir = PathBuf::from("./db.cotp");
+
+    // If db.cotp is present in the current directory or we are using a debug artifact, do not use the one in home dir
+    // First condition is optimized away in release mode
+    if cfg!(debug_assertions) || is_portable_mode() {
+        return db_from_current_dir;
     }
-    .join(".cotp/db.cotp")
+
+    // Take from homedir, otherwise fallback to portable mode
+    home_dir()
+        .map(|path| path.join(".cotp/db.cotp"))
+        .unwrap_or(db_from_current_dir)
 }
 
 pub fn init_app() -> Result<bool, ()> {
