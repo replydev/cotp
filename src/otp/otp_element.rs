@@ -220,11 +220,8 @@ impl OTPElement {
 
 fn get_label(issuer: &str, label: &str) -> String {
     let encoded_label = urlencoding::encode(label);
-    if !issuer.is_empty() {
-        let encoded_issuer = urlencoding::encode(issuer);
-        return format!("{encoded_issuer}:{encoded_label}");
-    }
-    encoded_label.to_string()
+    let encoded_issuer = urlencoding::encode(issuer);
+    format!("{encoded_issuer}:{encoded_label}")
 }
 
 #[cfg(test)]
@@ -236,7 +233,7 @@ mod test {
     use crate::otp::from_otp_uri::FromOtpUri;
 
     #[test]
-    fn test_serialization_otp_uri() {
+    fn test_serialization_otp_uri_full_element() {
         let otp_element = OTPElement {
             secret: String::from("xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g"),
             issuer: String::from("IssuerText"),
@@ -248,7 +245,23 @@ mod test {
             counter: None,
             pin: None,
         };
-        assert_eq!(otp_element.get_otpauth_uri().as_str(), "otpauth://totp/IssuerText:LabelText?secret=xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g&algorithm=SHA1&digits=6&period=30&lock=false");
+        assert_eq!("otpauth://totp/IssuerText:LabelText?secret=xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g&algorithm=SHA1&digits=6&period=30&lock=false",otp_element.get_otpauth_uri().as_str());
+    }
+
+    #[test]
+    fn test_serialization_otp_uri_no_issuer() {
+        let otp_element = OTPElement {
+            secret: String::from("xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g"),
+            issuer: String::from(""),
+            label: String::from("LabelText"),
+            digits: 6,
+            type_: Totp,
+            algorithm: Sha1,
+            period: 30,
+            counter: None,
+            pin: None,
+        };
+        assert_eq!("otpauth://totp/:LabelText?secret=xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g&algorithm=SHA1&digits=6&period=30&lock=false",otp_element.get_otpauth_uri().as_str());
     }
 
     #[test]
