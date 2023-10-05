@@ -1,6 +1,7 @@
 use base64::{engine::general_purpose, Engine as _};
 use copypasta_ext::prelude::*;
-use copypasta_ext::x11_fork::ClipboardContext;
+use copypasta_ext::x11_bin::ClipboardContext as BinClipboardContext;
+use copypasta_ext::x11_fork::ClipboardContext as ForkClipboardContext;
 use crossterm::style::Print;
 use dirs::home_dir;
 use std::path::PathBuf;
@@ -110,12 +111,17 @@ pub fn copy_string_to_clipboard(content: String) -> Result<CopyType, ()> {
             Ok(_) => Ok(CopyType::OSC52),
             Err(_) => Err(()),
         };
-    } else if let Ok(mut ctx) = ClipboardContext::new() {
-        return if ctx.set_contents(content).is_ok() {
-            Ok(CopyType::Native)
-        } else {
-            Err(())
-        };
+    } else if BinClipboardContext::new()
+        .and_then(|mut ctx| ctx.set_contents(content.clone()))
+        .is_ok()
+    {
+        Ok(CopyType::Native)
+    } else if ForkClipboardContext::new()
+        .and_then(|mut ctx| ctx.set_contents(content))
+        .is_ok()
+    {
+        Ok(CopyType::Native)
+    } else {
+        Err(())
     }
-    Err(())
 }
