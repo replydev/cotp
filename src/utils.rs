@@ -96,10 +96,9 @@ pub fn verified_password(message: &str, minimum_length: usize) -> String {
 }
 
 fn in_ssh_shell() -> bool {
-    return !env::var("SSH_CONNECTION")
-        .unwrap_or_default()
-        .trim()
-        .is_empty();
+    return env::var("SSH_CONNECTION")
+        .map(|v| !v.trim().is_empty())
+        .unwrap_or(false);
 }
 
 pub fn copy_string_to_clipboard(content: String) -> Result<CopyType, ()> {
