@@ -103,7 +103,7 @@ fn main_handler(key_event: KeyEvent, app: &mut App) {
             handle_exit(app);
         }
         // exit application on Ctrl-D
-        KeyCode::Char('d') | KeyCode::Char('D') => {
+        KeyCode::Char('d') | KeyCode::Char('D') | KeyCode::Char('c') => {
             if key_event.modifiers == KeyModifiers::CONTROL {
                 handle_exit(app);
             } else if app.table.state.selected().is_some() {
