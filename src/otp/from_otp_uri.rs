@@ -1,4 +1,4 @@
-use regex::Regex;
+use regex::{Captures, Regex};
 
 use super::{otp_algorithm::OTPAlgorithm, otp_element::OTPElement, otp_type::OTPType};
 
@@ -8,6 +8,12 @@ macro_rules! lazy_regex {
         RE.get_or_init(|| regex::Regex::new($re).unwrap())
     }};
 }
+
+const DECODE_LAMBDA: fn(&str) -> String = |i| {
+    urlencoding::decode(i)
+        .map(|i| i.to_string())
+        .unwrap_or_else(|i| i.to_string())
+};
 
 pub trait FromOtpUri: Sized {
     fn from_otp_uri(otp_uri: &str) -> Result<Self, String>;
@@ -20,12 +26,7 @@ impl FromOtpUri for OTPElement {
             .unwrap_or_else(|_| "TOTP".to_string());
         let (issuer, label) = lazy_regex!(r"[a-zA-Z][/](?:(.*):)(.+)\?")
             .captures(otp_uri)
-            .map(|c| {
-                (
-                    c.get(1).map(|v| v.as_str().to_string()),
-                    c.get(2).map(|v| v.as_str().to_string()),
-                )
-            })
+            .map(|c| get_issuer_and_label(c))
             .unwrap_or((None, None));
 
         if issuer.is_none() {
@@ -67,4 +68,10 @@ fn get_match(regex: &Regex, value: &str) -> Result<String, String> {
     }
     let match_str = optional_value.unwrap().get(1).unwrap();
     Ok(match_str.as_str().to_owned())
+}
+
+fn get_issuer_and_label(c: Captures) -> (Option<String>, Option<String>) {
+    let issuer = c.get(1).map(|i| i.as_str()).map(DECODE_LAMBDA);
+    let label = c.get(2).map(|l| l.as_str()).map(DECODE_LAMBDA);
+    (issuer, label)
 }
