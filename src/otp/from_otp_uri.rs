@@ -47,7 +47,7 @@ impl FromOtpUri for OTPElement {
         let counter = parsed_uri
             .query_pairs()
             .find(|(k, _v)| k == "counter")
-            .map_or(None, |(_k, v)| v.parse::<u64>().ok());
+            .and_then(|(_k, v)| v.parse::<u64>().ok());
 
         Ok(OTPElement {
             secret,
@@ -64,11 +64,11 @@ impl FromOtpUri for OTPElement {
 }
 
 fn get(parsed_uri: &Url) -> color_eyre::Result<Vec<String>> {
-    let mut first_segment: Vec<String> = parsed_uri
+    let first_segment: Vec<String> = parsed_uri
         .path_segments()
         .map(|c| c.collect::<Vec<_>>())
         .ok_or(ErrReport::msg("Failed to collect path segments"))?
-        .get(0)
+        .first()
         .ok_or(ErrReport::msg("No path segments found"))?
         .split(':')
         .collect::<Vec<_>>()
@@ -80,7 +80,7 @@ fn get(parsed_uri: &Url) -> color_eyre::Result<Vec<String>> {
 
 fn get_issuer_and_label(parsed_uri: &Url) -> (Option<String>, Option<String>) {
     // Find the first path segments, OTP Uris should not have others
-    let mut first_segment = get(parsed_uri);
+    let first_segment = get(parsed_uri);
     if first_segment.is_err() {
         return (None, None);
     }
