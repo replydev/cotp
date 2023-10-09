@@ -50,6 +50,8 @@ fn init() -> Result<ReadResult, String> {
 }
 
 fn main() -> AppResult<()> {
+    color_eyre::install()?;
+
     let cotp_args = CotpArgs::parse();
     let (database, key, salt) = match init() {
         Ok(v) => v,
