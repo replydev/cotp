@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 use args::CotpArgs;
 use clap::Parser;
+use color_eyre::eyre::{eyre, ErrReport};
 use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
 use interface::handler::handle_key_events;
@@ -22,7 +23,7 @@ mod otp;
 mod reading;
 mod utils;
 
-fn init() -> Result<ReadResult, String> {
+fn init() -> color_eyre::Result<ReadResult> {
     match utils::init_app() {
         Ok(first_run) => {
             if first_run {
@@ -37,15 +38,13 @@ fn init() -> Result<ReadResult, String> {
                 pw.zeroize();
                 match save_result {
                     Ok((key, salt)) => Ok((database, key, salt.to_vec())),
-                    Err(_) => Err(String::from(
-                        "An error occurred during database overwriting",
-                    )),
+                    Err(e) => Err(ErrReport::from(e)),
                 }
             } else {
                 get_elements()
             }
         }
-        Err(()) => Err(String::from("An error occurred during database creation")),
+        Err(()) => Err(eyre!("An error occurred during database creation")),
     }
 }
 

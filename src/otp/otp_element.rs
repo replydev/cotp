@@ -1,3 +1,4 @@
+use color_eyre::eyre::ErrReport;
 use std::{fs::File, io::Write, vec};
 
 use crate::otp::otp_error::OtpError;
@@ -56,12 +57,12 @@ impl OTPDatabase {
         self.needs_modification
     }
 
-    pub fn save(&mut self, key: &Vec<u8>, salt: &[u8]) -> Result<(), String> {
+    pub fn save(&mut self, key: &Vec<u8>, salt: &[u8]) -> color_eyre::Result<()> {
         self.needs_modification = false;
         migrate(self)?;
         match self.overwrite_database_key(key, salt) {
             Ok(()) => Ok(()),
-            Err(e) => Err(format!("{e:?}")),
+            Err(e) => Err(ErrReport::from(e)),
         }
     }
 
@@ -79,7 +80,7 @@ impl OTPDatabase {
         }
     }
 
-    pub fn save_with_pw(&mut self, password: &str) -> Result<(Vec<u8>, [u8; 16]), String> {
+    pub fn save_with_pw(&mut self, password: &str) -> color_eyre::Result<(Vec<u8>, [u8; 16])> {
         let salt = gen_salt()?;
         let key = argon_derive_key(password.as_bytes(), &salt)?;
         self.save(&key, &salt)?;

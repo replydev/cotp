@@ -4,29 +4,25 @@ use url::Url;
 use super::{otp_algorithm::OTPAlgorithm, otp_element::OTPElement, otp_type::OTPType};
 
 pub trait FromOtpUri: Sized {
-    fn from_otp_uri(otp_uri: &str) -> Result<Self, String>;
+    fn from_otp_uri(otp_uri: &str) -> color_eyre::Result<Self>;
 }
 
 impl FromOtpUri for OTPElement {
-    fn from_otp_uri(otp_uri: &str) -> Result<Self, String> {
-        let parsed_uri = Url::parse(otp_uri).map_err(|e| e.to_string())?;
+    fn from_otp_uri(otp_uri: &str) -> color_eyre::Result<Self> {
+        let parsed_uri = Url::parse(otp_uri).map_err(|e| ErrReport::from(e))?;
 
         let otp_type = parsed_uri
             .host_str()
             .map(|r| r.to_uppercase())
             .unwrap_or_else(|| "TOTP".to_string());
 
-        let (issuer, label) = get_issuer_and_label(&parsed_uri);
-
-        if issuer.is_none() {
-            return Err(String::from("Issuer not found in OTP Uri"));
-        }
+        let (issuer, label) = get_issuer_and_label(&parsed_uri)?;
 
         let secret = parsed_uri
             .query_pairs()
             .find(|(k, _v)| k == "secret")
             .map(|(_k, v)| v.to_uppercase())
-            .ok_or(String::from("Secret not found in OTP Uri"))?;
+            .ok_or(ErrReport::msg("Secret not found in OTP Uri"))?;
 
         let algorithm = parsed_uri
             .query_pairs()
@@ -51,8 +47,8 @@ impl FromOtpUri for OTPElement {
 
         Ok(OTPElement {
             secret,
-            issuer: issuer.unwrap(), // Safe to wrap due to upper check
-            label: label.unwrap_or_default(),
+            issuer,
+            label,
             digits,
             type_: OTPType::from(otp_type.as_str()),
             algorithm: OTPAlgorithm::from(algorithm.as_str()),
@@ -78,26 +74,33 @@ fn get(parsed_uri: &Url) -> color_eyre::Result<Vec<String>> {
     Ok(first_segment)
 }
 
-fn get_issuer_and_label(parsed_uri: &Url) -> (Option<String>, Option<String>) {
+fn get_issuer_and_label(parsed_uri: &Url) -> color_eyre::Result<(String, String)> {
     // Find the first path segments, OTP Uris should not have others
-    let first_segment = get(parsed_uri);
-    if first_segment.is_err() {
-        return (None, None);
-    }
+    let first_segment = get(parsed_uri)?;
+    let issuer: String;
+    let label: String;
 
-    let issuer: Option<String>;
-    let label: Option<String>;
-    let mut unwrapped = first_segment.unwrap();
-    if unwrapped.len() == 2 {
-        issuer = Some(unwrapped.remove(0));
-        label = Some(unwrapped.remove(0));
-    } else {
-        label = Some(unwrapped.remove(0));
+    let first = first_segment
+        .get(0)
+        .and_then(|v| urlencoding::decode(v.as_str()).map(|v| v.into_owned()).ok());
+
+    let second = first_segment
+        .get(1)
+        .and_then(|v| urlencoding::decode(v).map(|v| v.into_owned()).ok());
+
+    if first.is_some() || second.is_some() {
+        issuer = first.unwrap();
+        label = second.unwrap();
+    } else if first.is_some() {
+        label = first.unwrap();
         issuer = parsed_uri
             .query_pairs()
             .find(|(k, _v)| k == "issuer")
-            .map(|(_k, v)| v.to_string());
+            .map(|(_k, v)| v.to_string())
+            .unwrap_or(String::from("Account"));
+    } else {
+        return Err(ErrReport::msg("No issuer found in OTP uri"));
     }
 
-    (issuer, label)
+    Ok((issuer, label))
 }

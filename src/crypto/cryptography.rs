@@ -1,6 +1,7 @@
 use argon2::{Config, Variant, Version};
 use chacha20poly1305::aead::Aead;
 use chacha20poly1305::{Key, KeyInit, XChaCha20Poly1305, XNonce};
+use color_eyre::eyre::{eyre, ErrReport};
 use data_encoding::BASE64;
 
 use super::encrypted_database::EncryptedDatabase;
@@ -19,20 +20,13 @@ const KEY_DERIVATION_CONFIG: Config = Config {
     hash_length: XCHACHA20_POLY1305_KEY_LENGTH as u32,
 };
 
-pub fn argon_derive_key(password_bytes: &[u8], salt: &[u8]) -> Result<Vec<u8>, String> {
-    let config = KEY_DERIVATION_CONFIG;
-    let hash = argon2::hash_raw(password_bytes, salt, &config);
-    match hash {
-        Ok(vec) => Ok(vec),
-        Err(_e) => Err(String::from("Failed to derive encryption key")),
-    }
+pub fn argon_derive_key(password_bytes: &[u8], salt: &[u8]) -> color_eyre::Result<Vec<u8>> {
+    argon2::hash_raw(password_bytes, salt, &KEY_DERIVATION_CONFIG).map_err(|e| ErrReport::from(e))
 }
 
-pub fn gen_salt() -> Result<[u8; ARGON2ID_SALT_LENGTH], String> {
+pub fn gen_salt() -> color_eyre::Result<[u8; ARGON2ID_SALT_LENGTH]> {
     let mut salt: [u8; ARGON2ID_SALT_LENGTH] = [0; ARGON2ID_SALT_LENGTH];
-    if let Err(e) = getrandom::getrandom(&mut salt) {
-        return Err(format!("Error during salt generation: {e}"));
-    }
+    getrandom::getrandom(&mut salt).map_err(|e| ErrReport::from(e))?;
     Ok(salt)
 }
 
@@ -40,19 +34,19 @@ pub fn encrypt_string_with_key(
     plain_text: String,
     key: &Vec<u8>,
     salt: &[u8],
-) -> Result<EncryptedDatabase, String> {
+) -> color_eyre::Result<EncryptedDatabase> {
     let wrapped_key = Key::from_slice(key.as_slice());
 
     let aead = XChaCha20Poly1305::new(wrapped_key);
     let mut nonce_bytes: [u8; XCHACHA20_POLY1305_NONCE_LENGTH] =
         [0; XCHACHA20_POLY1305_NONCE_LENGTH];
-    if let Err(e) = getrandom::getrandom(&mut nonce_bytes) {
-        return Err(format!("Error during nonce generation: {e}"));
-    }
+
+    getrandom::getrandom(&mut nonce_bytes).map_err(|e| ErrReport::from(e))?;
+
     let nonce = XNonce::from_slice(&nonce_bytes);
     let cipher_text = aead
         .encrypt(nonce, plain_text.as_bytes())
-        .expect("Failed to encrypt");
+        .map_err(|e| eyre!("Error during encryption: {e}"))?;
     Ok(EncryptedDatabase::new(
         1,
         BASE64.encode(&nonce_bytes),
@@ -64,10 +58,10 @@ pub fn encrypt_string_with_key(
 pub fn decrypt_string(
     encrypted_text: &str,
     password: &str,
-) -> Result<(String, Vec<u8>, Vec<u8>), String> {
+) -> color_eyre::Result<(String, Vec<u8>, Vec<u8>)> {
     //encrypted text is an encrypted database json serialized object
     let encrypted_database: EncryptedDatabase = serde_json::from_str(encrypted_text)
-        .map_err(|e| format!("Error during encrypted database deserialization: {e}"))?;
+        .map_err(|e| eyre!("Error during encrypted database deserialization: {e}"))?;
     let nonce = BASE64
         .decode(encrypted_database.nonce().as_bytes())
         .expect("Cannot decode Base64 nonce");
@@ -84,11 +78,9 @@ pub fn decrypt_string(
     let nonce = XNonce::from_slice(nonce.as_slice());
     let decrypted = aead
         .decrypt(nonce, cipher_text.as_slice())
-        .map_err(|_| String::from("Wrong password"))?;
-    match String::from_utf8(decrypted) {
-        Ok(result) => Ok((result, key, salt)),
-        Err(e) => Err(format!("Error during UTF-8 string conversion: {e}")),
-    }
+        .map_err(|_| ErrReport::msg("Wrong password"))?;
+    let from_utf8 = String::from_utf8(decrypted).map_err(|e| ErrReport::from(e))?;
+    Ok((from_utf8, key, salt))
 }
 
 #[cfg(test)]

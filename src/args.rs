@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{Args, Parser, Subcommand};
+use color_eyre::eyre::eyre;
 
 use crate::{
     argument_functions, dashboard,
@@ -211,7 +212,7 @@ impl Default for ExportFormat {
     }
 }
 
-pub fn args_parser(matches: CotpArgs, read_result: OTPDatabase) -> Result<OTPDatabase, String> {
+pub fn args_parser(matches: CotpArgs, read_result: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
     match matches.command {
         Some(CotpSubcommands::Add(args)) => argument_functions::add(args, read_result),
         Some(CotpSubcommands::Edit(args)) => argument_functions::edit(args, read_result),
@@ -219,7 +220,7 @@ pub fn args_parser(matches: CotpArgs, read_result: OTPDatabase) -> Result<OTPDat
         Some(CotpSubcommands::Export(args)) => argument_functions::export(args, read_result),
         Some(CotpSubcommands::Passwd) => argument_functions::change_password(read_result),
         // no args, show dashboard
-        None => dashboard(read_result).map_err(|e| format!("{:?}", e)),
+        None => dashboard(read_result).map_err(|e| eyre!("An error occurred: {e}")),
     }
 }
 
