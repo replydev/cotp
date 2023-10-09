@@ -1,9 +1,9 @@
+use crate::clipboard::{copy_string_to_clipboard, CopyType};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::interface::app::{App, AppResult};
 use crate::interface::enums::Page::*;
 use crate::otp::otp_type::OTPType;
-use crate::utils::{copy_string_to_clipboard, CopyType};
 
 use super::app::Popup;
 use super::enums::Page;

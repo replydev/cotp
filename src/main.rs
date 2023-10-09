@@ -14,6 +14,7 @@ use zeroize::Zeroize;
 
 mod args;
 mod argument_functions;
+mod clipboard;
 mod crypto;
 mod exporters;
 mod importers;
