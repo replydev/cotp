@@ -66,8 +66,7 @@ pub fn add(matches: AddArgs, mut database: OTPDatabase) -> color_eyre::Result<OT
 }
 
 fn get_from_args(matches: AddArgs) -> color_eyre::Result<OTPElement> {
-    let secret =
-        rpassword::prompt_password("Insert the secret: ").map_err(|e| ErrReport::from(e))?;
+    let secret = rpassword::prompt_password("Insert the secret: ").map_err(ErrReport::from)?;
     Ok(map_args_to_code(secret, matches))
 }
 
@@ -167,7 +166,7 @@ pub fn change_password(mut database: OTPDatabase) -> color_eyre::Result<OTPDatab
     let mut new_password = utils::verified_password("New password: ", 8);
     database
         .save_with_pw(&new_password)
-        .map_err(|e| ErrReport::from(e))?;
+        .map_err(ErrReport::from)?;
     new_password.zeroize();
     Ok(database)
 }

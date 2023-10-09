@@ -10,16 +10,13 @@ pub type ReadResult = (OTPDatabase, Vec<u8>, Vec<u8>);
 
 pub fn get_elements() -> color_eyre::Result<ReadResult> {
     let mut pw = utils::password("Password: ", 8);
-    let (elements, key, salt) = match read_from_file(&pw) {
-        Ok((result, key, salt)) => (result, key, salt),
-        Err(e) => return Err(ErrReport::from(e)),
-    };
+    let (elements, key, salt) = read_from_file(&pw)?;
     pw.zeroize();
     Ok((elements, key, salt))
 }
 
 pub fn read_decrypted_text(password: &str) -> color_eyre::Result<(String, Vec<u8>, Vec<u8>)> {
-    let encrypted_contents = read_to_string(get_db_path()).map_err(|e| ErrReport::from(e))?;
+    let encrypted_contents = read_to_string(get_db_path()).map_err(ErrReport::from)?;
     if encrypted_contents.is_empty() {
         return match utils::delete_db() {
             Ok(_) => Err(eyre!(
@@ -39,7 +36,7 @@ pub fn read_from_file(password: &str) -> color_eyre::Result<ReadResult> {
         Ok((mut contents, key, salt)) => {
             let mut database: OTPDatabase = serde_json::from_str(&contents)
                 .or_else(|_| serde_json::from_str::<Vec<OTPElement>>(&contents).map(|r| r.into()))
-                .map_err(|e| ErrReport::from(e))?;
+                .map_err(ErrReport::from)?;
             contents.zeroize();
             database.sort();
             Ok((database, key, salt))

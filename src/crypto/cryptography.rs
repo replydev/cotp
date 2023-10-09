@@ -21,12 +21,12 @@ const KEY_DERIVATION_CONFIG: Config = Config {
 };
 
 pub fn argon_derive_key(password_bytes: &[u8], salt: &[u8]) -> color_eyre::Result<Vec<u8>> {
-    argon2::hash_raw(password_bytes, salt, &KEY_DERIVATION_CONFIG).map_err(|e| ErrReport::from(e))
+    argon2::hash_raw(password_bytes, salt, &KEY_DERIVATION_CONFIG).map_err(ErrReport::from)
 }
 
 pub fn gen_salt() -> color_eyre::Result<[u8; ARGON2ID_SALT_LENGTH]> {
     let mut salt: [u8; ARGON2ID_SALT_LENGTH] = [0; ARGON2ID_SALT_LENGTH];
-    getrandom::getrandom(&mut salt).map_err(|e| ErrReport::from(e))?;
+    getrandom::getrandom(&mut salt).map_err(ErrReport::from)?;
     Ok(salt)
 }
 
@@ -41,7 +41,7 @@ pub fn encrypt_string_with_key(
     let mut nonce_bytes: [u8; XCHACHA20_POLY1305_NONCE_LENGTH] =
         [0; XCHACHA20_POLY1305_NONCE_LENGTH];
 
-    getrandom::getrandom(&mut nonce_bytes).map_err(|e| ErrReport::from(e))?;
+    getrandom::getrandom(&mut nonce_bytes).map_err(ErrReport::from)?;
 
     let nonce = XNonce::from_slice(&nonce_bytes);
     let cipher_text = aead
@@ -78,8 +78,8 @@ pub fn decrypt_string(
     let nonce = XNonce::from_slice(nonce.as_slice());
     let decrypted = aead
         .decrypt(nonce, cipher_text.as_slice())
-        .map_err(|_| ErrReport::msg("Wrong password"))?;
-    let from_utf8 = String::from_utf8(decrypted).map_err(|e| ErrReport::from(e))?;
+        .map_err(|_| eyre!("Wrong password"))?;
+    let from_utf8 = String::from_utf8(decrypted).map_err(ErrReport::from)?;
     Ok((from_utf8, key, salt))
 }
 

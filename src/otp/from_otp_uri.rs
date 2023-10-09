@@ -9,7 +9,7 @@ pub trait FromOtpUri: Sized {
 
 impl FromOtpUri for OTPElement {
     fn from_otp_uri(otp_uri: &str) -> color_eyre::Result<Self> {
-        let parsed_uri = Url::parse(otp_uri).map_err(|e| ErrReport::from(e))?;
+        let parsed_uri = Url::parse(otp_uri).map_err(ErrReport::from)?;
 
         let otp_type = parsed_uri
             .host_str()
@@ -77,8 +77,6 @@ fn get(parsed_uri: &Url) -> color_eyre::Result<Vec<String>> {
 fn get_issuer_and_label(parsed_uri: &Url) -> color_eyre::Result<(String, String)> {
     // Find the first path segments, OTP Uris should not have others
     let first_segment = get(parsed_uri)?;
-    let issuer: String;
-    let label: String;
 
     let first = first_segment
         .get(0)
@@ -88,19 +86,16 @@ fn get_issuer_and_label(parsed_uri: &Url) -> color_eyre::Result<(String, String)
         .get(1)
         .and_then(|v| urlencoding::decode(v).map(|v| v.into_owned()).ok());
 
-    if first.is_some() && second.is_some() {
-        issuer = first.unwrap();
-        label = second.unwrap();
-    } else if first.is_some() {
-        label = first.unwrap();
-        issuer = parsed_uri
-            .query_pairs()
-            .find(|(k, _v)| k == "issuer")
-            .map(|(_k, v)| v.to_string())
-            .unwrap_or(String::from("Account"));
-    } else {
-        return Err(ErrReport::msg("No label found in OTP uri"));
+    match (first, second) {
+        (Some(i), Some(l)) => Ok((i, l)),
+        (Some(l), None) => {
+            let issuer = parsed_uri
+                .query_pairs()
+                .find(|(k, _v)| k == "issuer")
+                .map(|(_k, v)| v.to_string())
+                .unwrap_or(String::from("Account"));
+            Ok((issuer, l))
+        }
+        _ => Err(ErrReport::msg("No label found in OTP uri")),
     }
-
-    Ok((issuer, label))
 }

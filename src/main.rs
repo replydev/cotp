@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 use args::CotpArgs;
 use clap::Parser;
-use color_eyre::eyre::{eyre, ErrReport};
+use color_eyre::eyre::eyre;
 use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
 use interface::handler::handle_key_events;
@@ -36,10 +36,7 @@ fn init() -> color_eyre::Result<ReadResult> {
                 };
                 let save_result = database.save_with_pw(&pw);
                 pw.zeroize();
-                match save_result {
-                    Ok((key, salt)) => Ok((database, key, salt.to_vec())),
-                    Err(e) => Err(ErrReport::from(e)),
-                }
+                save_result.map(|(key, salt)| (database, key, salt.to_vec()))
             } else {
                 get_elements()
             }
