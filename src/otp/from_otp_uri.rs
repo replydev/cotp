@@ -88,7 +88,7 @@ fn get_issuer_and_label(parsed_uri: &Url) -> color_eyre::Result<(String, String)
         .get(1)
         .and_then(|v| urlencoding::decode(v).map(|v| v.into_owned()).ok());
 
-    if first.is_some() || second.is_some() {
+    if first.is_some() && second.is_some() {
         issuer = first.unwrap();
         label = second.unwrap();
     } else if first.is_some() {
