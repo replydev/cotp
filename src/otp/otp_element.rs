@@ -281,4 +281,10 @@ mod test {
 
         assert_eq!(expected, OTPElement::from_otp_uri(otp_uri).unwrap())
     }
+
+    #[test]
+    fn test_deserialization_with_issuer_parameter() {
+        let otp_uri = "otpauth://totp/2Ponies%40Github%20No.1?secret=JBSWY3DPEHPK3PXP&algorithm=SHA1&digits=6&period=30&lock=false&issuer=test";
+        assert_eq!(true, OTPElement::from_otp_uri(otp_uri).is_ok())
+    }
 }
