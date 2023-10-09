@@ -99,7 +99,7 @@ fn get_issuer_and_label(parsed_uri: &Url) -> color_eyre::Result<(String, String)
             .map(|(_k, v)| v.to_string())
             .unwrap_or(String::from("Account"));
     } else {
-        return Err(ErrReport::msg("No issuer found in OTP uri"));
+        return Err(ErrReport::msg("No label found in OTP uri"));
     }
 
     Ok((issuer, label))
