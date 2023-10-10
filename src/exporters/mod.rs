@@ -4,6 +4,7 @@ use serde::Serialize;
 use zeroize::Zeroize;
 
 pub mod andotp;
+pub mod otp_uri;
 
 pub fn do_export<T>(to_be_saved: &T, exported_path: PathBuf) -> Result<PathBuf, String>
 where

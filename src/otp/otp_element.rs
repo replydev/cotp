@@ -1,3 +1,4 @@
+use color_eyre::eyre::ErrReport;
 use std::{fs::File, io::Write, vec};
 
 use crate::otp::otp_error::OtpError;
@@ -56,12 +57,12 @@ impl OTPDatabase {
         self.needs_modification
     }
 
-    pub fn save(&mut self, key: &Vec<u8>, salt: &[u8]) -> Result<(), String> {
+    pub fn save(&mut self, key: &Vec<u8>, salt: &[u8]) -> color_eyre::Result<()> {
         self.needs_modification = false;
         migrate(self)?;
         match self.overwrite_database_key(key, salt) {
             Ok(()) => Ok(()),
-            Err(e) => Err(format!("{e:?}")),
+            Err(e) => Err(ErrReport::from(e)),
         }
     }
 
@@ -79,7 +80,7 @@ impl OTPDatabase {
         }
     }
 
-    pub fn save_with_pw(&mut self, password: &str) -> Result<(Vec<u8>, [u8; 16]), String> {
+    pub fn save_with_pw(&mut self, password: &str) -> color_eyre::Result<(Vec<u8>, [u8; 16])> {
         let salt = gen_salt()?;
         let key = argon_derive_key(password.as_bytes(), &salt)?;
         self.save(&key, &salt)?;
@@ -220,11 +221,8 @@ impl OTPElement {
 
 fn get_label(issuer: &str, label: &str) -> String {
     let encoded_label = urlencoding::encode(label);
-    if !issuer.is_empty() {
-        let encoded_issuer = urlencoding::encode(issuer);
-        return format!("{encoded_issuer}:{encoded_label}");
-    }
-    encoded_label.to_string()
+    let encoded_issuer = urlencoding::encode(issuer);
+    format!("{encoded_issuer}:{encoded_label}")
 }
 
 #[cfg(test)]
@@ -236,7 +234,7 @@ mod test {
     use crate::otp::from_otp_uri::FromOtpUri;
 
     #[test]
-    fn test_serialization_otp_uri() {
+    fn test_serialization_otp_uri_full_element() {
         let otp_element = OTPElement {
             secret: String::from("xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g"),
             issuer: String::from("IssuerText"),
@@ -248,7 +246,23 @@ mod test {
             counter: None,
             pin: None,
         };
-        assert_eq!(otp_element.get_otpauth_uri().as_str(), "otpauth://totp/IssuerText:LabelText?secret=xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g&algorithm=SHA1&digits=6&period=30&lock=false");
+        assert_eq!("otpauth://totp/IssuerText:LabelText?secret=xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g&algorithm=SHA1&digits=6&period=30&lock=false",otp_element.get_otpauth_uri().as_str());
+    }
+
+    #[test]
+    fn test_serialization_otp_uri_no_issuer() {
+        let otp_element = OTPElement {
+            secret: String::from("xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g"),
+            issuer: String::from(""),
+            label: String::from("LabelText"),
+            digits: 6,
+            type_: Totp,
+            algorithm: Sha1,
+            period: 30,
+            counter: None,
+            pin: None,
+        };
+        assert_eq!("otpauth://totp/:LabelText?secret=xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g&algorithm=SHA1&digits=6&period=30&lock=false",otp_element.get_otpauth_uri().as_str());
     }
 
     #[test]
@@ -267,5 +281,11 @@ mod test {
         let otp_uri = "otpauth://totp/IssuerText:LabelText?secret=xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g&algorithm=SHA1&digits=6&period=30&lock=false";
 
         assert_eq!(expected, OTPElement::from_otp_uri(otp_uri).unwrap())
+    }
+
+    #[test]
+    fn test_deserialization_with_issuer_parameter() {
+        let otp_uri = "otpauth://totp/2Ponies%40Github%20No.1?secret=JBSWY3DPEHPK3PXP&algorithm=SHA1&digits=6&period=30&lock=false&issuer=test";
+        assert_eq!(true, OTPElement::from_otp_uri(otp_uri).is_ok())
     }
 }

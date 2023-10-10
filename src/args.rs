@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{Args, Parser, Subcommand};
+use color_eyre::eyre::eyre;
 
 use crate::{
     argument_functions, dashboard,
@@ -31,7 +32,7 @@ enum CotpSubcommands {
 #[derive(Args)]
 pub struct AddArgs {
     /// Add OTP code via an OTP URI
-    #[arg(short = 'u', long = "otpuri", required_unless_present = "issuer")]
+    #[arg(short = 'u', long = "otpuri", required_unless_present = "label")]
     pub otp_uri: bool,
 
     /// Specify the OTP code type
@@ -39,12 +40,12 @@ pub struct AddArgs {
     pub otp_type: OTPType,
 
     /// Code issuer
-    #[arg(short, long, required_unless_present = "otp_uri")]
-    pub issuer: Option<String>,
+    #[arg(short, long, default_value = "")]
+    pub issuer: String,
 
     /// Code label
-    #[arg(short, long, default_value = "")]
-    pub label: String,
+    #[arg(short, long, required_unless_present = "otp_uri")]
+    pub label: Option<String>,
 
     /// OTP Algorithm
     #[arg(short, long, value_enum, default_value_t = OTPAlgorithm::Sha1)]
@@ -179,6 +180,10 @@ pub struct BackupType {
     /// Import from Microsoft Authenticator
     #[arg(short = 'm', long = "microsoft-authenticator")]
     pub microsoft_authenticator: bool,
+
+    /// Import from OTP Uri batch
+    #[arg(short, long = "otp-uri")]
+    pub otp_uri: bool,
 }
 
 #[derive(Args)]
@@ -188,9 +193,13 @@ pub struct ExportFormat {
     #[arg(short, long)]
     pub cotp: bool,
 
-    /// Import from andOTP backup
+    /// Export into andOTP backup
     #[arg(short = 'e', long)]
     pub andotp: bool,
+
+    /// Export into an OTP URI
+    #[arg(short, long = "otp-uri")]
+    pub otp_uri: bool,
 }
 
 impl Default for ExportFormat {
@@ -198,11 +207,12 @@ impl Default for ExportFormat {
         Self {
             cotp: true,
             andotp: false,
+            otp_uri: false,
         }
     }
 }
 
-pub fn args_parser(matches: CotpArgs, read_result: OTPDatabase) -> Result<OTPDatabase, String> {
+pub fn args_parser(matches: CotpArgs, read_result: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
     match matches.command {
         Some(CotpSubcommands::Add(args)) => argument_functions::add(args, read_result),
         Some(CotpSubcommands::Edit(args)) => argument_functions::edit(args, read_result),
@@ -210,7 +220,7 @@ pub fn args_parser(matches: CotpArgs, read_result: OTPDatabase) -> Result<OTPDat
         Some(CotpSubcommands::Export(args)) => argument_functions::export(args, read_result),
         Some(CotpSubcommands::Passwd) => argument_functions::change_password(read_result),
         // no args, show dashboard
-        None => dashboard(read_result).map_err(|e| format!("{:?}", e)),
+        None => dashboard(read_result).map_err(|e| eyre!("An error occurred: {e}")),
     }
 }
 
