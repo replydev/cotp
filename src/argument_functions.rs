@@ -73,8 +73,8 @@ fn get_from_args(matches: AddArgs) -> color_eyre::Result<OTPElement> {
 fn map_args_to_code(secret: String, matches: AddArgs) -> OTPElement {
     OTPElement {
         secret,
-        issuer: matches.issuer.unwrap(),
-        label: matches.label,
+        issuer: matches.issuer,
+        label: matches.label.unwrap(),
         digits: matches.digits,
         type_: matches.otp_type,
         algorithm: matches.algorithm,
