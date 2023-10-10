@@ -1,9 +1,9 @@
+use crate::clipboard::{copy_string_to_clipboard, CopyType};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::interface::app::{App, AppResult};
 use crate::interface::enums::Page::*;
 use crate::otp::otp_type::OTPType;
-use crate::utils::{copy_string_to_clipboard, CopyType};
 
 use super::app::Popup;
 use super::enums::Page;
@@ -103,7 +103,7 @@ fn main_handler(key_event: KeyEvent, app: &mut App) {
             handle_exit(app);
         }
         // exit application on Ctrl-D
-        KeyCode::Char('d') | KeyCode::Char('D') => {
+        KeyCode::Char('d') | KeyCode::Char('D') | KeyCode::Char('c') => {
             if key_event.modifiers == KeyModifiers::CONTROL {
                 handle_exit(app);
             } else if app.table.state.selected().is_some() {

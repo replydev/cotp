@@ -1,17 +1,7 @@
-use base64::{engine::general_purpose, Engine as _};
-use copypasta_ext::prelude::*;
-use copypasta_ext::x11_fork::ClipboardContext;
-use crossterm::style::Print;
-#[cfg(not(debug_assertions))]
 use dirs::home_dir;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, io};
-
-pub enum CopyType {
-    Native,
-    OSC52,
-}
 
 pub fn get_db_path() -> PathBuf {
     match env::var("COTP_DB_PATH") {
@@ -20,29 +10,24 @@ pub fn get_db_path() -> PathBuf {
     }
 }
 
+pub fn is_portable_mode() -> bool {
+    PathBuf::from("db.cotp").exists()
+}
+
 // Pushing an absolute path to a PathBuf replaces the entire PathBuf: https://doc.rust-lang.org/std/path/struct.PathBuf.html#method.push
 pub fn get_default_db_path() -> PathBuf {
-    let result: Option<PathBuf> = {
-        #[cfg(not(debug_assertions))]
-        {
-            home_dir()
-        }
-        #[cfg(debug_assertions)]
-        Some(PathBuf::from("."))
-    };
-    match result {
-        Some(home) => home,
-        None => {
-            let current_dir = PathBuf::from(".");
-            if let Some(str_dir) = current_dir.to_str() {
-                eprintln!("Cannot get home folder, using: {str_dir}");
-            } else {
-                eprintln!("Cannot get home folder, using");
-            }
-            current_dir
-        }
+    let db_from_current_dir = PathBuf::from("./db.cotp");
+
+    // If db.cotp is present in the current directory or we are using a debug artifact, do not use the one in home dir
+    // First condition is optimized away in release mode
+    if cfg!(debug_assertions) || is_portable_mode() {
+        return db_from_current_dir;
     }
-    .join(".cotp/db.cotp")
+
+    // Take from homedir, otherwise fallback to portable mode
+    home_dir()
+        .map(|path| path.join(".cotp/db.cotp"))
+        .unwrap_or(db_from_current_dir)
 }
 
 pub fn init_app() -> Result<bool, ()> {
@@ -93,34 +78,4 @@ pub fn verified_password(message: &str, minimum_length: usize) -> String {
         }
         return password;
     }
-}
-
-fn in_ssh_shell() -> bool {
-    return env::var("SSH_CONNECTION")
-        .map(|v| !v.trim().is_empty())
-        .unwrap_or(false);
-}
-
-pub fn copy_string_to_clipboard(content: String) -> Result<CopyType, ()> {
-    if in_ssh_shell() {
-        // We do not use copypasta_ext::osc52 module because we have enabled terminal raw mode, so we print with crossterm utilities
-        // Check https://github.com/timvisee/rust-clipboard-ext/blob/371df19d2f961882a21c957f396d1e24548d1f28/src/osc52.rs#L92
-        return match crossterm::execute!(
-            io::stdout(),
-            Print(format!(
-                "\x1B]52;c;{}\x07",
-                general_purpose::STANDARD.encode(content)
-            ))
-        ) {
-            Ok(_) => Ok(CopyType::OSC52),
-            Err(_) => Err(()),
-        };
-    } else if let Ok(mut ctx) = ClipboardContext::new() {
-        return if ctx.set_contents(content).is_ok() {
-            Ok(CopyType::Native)
-        } else {
-            Err(())
-        };
-    }
-    Err(())
 }
