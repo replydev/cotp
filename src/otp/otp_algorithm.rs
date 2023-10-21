@@ -2,6 +2,7 @@ use std::fmt;
 
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
+use zeroize::Zeroize;
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Copy, ValueEnum, Hash)]
 #[serde(rename_all = "UPPERCASE")]
@@ -26,5 +27,11 @@ impl From<&str> for OTPAlgorithm {
             "MD5" => Self::Md5,
             _ => Self::Sha1,
         }
+    }
+}
+
+impl Zeroize for OTPAlgorithm {
+    fn zeroize(&mut self) {
+        *self = OTPAlgorithm::Sha1;
     }
 }
