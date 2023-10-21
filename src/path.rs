@@ -1,4 +1,4 @@
-use dirs::home_dir;
+use dirs::{data_dir, home_dir};
 use std::path::PathBuf;
 use std::sync::OnceLock;
 use std::{env, fs};
@@ -28,8 +28,7 @@ fn get_default_db_path() -> PathBuf {
 
     ONCE_COMPUTED_PATH
         .get_or_init(|| {
-            env::var("XDG_DATA_HOME")
-                .ok()
+            data_dir()
                 .map(PathBuf::from)
                 .map(|p| p.join(XDG_PATH))
                 .map(|xdg| {
