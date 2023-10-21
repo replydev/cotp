@@ -20,9 +20,9 @@ fn get_default_db_path() -> PathBuf {
     // If db.cotp is present in the current directory or we are using a debug artifact, do not use the one in home dir
     // First condition is optimized away in release mode
     let portable_path: PathBuf = PathBuf::from(CURRENT_DB_PATH);
-    /*if cfg!(debug_assertions) || portable_path.exists() {
+    if cfg!(debug_assertions) || portable_path.exists() {
         return portable_path;
-    }*/
+    }
 
     let home_path = home_dir().map(|path| path.join(HOME_PATH));
 
