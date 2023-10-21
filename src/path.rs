@@ -3,9 +3,9 @@ use std::path::PathBuf;
 use std::sync::OnceLock;
 use std::{env, fs};
 
-const CURRENT_DB_PATH: &'static str = "./db.cotp";
-const XDG_PATH: &'static str = "cotp/db.cotp";
-const HOME_PATH: &'static str = ".cotp/db.cotp";
+const CURRENT_DB_PATH: &str = "./db.cotp";
+const XDG_PATH: &str = "cotp/db.cotp";
+const HOME_PATH: &str = ".cotp/db.cotp";
 
 static ONCE_COMPUTED_PATH: OnceLock<PathBuf> = OnceLock::new();
 
