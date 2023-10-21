@@ -51,7 +51,7 @@ fn main() -> AppResult<()> {
     color_eyre::install()?;
 
     let cotp_args = CotpArgs::parse();
-    let (database, key, salt) = match init() {
+    let (database, mut key, salt) = match init() {
         Ok(v) => v,
         Err(e) => {
             println!("{e}");
@@ -63,24 +63,28 @@ fn main() -> AppResult<()> {
         Ok(d) => d,
         Err(e) => {
             eprintln!("An error occurred: {e}");
+            key.zeroize();
             std::process::exit(-2)
         }
     };
 
-    if reowned_database.is_modified() {
+    let error_code = if reowned_database.is_modified() {
         match reowned_database.save(&key, &salt) {
             Ok(_) => {
                 println!("Success");
+                0
             }
             Err(_) => {
                 eprintln!("An error occurred during database overwriting");
-                std::process::exit(-3)
+                -1
             }
         }
     } else {
         println!("Success");
-    }
-    std::process::exit(0)
+        0
+    };
+    key.zeroize();
+    std::process::exit(error_code)
 }
 
 fn dashboard(mut database: OTPDatabase) -> AppResult<OTPDatabase> {
