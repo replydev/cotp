@@ -1,11 +1,9 @@
 use color_eyre::eyre::ErrReport;
 use std::{fs::File, io::Write, vec};
 
+use crate::crypto::cryptography::{argon_derive_key, encrypt_string_with_key, gen_salt};
 use crate::otp::otp_error::OtpError;
-use crate::{
-    crypto::cryptography::{argon_derive_key, encrypt_string_with_key, gen_salt},
-    utils,
-};
+use crate::path::get_db_path;
 use data_encoding::BASE32_NOPAD;
 use qrcode::render::unicode;
 use qrcode::QrCode;
@@ -69,7 +67,7 @@ impl OTPDatabase {
     fn overwrite_database_key(&self, key: &Vec<u8>, salt: &[u8]) -> Result<(), std::io::Error> {
         let json: &str = &serde_json::to_string(&self)?;
         let encrypted = encrypt_string_with_key(json.to_string(), key, salt).unwrap();
-        let mut file = File::create(utils::get_db_path())?;
+        let mut file = File::create(get_db_path())?;
         match serde_json::to_string(&encrypted) {
             Ok(content) => {
                 file.write_all(content.as_bytes())?;
