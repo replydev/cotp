@@ -8,6 +8,7 @@ use data_encoding::BASE32_NOPAD;
 use qrcode::render::unicode;
 use qrcode::QrCode;
 use serde::{Deserialize, Serialize};
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use super::{
     algorithms::{
@@ -125,7 +126,7 @@ impl OTPDatabase {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Debug, Hash)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Debug, Hash, Zeroize, ZeroizeOnDrop)]
 pub struct OTPElement {
     pub secret: String,
     pub issuer: String,
