@@ -4,7 +4,6 @@ use crate::interface::enums::Focus;
 use crate::interface::enums::Page;
 use crate::interface::enums::Page::{Main, Qrcode};
 use crate::otp::otp_element::OTPDatabase;
-use ratatui::backend::Backend;
 use ratatui::layout::Rect;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout};
 use ratatui::style::{Color, Modifier, Style};
@@ -87,14 +86,14 @@ impl<'a> App<'a> {
     }
 
     /// Renders the user interface widgets.
-    pub fn render<B: Backend>(&mut self, frame: &mut Frame<'_, B>) {
+    pub fn render(&mut self, frame: &mut Frame<'_>) {
         match &self.current_page {
             Main => self.render_main_page(frame),
             Qrcode => self.render_qrcode_page(frame),
         }
     }
 
-    fn render_qrcode_page<B: Backend>(&self, frame: &mut Frame<'_, B>) {
+    fn render_qrcode_page(&self, frame: &mut Frame<'_>) {
         let paragraph = if let Some(i) = self.table.state.selected() {
             if let Some(element) = self.database.elements_ref().get(i) {
                 let title = if element.label.is_empty() {
@@ -124,7 +123,7 @@ impl<'a> App<'a> {
         self.render_paragraph(frame, paragraph);
     }
 
-    fn render_paragraph<B: Backend>(&self, frame: &mut Frame<'_, B>, paragraph: Paragraph) {
+    fn render_paragraph(&self, frame: &mut Frame<'_>, paragraph: Paragraph) {
         let rects = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Percentage(100)].as_ref())
@@ -133,7 +132,7 @@ impl<'a> App<'a> {
         frame.render_widget(paragraph, rects[0]);
     }
 
-    fn render_main_page<B: Backend>(&mut self, frame: &mut Frame<'_, B>) {
+    fn render_main_page(&mut self, frame: &mut Frame<'_>) {
         let height = frame.size().height;
         let rects = Layout::default()
             .direction(Direction::Vertical)
@@ -188,7 +187,7 @@ impl<'a> App<'a> {
         }
     }
 
-    fn render_alert<B: Backend>(&mut self, frame: &mut Frame<'_, B>) {
+    fn render_alert(&mut self, frame: &mut Frame<'_>) {
         let block = Block::default().title("Alert").borders(Borders::ALL);
         let paragraph = Paragraph::new(&*self.popup.text)
             .block(block)
@@ -200,7 +199,7 @@ impl<'a> App<'a> {
         frame.render_widget(paragraph, area);
     }
 
-    fn render_table_box<B: Backend>(&mut self, frame: &mut Frame<'_, B>, area: Rect) {
+    fn render_table_box(&mut self, frame: &mut Frame<'_>, area: Rect) {
         let constraints = if self.is_large_application(frame) {
             vec![Constraint::Percentage(80), Constraint::Percentage(20)]
         } else {
@@ -290,7 +289,7 @@ impl<'a> App<'a> {
         }
     }
 
-    fn is_large_application<B: Backend>(&self, frame: &mut Frame<'_, B>) -> bool {
+    fn is_large_application(&self, frame: &mut Frame<'_>) -> bool {
         frame.size().width >= LARGE_APPLICATION_WIDTH
     }
 }
