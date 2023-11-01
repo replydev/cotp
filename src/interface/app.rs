@@ -94,8 +94,12 @@ impl<'a> App<'a> {
     }
 
     fn render_qrcode_page(&self, frame: &mut Frame<'_>) {
-        let paragraph = if let Some(i) = self.table.state.selected() {
-            if let Some(element) = self.database.elements_ref().get(i) {
+        let paragraph = self
+            .table
+            .state
+            .selected()
+            .and_then(|index| self.database.elements_ref().get(index))
+            .map(|element| {
                 let title = if element.label.is_empty() {
                     element.issuer.to_owned()
                 } else {
@@ -106,20 +110,14 @@ impl<'a> App<'a> {
                     .style(Style::default().fg(Color::White).bg(Color::Reset))
                     .alignment(Alignment::Center)
                     .wrap(Wrap { trim: true })
-            } else {
+            })
+            .unwrap_or_else(|| {
                 Paragraph::new("No element is selected")
                     .block(Block::default().title("Nope").borders(Borders::ALL))
                     .style(Style::default().fg(Color::White).bg(Color::Reset))
                     .alignment(Alignment::Center)
                     .wrap(Wrap { trim: true })
-            }
-        } else {
-            Paragraph::new("No element is selected")
-                .block(Block::default().title("Nope").borders(Borders::ALL))
-                .style(Style::default().fg(Color::White).bg(Color::Reset))
-                .alignment(Alignment::Center)
-                .wrap(Wrap { trim: true })
-        };
+            });
         self.render_paragraph(frame, paragraph);
     }
 
