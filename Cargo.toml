@@ -30,7 +30,7 @@ strip = "symbols"
 serde_json = "1.0.108"
 serde = { version = "1.0.193", features = ["derive"] }
 dirs = "5.0.1"
-rpassword = "7.2.0"
+rpassword = "7.3.1"
 data-encoding = "2.5.0"
 copypasta-ext = "0.4.4"
 zeroize = { version = "1.6.0", features = ["zeroize_derive"]}
