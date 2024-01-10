@@ -225,7 +225,7 @@ impl<'a> App<'a> {
                 .bottom_margin(1)
         });
 
-        const TABLE_WIDTHS: &'static [Constraint] = &[
+        const TABLE_WIDTHS: &[Constraint] = &[
             Constraint::Percentage(5),
             Constraint::Percentage(35),
             Constraint::Percentage(35),
