@@ -79,7 +79,7 @@ fn get_issuer_and_label(parsed_uri: &Url) -> color_eyre::Result<(String, String)
     let first_segment = get(parsed_uri)?;
 
     let first = first_segment
-        .get(0)
+        .first()
         .and_then(|v| urlencoding::decode(v.as_str()).map(|v| v.into_owned()).ok());
 
     let second = first_segment

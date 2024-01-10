@@ -225,7 +225,14 @@ impl<'a> App<'a> {
                 .bottom_margin(1)
         });
 
-        let t = Table::new(rows)
+        const TABLE_WIDTHS: &[Constraint] = &[
+            Constraint::Percentage(5),
+            Constraint::Percentage(35),
+            Constraint::Percentage(35),
+            Constraint::Percentage(25),
+        ];
+
+        let t = Table::new(rows, TABLE_WIDTHS)
             .header(header)
             .block(
                 Block::default()
@@ -238,13 +245,7 @@ impl<'a> App<'a> {
                     .fg(Color::Black)
                     .add_modifier(Modifier::BOLD),
             )
-            .highlight_symbol("-> ")
-            .widths(&[
-                Constraint::Percentage(5),
-                Constraint::Percentage(35),
-                Constraint::Percentage(35),
-                Constraint::Percentage(25),
-            ]);
+            .highlight_symbol("-> ");
 
         let selected_element = match self.table.state.selected() {
             Some(index) => self.database.get_element(index),

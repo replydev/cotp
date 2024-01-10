@@ -329,7 +329,7 @@ fn handle_exit(app: &mut App) {
     if app.database.is_modified() {
         show_popup(
             Popup {
-                text: String::from("Do you want to save your chages? [Y/N]"),
+                text: String::from("Save changes? [Y/N]"),
                 percent_x: 60,
                 percent_y: 20,
                 action: PopupAction::SaveBeforeQuit,
