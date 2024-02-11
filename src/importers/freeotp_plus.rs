@@ -49,20 +49,7 @@ impl From<FreeOTPElement> for OTPElement {
 impl TryFrom<FreeOTPPlusJson> for Vec<OTPElement> {
     type Error = String;
     fn try_from(freeotp: FreeOTPPlusJson) -> Result<Self, Self::Error> {
-        Ok(freeotp
-            .tokens
-            .into_iter()
-            .enumerate()
-            .map(|(i, mut token)| {
-                token._label = freeotp
-                    .token_order
-                    .get(i)
-                    .unwrap_or(&String::from("No Label"))
-                    .to_owned();
-                token
-            })
-            .map(|e| e.into())
-            .collect())
+        Ok(freeotp.tokens.into_iter().map(|e| e.into()).collect())
     }
 }
 
@@ -78,7 +65,14 @@ fn encode_secret(secret: &[i8]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::encode_secret;
+    use std::path::PathBuf;
+
+    use crate::{
+        importers::importer::import_from_path,
+        otp::{otp_algorithm::OTPAlgorithm, otp_element::OTPElement, otp_type::OTPType},
+    };
+
+    use super::{encode_secret, FreeOTPPlusJson};
 
     #[test]
     fn test_secret_conversion() {
@@ -91,5 +85,41 @@ mod tests {
             encode_secret(&secret),
             String::from("3ZUNXX2SU6RZP4QFMS32YAILJFS2I2T2UZXYSHSX7IIMPAQZAC753NG2")
         );
+    }
+
+    #[test]
+    fn test_conversion() {
+        let imported = import_from_path::<FreeOTPPlusJson>(PathBuf::from(
+            "test_samples/freeotp_plus_example1.json",
+        ));
+
+        assert!(imported.is_ok());
+        assert_eq!(
+            vec![
+                OTPElement {
+                    secret: "AAAAAAAAAAAAAAAA".to_string(),
+                    issuer: "Example2".to_string(),
+                    label: "Label2".to_string(),
+                    digits: 6,
+                    type_: OTPType::Totp,
+                    algorithm: OTPAlgorithm::Sha1,
+                    period: 30,
+                    counter: None,
+                    pin: None
+                },
+                OTPElement {
+                    secret: "AAAAAAAA".to_string(),
+                    issuer: "Example1".to_string(),
+                    label: "Label1".to_string(),
+                    digits: 6,
+                    type_: OTPType::Totp,
+                    algorithm: OTPAlgorithm::Sha256,
+                    period: 30,
+                    counter: None,
+                    pin: None
+                }
+            ],
+            imported.unwrap()
+        )
     }
 }
