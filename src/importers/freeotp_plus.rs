@@ -1,16 +1,16 @@
 use data_encoding::BASE32_NOPAD;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::otp::{otp_algorithm::OTPAlgorithm, otp_element::OTPElement, otp_type::OTPType};
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct FreeOTPPlusJson {
     #[serde(rename = "tokenOrder")]
     token_order: Vec<String>,
     tokens: Vec<FreeOTPElement>,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct FreeOTPElement {
     algo: String,
     counter: u64,
