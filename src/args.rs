@@ -200,6 +200,10 @@ pub struct ExportFormat {
     /// Export into an OTP URI
     #[arg(short, long = "otp-uri")]
     pub otp_uri: bool,
+
+    /// Export into the FreeOTP+ database format
+    #[arg(short, long = "freeotp-plus")]
+    pub freeotp_plus: bool,
 }
 
 impl Default for ExportFormat {
@@ -208,6 +212,7 @@ impl Default for ExportFormat {
             cotp: true,
             andotp: false,
             otp_uri: false,
+            freeotp_plus: false,
         }
     }
 }
