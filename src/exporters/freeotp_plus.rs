@@ -6,21 +6,21 @@ use crate::{
     otp::otp_element::{OTPDatabase, OTPElement},
 };
 
-impl TryFrom<OTPDatabase> for FreeOTPPlusJson {
+impl TryFrom<&OTPDatabase> for FreeOTPPlusJson {
     type Error = ErrReport;
-    fn try_from(otp_database: OTPDatabase) -> Result<Self, Self::Error> {
+    fn try_from(otp_database: &OTPDatabase) -> Result<Self, Self::Error> {
         otp_database
             .elements
-            .into_iter()
+            .iter()
             .map(|e| e.try_into())
             .collect::<Result<Vec<FreeOTPElement>, ErrReport>>()
             .map(FreeOTPPlusJson::new)
     }
 }
 
-impl TryFrom<OTPElement> for FreeOTPElement {
+impl TryFrom<&OTPElement> for FreeOTPElement {
     type Error = ErrReport;
-    fn try_from(otp_element: OTPElement) -> Result<Self, Self::Error> {
+    fn try_from(otp_element: &OTPElement) -> Result<Self, Self::Error> {
         Ok(FreeOTPElement {
             secret: decode_secret(otp_element.secret.clone())?,
             algo: otp_element.algorithm.to_string(),
