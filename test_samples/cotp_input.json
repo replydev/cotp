@@ -1,0 +1,27 @@
+{
+    "version": 2,
+    "elements": [
+      {
+        "secret": "AA",
+        "issuer": "",
+        "label": "label1",
+        "digits": 6,
+        "type": "TOTP",
+        "algorithm": "SHA1",
+        "period": 30,
+        "counter": null,
+        "pin": null
+      },
+      {
+        "secret": "AA",
+        "issuer": "ciccio",
+        "label": "label2",
+        "digits": 6,
+        "type": "HOTP",
+        "algorithm": "SHA256",
+        "period": 30,
+        "counter": 3,
+        "pin": null
+      }
+    ]
+  }
