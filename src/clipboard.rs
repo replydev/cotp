@@ -44,7 +44,7 @@ fn wayland_clipboard(content: &str) -> bool {
 }
 
 #[cfg(not(target_os = "linux"))]
-fn wayland_clipboard(content: &str) -> bool {
+fn wayland_clipboard(_content: &str) -> bool {
     false
 }
 
