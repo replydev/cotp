@@ -1,0 +1,46 @@
+{
+    "tokenOrder": [
+      "Example2:Label2",
+      "Example1:Label"
+    ],
+    "tokens": [
+      {
+        "algo": "SHA1",
+        "counter": 0,
+        "digits": 6,
+        "issuerExt": "Example2",
+        "label": "Label2",
+        "period": 30,
+        "secret": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "type": "TOTP"
+      },
+      {
+        "algo": "SHA256",
+        "counter": 0,
+        "digits": 6,
+        "issuerExt": "Example1",
+        "label": "Label1",
+        "period": 30,
+        "secret": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "type": "TOTP"
+      }
+    ]
+  }
+  

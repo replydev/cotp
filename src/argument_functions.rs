@@ -149,6 +149,9 @@ pub fn export(matches: ExportArgs, database: OTPDatabase) -> color_eyre::Result<
     } else if export_format.otp_uri {
         let otp_uri_list: OtpUriList = (&database).into();
         do_export(&otp_uri_list, exported_path)
+    } else if export_format.freeotp_plus {
+        let freeotp_plus: FreeOTPPlusJson = (&database).try_into()?;
+        do_export(&freeotp_plus, exported_path)
     } else {
         unreachable!("Unreachable code");
     }

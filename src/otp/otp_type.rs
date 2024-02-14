@@ -26,7 +26,14 @@ pub enum OTPType {
 
 impl fmt::Display for OTPType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{self:?}")
+        let to_string = match self {
+            OTPType::Totp => "TOTP",
+            OTPType::Hotp => "HOTP",
+            OTPType::Steam => "STEAM",
+            OTPType::Yandex => "YANDEX",
+            OTPType::Motp => "MOTP",
+        };
+        write!(f, "{to_string}")
     }
 }
 

@@ -1,6 +1,6 @@
 [package]
 name = "cotp"
-version = "1.3.0"
+version = "1.4.0"
 authors = ["replydev <commoncargo@tutanota.com>"]
 edition = "2021"
 description = "Trustworthy, encrypted, command-line TOTP/HOTP authenticator app with import functionality."
@@ -29,7 +29,6 @@ strip = "symbols"
 [dependencies]
 serde = { version = "1.0.196", features = ["derive"] }
 serde_json = "1.0.113"
-serde = { version = "1.0.195", features = ["derive"] }
 dirs = "5.0.1"
 rpassword = "7.3.1"
 data-encoding = "2.5.0"
