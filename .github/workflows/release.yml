@@ -8,6 +8,10 @@ jobs:
   semantic-release:
     name: Release the application
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Permit release creation
+      issues: write # Write on released issues
+      pull-requests: write # Write on released PRs
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -22,3 +26,5 @@ jobs:
 
       - name: Run the release
         run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
