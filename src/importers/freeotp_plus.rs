@@ -13,7 +13,16 @@ pub struct FreeOTPPlusJson {
 impl FreeOTPPlusJson {
     /// Creates a new instance of FreeOTPPlusJSON. Currently we clone the tokens label to retrieve the tokens order.
     pub fn new(tokens: Vec<FreeOTPElement>) -> Self {
-        let token_order: Vec<String> = tokens.iter().map(|e| &e._label).cloned().collect();
+        let token_order: Vec<String> = tokens
+            .iter()
+            .map(|e| {
+                if e.issuer_ext.is_empty() {
+                    e._label.clone()
+                } else {
+                    format!("{}:{}", e.issuer_ext, e._label)
+                }
+            })
+            .collect();
 
         Self {
             token_order,
@@ -149,7 +158,7 @@ mod tests {
             serde_json::from_str(input_json.as_str()).expect("Cannot deserialize into input JSON");
 
         // Act
-        let converted: Result<FreeOTPPlusJson> = input_cotp_database.try_into();
+        let converted: Result<FreeOTPPlusJson> = (&input_cotp_database).try_into();
 
         // Assert
         assert!(converted.is_ok());
@@ -157,7 +166,7 @@ mod tests {
         let free_otp = converted.unwrap();
 
         assert_eq!(
-            vec!["label1".to_string(), "label2".to_string()],
+            vec!["label1".to_string(), "ciccio:label2".to_string()],
             free_otp.token_order
         );
 
