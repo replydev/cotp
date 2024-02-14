@@ -3,18 +3,18 @@
 	"plugins": [
 		"@semantic-release/commit-analyzer",
 		"@semantic-release/release-notes-generator",
-		"@semantic-release/github",
+		[
+			"@semantic-release/exec",
+			{
+				"prepareCmd": "ci/write_cargo_version.sh ${nextRelease.version}"
+			}
+		],
 		[
 			"@semantic-release/git",
 			{
 				"assets": ["Cargo.toml", "Cargo.lock"]
 			}
 		],
-		[
-			"@semantic-release/exec",
-			{
-				"verifyConditionsCmd": "bash ci/write_cargo_version.sh ${nextRelease.version}"
-			}
-		]
+		"@semantic-release/github"
 	]
 }
