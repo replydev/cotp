@@ -1,0 +1,24 @@
+name: Release
+on:
+  push:
+    branches:
+      - "main"
+      
+jobs:
+  semantic-release:
+    name: Release the application
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      
+      - name: Install NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      
+      - name: Install Semantic Release globally
+        run: npm install -g semantic-release @semantic-release/git @semantic-release/exec
+
+      - name: Run the release
+        run: npx semantic-release
