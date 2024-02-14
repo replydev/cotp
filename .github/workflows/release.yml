@@ -1,224 +1,24 @@
 name: Release
 on:
   push:
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
-
-env:
-  BIN_NAME: cotp
-  PROJECT_NAME: cotp
-  REPO_NAME: replydev/cotp
-
-jobs:
-  dist:
-    name: Dist
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false # don't fail other jobs if one fails
-      matrix:
-        build: [x86_64-linux, aarch64-linux, x86_64-macos, x86_64-win-msvc] 
-        include:
-          - build: x86_64-linux
-            os: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-          - build: aarch64-linux
-            os: ubuntu-22.04
-            target: aarch64-unknown-linux-gnu
-          - build: x86_64-macos
-            os: macos-14
-            target: x86_64-apple-darwin
-          - build: x86_64-win-msvc
-            os: windows-2022
-            target: x86_64-pc-windows-msvc
-
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-
-      - name: Install stable toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          target: ${{ matrix.target }}
+    branches:
+      - "main"
       
-      # Cache dependencies
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: ${{ matrix.target }}-release
-
-      - name: Install cross for arm64 compilation
-        if: matrix.build == 'aarch64-linux'
-        run: cargo install cross --git https://github.com/cross-rs/cross
-
-      - name: Install Dependencies for Linux x86_64
-        if: matrix.build == 'x86_64-linux'
-        run: sudo apt update && sudo apt install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev
-
-      - name: Build release binary (arm64)
-        if: matrix.build == 'aarch64-linux'
-        run: cross build --release --locked --target ${{ matrix.target }}
-
-      - name: Build release binary (x86_64)
-        if: matrix.build != 'aarch64-linux'
-        run: cargo build --release --locked --target ${{ matrix.target }}
-
-      - name: Build archive
-        shell: bash
-        run: |
-          mkdir dist
-          if [ "${{ matrix.os }}" = "windows-2019" ]; then
-            cp "target/${{ matrix.target }}/release/$BIN_NAME.exe" "dist/"
-          else
-            cp "target/${{ matrix.target }}/release/$BIN_NAME" "dist/"
-          fi
-
-      - uses: actions/upload-artifact@v4.3.1
-        with:
-          name: bins-${{ matrix.build }}
-          path: dist
-
-  publish:
-    name: "Publish binaries to release page"
-    needs: [dist]
+jobs:
+  semantic-release:
+    name: Release the application
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
+      
+      - name: Install NodeJS
+        uses: actions/setup-node@v4
         with:
-          submodules: false
+          node-version: 20
+      
+      - name: Install Semantic Release globally
+        run: npm install -g semantic-release @semantic-release/git @semantic-release/exec
 
-      - uses: actions/download-artifact@v4
-        # with:
-        #   path: dist
-      # - run: ls -al ./dist
-      - run: ls -al bins-*
-
-      - name: Calculate tag name
-        run: |
-          name=dev
-          if [[ $GITHUB_REF == refs/tags/v* ]]; then
-            name=${GITHUB_REF:10}
-          fi
-          echo val=$name >> $GITHUB_OUTPUT
-          echo TAG=$name >> $GITHUB_ENV
-        id: tagname
-
-      - name: Build archive
-        shell: bash
-        run: |
-          set -ex
-
-          rm -rf tmp
-          mkdir tmp
-          mkdir dist
-
-          for dir in bins-* ; do
-              platform=${dir#"bins-"}
-              unset exe
-              # If platform contains "win" then append .exe to the filename
-              if [[ "$platform" == *"win"* ]]; then
-                  exe=".exe"
-              fi
-              pkgname=$PROJECT_NAME-$TAG-$platform
-              mkdir tmp/$pkgname
-              # cp LICENSE README.md tmp/$pkgname
-              mv bins-$platform/$BIN_NAME$exe tmp/$pkgname
-              chmod +x tmp/$pkgname/$BIN_NAME$exe
-
-              if [ "$exe" = "" ]; then
-                  tar cJf dist/$pkgname.tar.xz -C tmp $pkgname
-              else
-                  (cd tmp && 7z a -r ../dist/$pkgname.zip $pkgname)
-              fi
-          done
-
-      - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: dist/*
-          file_glob: true
-          tag: ${{ steps.tagname.outputs.val }}
-          overwrite: true
-
-      - name: Extract version
-        id: extract-version
-        run: |
-          printf "%s=%s >> $GITHUB_OUTPUT\n" tag-name "${GITHUB_REF#refs/tags/}"
-
-  publish_on_cargo_crates:
-    name: "Publish crate on crates.io"
-    needs: [dist]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-        with:
-          submodules: false
-
-      - name: Install stable toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Login
-        run: cargo login ${{ secrets.CRATE_AUTH_TOKEN }}
-
-      - name: List
-        run: cargo package --list
-
-      - name: Publish
-        run: cargo publish
-
-  aur-publish-cotp:
-    name: "Publish new version to AUR"
-    runs-on: ubuntu-latest
-    needs: [publish]
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Calculate tag name
-        run: |
-          name=dev
-          if [[ $GITHUB_REF == refs/tags/v* ]]; then
-            name=${GITHUB_REF:10}
-          fi
-          echo val=$name >> $GITHUB_OUTPUT
-          echo TAG=$name >> $GITHUB_ENV
-        id: tagname
-
-      - name: Generate PKGBUILDs
-        shell: bash
-        run: |
-          # requests is already installed
-          # pip install requests
-          python ci/build_pkgbuild.py ${{env.TAG}}
-          cat ./ci/cotp/PKGBUILD
-          cat ./ci/cotp-bin/PKGBUILD
-
-      - name: Publish cotp AUR package
-        uses: KSXGitHub/github-actions-deploy-aur@v2.7.0
-        with:
-          pkgname: cotp
-          pkgbuild: ./ci/cotp/PKGBUILD
-          commit_username: ${{ secrets.AUR_USERNAME }}
-          commit_email: ${{ secrets.AUR_EMAIL }}
-          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
-          commit_message: Update cotp package to version ${{env.TAG}}
-          ssh_keyscan_types: rsa,dsa,ecdsa,ed25519
-
-      - name: "Clean repo dir"
-        shell: bash
-        run: |
-          rm -rf /tmp/local-repo
-
-      - name: Publish cotp-bin AUR package
-        uses: KSXGitHub/github-actions-deploy-aur@v2.7.0
-        with:
-          pkgname: cotp-bin
-          pkgbuild: ./ci/cotp-bin/PKGBUILD
-          commit_username: ${{ secrets.AUR_USERNAME }}
-          commit_email: ${{ secrets.AUR_EMAIL }}
-          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
-          commit_message: Update cotp-bin package to version ${{env.TAG}}
-          ssh_keyscan_types: rsa,dsa,ecdsa,ed25519
+      - name: Run the release
+        run: npx semantic-release
