@@ -2,7 +2,7 @@
     "version": 2,
     "elements": [
       {
-        "secret": "AA",
+        "secret": "A7MES7UQ44SRYSGZOMZICLSKOXMHZEZ25U3CG5MIS3MNTDDLQV7W7I5ZAZOIYHYEM7CUXFRZG36WQZ7GY453WYXQTJNVSYS2TTVSYHEX2NOIAUQ65GL6EWYRZUMPTQ2L3KGIM2SPEVJMFA7C4V2HIUWJJBLSSD7H4VAQNGBR42IQU",
         "issuer": "",
         "label": "label1",
         "digits": 6,
@@ -13,7 +13,7 @@
         "pin": null
       },
       {
-        "secret": "AA",
+        "secret": "EO2Q2L76QCOOKQENXAHLFBSYH3QDSJMRLK5MN4MPN6RFXJS2UU67P2JWATQ2H6HXDN66W4FQ4JAC4CQ",
         "issuer": "ciccio",
         "label": "label2",
         "digits": 6,

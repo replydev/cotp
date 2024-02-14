@@ -119,7 +119,6 @@ mod tests {
             "test_samples/freeotp_plus_example1.json",
         ));
 
-        assert!(imported.is_ok());
         assert_eq!(
             vec![
                 OTPElement {
@@ -161,8 +160,6 @@ mod tests {
         let converted: Result<FreeOTPPlusJson> = (&input_cotp_database).try_into();
 
         // Assert
-        assert!(converted.is_ok());
-
         let free_otp = converted.unwrap();
 
         assert_eq!(
@@ -179,7 +176,15 @@ mod tests {
                     issuer_ext: String::default(),
                     _label: "label1".to_string(),
                     period: 30,
-                    secret: vec![0],
+                    secret: vec![
+                        7, -40, 73, 126, -112, -25, 37, 28, 72, -39, 115, 50, -127, 46, 74, 117,
+                        -40, 124, -109, 58, -19, 54, 35, 117, -120, -106, -40, -39, -116, 107,
+                        -123, 127, 111, -93, -71, 6, 92, -116, 31, 4, 103, -59, 75, -106, 57, 54,
+                        -3, 104, 103, -26, -57, 59, -69, 98, -16, -102, 91, 89, 98, 90, -100, -21,
+                        44, 28, -105, -45, 92, -128, 82, 30, -23, -105, -30, 91, 17, -51, 24, -7,
+                        -61, 75, -38, -116, -122, 106, 79, 37, 82, -62, -125, -30, -27, 116, 116,
+                        82, -55, 72, 87, 41, 15, -25, -27, 65, 6, -104, 49, -26, -111, 10
+                    ],
                     _type: "TOTP".to_string()
                 },
                 FreeOTPElement {
@@ -189,7 +194,11 @@ mod tests {
                     issuer_ext: "ciccio".to_string(),
                     _label: "label2".to_string(),
                     period: 30,
-                    secret: vec![0],
+                    secret: vec![
+                        35, -75, 13, 47, -2, -128, -100, -27, 64, -115, -72, 14, -78, -122, 88, 62,
+                        -32, 57, 37, -111, 90, -70, -58, -15, -113, 111, -94, 91, -90, 90, -91, 61,
+                        -9, -23, 54, 4, -31, -93, -8, -9, 27, 125, -21, 112, -80, -30, 64, 46, 10
+                    ],
                     _type: "HOTP".to_string()
                 }
             ],
