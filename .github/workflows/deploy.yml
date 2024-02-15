@@ -68,7 +68,7 @@ jobs:
         shell: bash
         run: |
           mkdir dist
-          if [ "${{ matrix.os }}" = "windows-2019" ]; then
+          if [ "${{ matrix.os }}" == *"windows"* ]; then
             cp "target/${{ matrix.target }}/release/$BIN_NAME.exe" "dist/"
           else
             cp "target/${{ matrix.target }}/release/$BIN_NAME" "dist/"
@@ -76,7 +76,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4.3.1
         with:
-          name: cotp-${{ matrix.build }}-${{ inputs.tag }}
+          name: cotp-${{ matrix.build }}
           path: dist
 
   publish:
