@@ -12,6 +12,7 @@ jobs:
       contents: write # Permit release creation
       issues: write # Write on released issues
       pull-requests: write # Write on released PRs
+      actions: write # Trigger deploy action
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -27,4 +28,4 @@ jobs:
       - name: Release with semantic versioning
         run: npx semantic-release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
