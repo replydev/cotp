@@ -6,7 +6,8 @@
 		[
 			"@semantic-release/exec",
 			{
-				"prepareCmd": "ci/write_cargo_version.sh ${nextRelease.version}"
+				"prepareCmd": "ci/write_cargo_version.sh ${nextRelease.version}",
+        "successCmd": "gh workflow run Deploy -f tag=${nextRelease.version}"
 			}
 		],
 		[

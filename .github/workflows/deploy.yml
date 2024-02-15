@@ -1,8 +1,11 @@
 name: Deploy
 on:
-  push:
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
+   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag name used to deploy the version'
+        required: true
+        type: string
 
 env:
   BIN_NAME: cotp
@@ -73,7 +76,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4.3.1
         with:
-          name: bins-${{ matrix.build }}
+          name: cotp-${{ matrix.build }}-${{ inputs.tag }}
           path: dist
 
   publish:
@@ -87,23 +90,12 @@ jobs:
           submodules: false
 
       - uses: actions/download-artifact@v4
-        # with:
-        #   path: dist
-      # - run: ls -al ./dist
-      - run: ls -al bins-*
-
-      - name: Calculate tag name
-        run: |
-          name=dev
-          if [[ $GITHUB_REF == refs/tags/v* ]]; then
-            name=${GITHUB_REF:10}
-          fi
-          echo val=$name >> $GITHUB_OUTPUT
-          echo TAG=$name >> $GITHUB_ENV
-        id: tagname
+      - run: ls -al cotp-*
 
       - name: Build archive
         shell: bash
+        env:
+          TAG: ${{ inputs.tag }}
         run: |
           set -ex
 
@@ -111,8 +103,8 @@ jobs:
           mkdir tmp
           mkdir dist
 
-          for dir in bins-* ; do
-              platform=${dir#"bins-"}
+          for dir in cotp-* ; do
+              platform=${dir#"cotp-"}
               unset exe
               # If platform contains "win" then append .exe to the filename
               if [[ "$platform" == *"win"* ]]; then
@@ -137,13 +129,8 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: dist/*
           file_glob: true
-          tag: ${{ steps.tagname.outputs.val }}
+          tag: ${{ inputs.tag }}
           overwrite: true
-
-      - name: Extract version
-        id: extract-version
-        run: |
-          printf "%s=%s >> $GITHUB_OUTPUT\n" tag-name "${GITHUB_REF#refs/tags/}"
 
   publish_on_cargo_crates:
     name: "Publish crate on crates.io"
@@ -177,22 +164,10 @@ jobs:
         with:
           submodules: true
 
-      - name: Calculate tag name
-        run: |
-          name=dev
-          if [[ $GITHUB_REF == refs/tags/v* ]]; then
-            name=${GITHUB_REF:10}
-          fi
-          echo val=$name >> $GITHUB_OUTPUT
-          echo TAG=$name >> $GITHUB_ENV
-        id: tagname
-
       - name: Generate PKGBUILDs
         shell: bash
         run: |
-          # requests is already installed
-          # pip install requests
-          python ci/build_pkgbuild.py ${{env.TAG}}
+          python ci/build_pkgbuild.py ${{ inputs.tag }}
           cat ./ci/cotp/PKGBUILD
           cat ./ci/cotp-bin/PKGBUILD
 
@@ -204,7 +179,7 @@ jobs:
           commit_username: ${{ secrets.AUR_USERNAME }}
           commit_email: ${{ secrets.AUR_EMAIL }}
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
-          commit_message: Update cotp package to version ${{env.TAG}}
+          commit_message: Update cotp package to version ${{ inputs.tag }}
           ssh_keyscan_types: rsa,dsa,ecdsa,ed25519
 
       - name: "Clean repo dir"
@@ -220,5 +195,5 @@ jobs:
           commit_username: ${{ secrets.AUR_USERNAME }}
           commit_email: ${{ secrets.AUR_EMAIL }}
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
-          commit_message: Update cotp-bin package to version ${{env.TAG}}
+          commit_message: Update cotp-bin package to version ${{ inputs.tag }}
           ssh_keyscan_types: rsa,dsa,ecdsa,ed25519
