@@ -25,6 +25,7 @@ jobs:
       - name: Install Semantic Release globally
         run: npm install -g semantic-release @semantic-release/git @semantic-release/exec
 
+      # Semantic Release configuration executes gh CLI which triggers the deploy workflow
       - name: Release with semantic versioning
         run: npx semantic-release
         env:

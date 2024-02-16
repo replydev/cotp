@@ -2,8 +2,8 @@ name: Deploy
 on:
    workflow_dispatch:
     inputs:
-      tag:
-        description: 'Tag name used to deploy the version'
+      new_version:
+        description: New version to deploy
         required: true
         type: string
 
@@ -95,7 +95,7 @@ jobs:
       - name: Build archive
         shell: bash
         env:
-          TAG: ${{ inputs.tag }}
+          NEW_VERSION: ${{ inputs.new_version }}
         run: |
           set -ex
 
@@ -110,7 +110,7 @@ jobs:
               if [[ "$platform" == *"win"* ]]; then
                   exe=".exe"
               fi
-              pkgname=$PROJECT_NAME-$TAG-$platform
+              pkgname=$PROJECT_NAME-$NEW_VERSION-$platform
               mkdir tmp/$pkgname
               # cp LICENSE README.md tmp/$pkgname
               mv cotp-$platform/$BIN_NAME$exe tmp/$pkgname
@@ -129,7 +129,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: dist/*
           file_glob: true
-          tag: ${{ inputs.tag }}
+          tag: v${{ inputs.new_version }}
           overwrite: true
 
   publish_on_cargo_crates:
@@ -167,7 +167,7 @@ jobs:
       - name: Generate PKGBUILDs
         shell: bash
         run: |
-          python ci/build_pkgbuild.py ${{ inputs.tag }}
+          python ci/build_pkgbuild.py ${{ inputs.new_version }}
           cat ./ci/cotp/PKGBUILD
           cat ./ci/cotp-bin/PKGBUILD
 
@@ -179,7 +179,7 @@ jobs:
           commit_username: ${{ secrets.AUR_USERNAME }}
           commit_email: ${{ secrets.AUR_EMAIL }}
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
-          commit_message: Update cotp package to version ${{ inputs.tag }}
+          commit_message: Update cotp package to version ${{ inputs.new_version }}
           ssh_keyscan_types: rsa,dsa,ecdsa,ed25519
 
       - name: "Clean repo dir"
@@ -195,5 +195,5 @@ jobs:
           commit_username: ${{ secrets.AUR_USERNAME }}
           commit_email: ${{ secrets.AUR_EMAIL }}
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
-          commit_message: Update cotp-bin package to version ${{ inputs.tag }}
+          commit_message: Update cotp-bin package to version ${{ inputs.new_version }}
           ssh_keyscan_types: rsa,dsa,ecdsa,ed25519

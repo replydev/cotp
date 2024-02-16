@@ -3,17 +3,18 @@
 	"plugins": [
 		"@semantic-release/commit-analyzer",
 		"@semantic-release/release-notes-generator",
+		"@semantic-release/changelog",
 		[
 			"@semantic-release/exec",
 			{
 				"prepareCmd": "ci/write_cargo_version.sh ${nextRelease.version}",
-        "successCmd": "gh workflow run Deploy -f tag=${nextRelease.version}"
+				"successCmd": "gh workflow run Deploy -f new_version=${nextRelease.version}"
 			}
 		],
 		[
 			"@semantic-release/git",
 			{
-				"assets": ["Cargo.toml", "Cargo.lock"]
+				"assets": ["Cargo.toml", "Cargo.lock", "CHANGELOG.md"]
 			}
 		],
 		"@semantic-release/github"
