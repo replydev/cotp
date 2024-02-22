@@ -31,10 +31,6 @@ enum CotpSubcommands {
 
 #[derive(Args)]
 pub struct AddArgs {
-    /// Add OTP code via an OTP URI
-    #[arg(short = 'u', long = "otpuri", required_unless_present = "label")]
-    pub otp_uri: bool,
-
     /// Specify the OTP code type
     #[arg(short = 't', long = "type", default_value = "totp")]
     pub otp_type: OTPType,
@@ -44,7 +40,7 @@ pub struct AddArgs {
     pub issuer: String,
 
     /// Code label
-    #[arg(short, long, required_unless_present = "otp_uri")]
+    #[arg(short, long, required = true)]
     pub label: Option<String>,
 
     /// OTP Algorithm
