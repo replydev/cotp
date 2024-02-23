@@ -42,20 +42,16 @@ cotp should be easily compiled on the most used platform, but it is mostly teste
 
 ## Arch Linux and arch-based distributions
 
-We have two AUR packages ready to be installed, [cotp](https://aur.archlinux.org/packages/cotp)
-and [cotp-bin](https://aur.archlinux.org/packages/cotp-bin). You can use an AUR Helper
-like [paru](https://github.com/morganamilo/paru):
-
-`paru -S cotp`
-
-Or manually clone the AUR repo and make the pkg
+Arch Linux has an [official package](https://archlinux.org/packages/extra/x86_64/cotp) in the [extra] repository:
 
 ```
-pacman -S git base-devel
-git clone https://aur.archlinux.org/cotp.git
-cd cotp
-makepkg -si
+pacman -S cotp
 ```
+
+Additionally if you wish to compile and run the Git HEAD version instead of the current stable release,
+an AUR package [cotp-git](https://aur.archlinux.org/packages/cotp-git) can be installed using the
+[usual instructions](https://wiki.archlinux.org/title/Arch_User_Repository#Installing_and_upgrading_packages)
+or your favorite AUR helper like [paru](https://github.com/morganamilo/paru) (`paru -S cotp-git`).
 
 ## Other linux distributions and \*nix
 
