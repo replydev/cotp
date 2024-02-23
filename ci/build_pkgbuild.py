@@ -64,8 +64,8 @@ def main():
     source_digest = file_digest(source_filename)
     print(f"Source digest: {source_digest}")
 
-    compiled_bin_url = f"https://github.com/replydev/cotp/releases/download/v{version}/cotp-v{version}-x86_64-linux.tar.xz"
-    compiled_bin_filename = f"cotp-v{version}-x86_64-linux.tar.xz"
+    compiled_bin_url = f"https://github.com/replydev/cotp/releases/download/v{version}/cotp-{version}-x86_64-linux.tar.xz"
+    compiled_bin_filename = f"cotp-{version}-x86_64-linux.tar.xz"
     download_file(compiled_bin_url, compiled_bin_filename)
     compiled_bin_digest = file_digest(compiled_bin_filename)
     print(f"Binary digest: {compiled_bin_digest}")
