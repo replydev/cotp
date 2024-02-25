@@ -1,6 +1,10 @@
 # cotp - command line TOTP/HOTP authenticator
 
-[![Actions Status](https://github.com/replydev/cotp/workflows/Build/badge.svg)](https://github.com/replydev/cotp/actions) [![AUR package](https://img.shields.io/aur/version/cotp)](https://aur.archlinux.org/packages/cotp/) [![AUR package](https://img.shields.io/aur/version/cotp-bin)](https://aur.archlinux.org/packages/cotp-bin/) [![crates.io](https://img.shields.io/crates/v/cotp)](https://crates.io/crates/cotp) [![Downloads](https://img.shields.io/crates/d/cotp)](https://crates.io/crates/cotp)
+[![Actions Status](https://github.com/replydev/cotp/workflows/Build/badge.svg)](https://github.com/replydev/cotp/actions)
+[![crates.io](https://img.shields.io/crates/v/cotp)](https://crates.io/crates/cotp) 
+[![Downloads](https://img.shields.io/crates/d/cotp)](https://crates.io/crates/cotp)
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/cotp.svg)](https://repology.org/project/cotp/versions)
 
 I believe that security is of paramount importance, especially in this digital world. I created cotp because I needed a
 minimalist, secure, desktop accessible software to manage my two-factor authentication codes.
@@ -42,20 +46,16 @@ cotp should be easily compiled on the most used platform, but it is mostly teste
 
 ## Arch Linux and arch-based distributions
 
-We have two AUR packages ready to be installed, [cotp](https://aur.archlinux.org/packages/cotp)
-and [cotp-bin](https://aur.archlinux.org/packages/cotp-bin). You can use an AUR Helper
-like [paru](https://github.com/morganamilo/paru):
-
-`paru -S cotp`
-
-Or manually clone the AUR repo and make the pkg
+Arch Linux has an [official package](https://archlinux.org/packages/extra/x86_64/cotp) in the [extra] repository:
 
 ```
-pacman -S git base-devel
-git clone https://aur.archlinux.org/cotp.git
-cd cotp
-makepkg -si
+pacman -S cotp
 ```
+
+Additionally if you wish to compile and run the Git HEAD version instead of the current stable release,
+an AUR package [cotp-git](https://aur.archlinux.org/packages/cotp-git) can be installed using the
+[usual instructions](https://wiki.archlinux.org/title/Arch_User_Repository#Installing_and_upgrading_packages)
+or your favorite AUR helper like [paru](https://github.com/morganamilo/paru) (`paru -S cotp-git`).
 
 ## Other linux distributions and \*nix
 
