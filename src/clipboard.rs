@@ -1,4 +1,5 @@
 use base64::{engine::general_purpose, Engine as _};
+use color_eyre::eyre::eyre;
 use copypasta_ext::prelude::*;
 #[cfg(target_os = "linux")]
 use copypasta_ext::wayland_bin::WaylandBinClipboardContext;
@@ -12,13 +13,13 @@ pub enum CopyType {
     OSC52,
 }
 
-pub fn copy_string_to_clipboard(content: String) -> Result<CopyType, ()> {
-    if ssh_clipboard(content.as_str()) {
+pub fn copy_string_to_clipboard(content: &str) -> color_eyre::Result<CopyType> {
+    if ssh_clipboard(content) {
         Ok(CopyType::OSC52)
-    } else if wayland_clipboard(content.as_str()) || other_platform_clipboard(content.as_str()) {
+    } else if wayland_clipboard(content) || other_platform_clipboard(content) {
         Ok(CopyType::Native)
     } else {
-        Err(())
+        Err(eyre!("Cannot detect clipboard implementation"))
     }
 }
 
