@@ -1,4 +1,4 @@
-use crate::args::{AddArgs, EditArgs, ExportArgs, ImportArgs};
+use crate::args::{AddArgs, EditArgs, ExportArgs, ExtractArgs, ImportArgs};
 use crate::exporters::do_export;
 use crate::exporters::otp_uri::OtpUriList;
 use crate::importers::aegis::AegisJson;
@@ -8,7 +8,7 @@ use crate::importers::converted::ConvertedJsonList;
 use crate::importers::freeotp_plus::FreeOTPPlusJson;
 use crate::importers::importer::import_from_path;
 use crate::otp::otp_element::{OTPDatabase, OTPElement};
-use crate::utils;
+use crate::{clipboard, utils};
 use color_eyre::eyre::{eyre, ErrReport};
 use zeroize::Zeroize;
 
@@ -156,6 +156,38 @@ pub fn export(matches: ExportArgs, database: OTPDatabase) -> color_eyre::Result<
         database
     })
     .map_err(|e| eyre!("An error occurred while exporting database: {e}"))
+}
+
+pub fn extract(args: ExtractArgs, database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
+    let first_with_filters = database
+        .elements
+        .iter()
+        .enumerate()
+        // Filter by index
+        .filter(|(index, _)| args.index.map_or(true, |i| i == *index))
+        .map(|(_, code)| code)
+        // Filter by issuer
+        .filter(|code| {
+            args.issuer.as_ref().map_or(true, |issuer| {
+                code.issuer.to_lowercase() == issuer.to_lowercase()
+            })
+        })
+        // Filter by label
+        .filter(|code| {
+            args.label.as_ref().map_or(true, |label| {
+                code.label.to_lowercase() == label.to_lowercase()
+            })
+        })
+        .next();
+
+    if let Some(otp) = first_with_filters {
+        let code = otp.get_otp_code()?;
+        let _ = clipboard::copy_string_to_clipboard(code.as_str())?;
+        println!("{}", code);
+        Ok(database)
+    } else {
+        Err(eyre!("No such code found with these fields"))
+    }
 }
 
 pub fn change_password(mut database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
