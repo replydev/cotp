@@ -71,7 +71,7 @@ fn main() -> AppResult<()> {
     let error_code = if reowned_database.is_modified() {
         match reowned_database.save(&key, &salt) {
             Ok(_) => {
-                println!("Success");
+                println!("Modifications has been persisted");
                 0
             }
             Err(_) => {
@@ -80,7 +80,6 @@ fn main() -> AppResult<()> {
             }
         }
     } else {
-        println!("Success");
         0
     };
     key.zeroize();
