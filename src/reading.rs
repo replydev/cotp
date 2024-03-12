@@ -15,7 +15,7 @@ pub fn get_elements_from_input() -> color_eyre::Result<ReadResult> {
 }
 
 pub fn get_elements_from_stdin() -> color_eyre::Result<ReadResult> {
-    for password in io::stdin().lock().lines() {
+    if let Some(password) = io::stdin().lock().lines().next() {
         return get_elements_with_password(password?);
     }
     Err(eyre!("Failure during stdin reading"))

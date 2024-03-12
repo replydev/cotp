@@ -164,21 +164,8 @@ pub fn extract(args: ExtractArgs, database: OTPDatabase) -> color_eyre::Result<O
         .iter()
         .enumerate()
         // Filter by index
-        .filter(|(index, _)| args.index.map_or(true, |i| i == *index))
-        .map(|(_, code)| code)
-        // Filter by issuer
-        .filter(|code| {
-            args.issuer.as_ref().map_or(true, |issuer| {
-                code.issuer.to_lowercase() == issuer.to_lowercase()
-            })
-        })
-        // Filter by label
-        .filter(|code| {
-            args.label.as_ref().map_or(true, |label| {
-                code.label.to_lowercase() == label.to_lowercase()
-            })
-        })
-        .next();
+        .find(|(index, code)| filter_extract(&args, index, code))
+        .map(|(_, code)| code);
 
     if let Some(otp) = first_with_filters {
         let code = otp.get_otp_code()?;
@@ -200,4 +187,17 @@ pub fn change_password(mut database: OTPDatabase) -> color_eyre::Result<OTPDatab
         .map_err(ErrReport::from)?;
     new_password.zeroize();
     Ok(database)
+}
+
+fn filter_extract(args: &ExtractArgs, index: &usize, code: &OTPElement) -> bool {
+    let match_by_index = args.index.map_or(true, |i| i == *index);
+
+    let match_by_issuer = args.issuer.as_ref().map_or(true, |issuer| {
+        code.issuer.to_lowercase() == issuer.to_lowercase()
+    });
+
+    let match_by_label = args.label.as_ref().map_or(true, |label| {
+        code.label.to_lowercase() == label.to_lowercase()
+    });
+    match_by_index && match_by_issuer && match_by_label
 }
