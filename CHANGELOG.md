@@ -1,3 +1,13 @@
+# [1.5.0](https://github.com/replydev/cotp/compare/v1.4.5...v1.5.0) (2024-03-12)
+
+
+### Features
+
+* add new extract subcommand and password-stdin flag ([e033e60](https://github.com/replydev/cotp/commit/e033e60d9a0f0df64fd5935bfa43666ded1ee48a))
+* implement code extraction ([87d8ccd](https://github.com/replydev/cotp/commit/87d8ccd4e10554ebb81839bebc189384ffec24a4))
+* implement password reading from stdin ([0f3bef7](https://github.com/replydev/cotp/commit/0f3bef7d00fb9094e16b9f45b938ca25667ec54f))
+* parametrize copy to clipboard and do not set the default ([794a378](https://github.com/replydev/cotp/commit/794a3788f860f83a7d63c4897e79214ae7cc68e0))
+
 ## [1.4.5](https://github.com/replydev/cotp/compare/v1.4.4...v1.4.5) (2024-02-22)
 
 
