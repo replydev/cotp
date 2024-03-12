@@ -182,8 +182,11 @@ pub fn extract(args: ExtractArgs, database: OTPDatabase) -> color_eyre::Result<O
 
     if let Some(otp) = first_with_filters {
         let code = otp.get_otp_code()?;
-        let _ = clipboard::copy_string_to_clipboard(code.as_str())?;
         println!("{}", code);
+        if args.copy_to_clipboard {
+            let _ = clipboard::copy_string_to_clipboard(code.as_str())?;
+            println!("Copied to clipboard");
+        }
         Ok(database)
     } else {
         Err(eyre!("No such code found with these fields"))

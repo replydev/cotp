@@ -141,6 +141,10 @@ pub struct ExtractArgs {
     /// Code label
     #[arg(short, long, required_unless_present_any=["index", "issuer"])]
     pub label: Option<String>,
+
+    /// Copy the code to the clipboard
+    #[arg(short, long = "copy-clipboard", default_value_t = false)]
+    pub copy_to_clipboard: bool,
 }
 
 #[derive(Args)]
