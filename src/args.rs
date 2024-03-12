@@ -13,6 +13,9 @@ use crate::{
 pub struct CotpArgs {
     #[command(subcommand)]
     command: Option<CotpSubcommands>,
+    /// Fetch the password from standard input
+    #[arg(long = "password-stdin", default_value_t = false)]
+    pub password_from_stdin: bool,
 }
 
 #[derive(Subcommand)]
@@ -25,6 +28,8 @@ enum CotpSubcommands {
     Import(ImportArgs),
     /// Export cotp database
     Export(ExportArgs),
+    /// Copies the selected code into the clipboard
+    Extract(ExtractArgs),
     /// Change database password
     Passwd,
 }
@@ -124,6 +129,21 @@ pub struct ImportArgs {
 }
 
 #[derive(Args)]
+pub struct ExtractArgs {
+    /// Code Index
+    #[arg(short, long, required_unless_present_any=["issuer", "label"])]
+    pub index: Option<usize>,
+
+    /// Code issuer
+    #[arg(short = 's', long, required_unless_present_any=["index","label"])]
+    pub issuer: Option<String>,
+
+    /// Code label
+    #[arg(short, long, required_unless_present_any=["index", "issuer"])]
+    pub label: Option<String>,
+}
+
+#[derive(Args)]
 pub struct ExportArgs {
     /// Export file path
     #[arg(short, long, default_value = ".")]
@@ -219,6 +239,7 @@ pub fn args_parser(matches: CotpArgs, read_result: OTPDatabase) -> color_eyre::R
         Some(CotpSubcommands::Edit(args)) => argument_functions::edit(args, read_result),
         Some(CotpSubcommands::Import(args)) => argument_functions::import(args, read_result),
         Some(CotpSubcommands::Export(args)) => argument_functions::export(args, read_result),
+        Some(CotpSubcommands::Extract(args)) => argument_functions::extract(args, read_result),
         Some(CotpSubcommands::Passwd) => argument_functions::change_password(read_result),
         // no args, show dashboard
         None => dashboard(read_result).map_err(|e| eyre!("An error occurred: {e}")),
