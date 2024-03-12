@@ -163,7 +163,6 @@ pub fn extract(args: ExtractArgs, database: OTPDatabase) -> color_eyre::Result<O
         .elements
         .iter()
         .enumerate()
-        // Filter by index
         .find(|(index, code)| filter_extract(&args, index, code))
         .map(|(_, code)| code);
 
@@ -199,5 +198,6 @@ fn filter_extract(args: &ExtractArgs, index: &usize, code: &OTPElement) -> bool 
     let match_by_label = args.label.as_ref().map_or(true, |label| {
         code.label.to_lowercase() == label.to_lowercase()
     });
+
     match_by_index && match_by_issuer && match_by_label
 }
