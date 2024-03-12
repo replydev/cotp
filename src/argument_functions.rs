@@ -1,4 +1,4 @@
-use crate::args::{AddArgs, EditArgs, ExportArgs, ImportArgs};
+use crate::args::{AddArgs, EditArgs, ExportArgs, ExtractArgs, ImportArgs};
 use crate::exporters::do_export;
 use crate::exporters::otp_uri::OtpUriList;
 use crate::importers::aegis::AegisJson;
@@ -8,7 +8,7 @@ use crate::importers::converted::ConvertedJsonList;
 use crate::importers::freeotp_plus::FreeOTPPlusJson;
 use crate::importers::importer::import_from_path;
 use crate::otp::otp_element::{OTPDatabase, OTPElement};
-use crate::utils;
+use crate::{clipboard, utils};
 use color_eyre::eyre::{eyre, ErrReport};
 use zeroize::Zeroize;
 
@@ -158,6 +158,27 @@ pub fn export(matches: ExportArgs, database: OTPDatabase) -> color_eyre::Result<
     .map_err(|e| eyre!("An error occurred while exporting database: {e}"))
 }
 
+pub fn extract(args: ExtractArgs, database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
+    let first_with_filters = database
+        .elements
+        .iter()
+        .enumerate()
+        .find(|(index, code)| filter_extract(&args, index, code))
+        .map(|(_, code)| code);
+
+    if let Some(otp) = first_with_filters {
+        let code = otp.get_otp_code()?;
+        println!("{}", code);
+        if args.copy_to_clipboard {
+            let _ = clipboard::copy_string_to_clipboard(code.as_str())?;
+            println!("Copied to clipboard");
+        }
+        Ok(database)
+    } else {
+        Err(eyre!("No such code found with these fields"))
+    }
+}
+
 pub fn change_password(mut database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
     let mut new_password = utils::verified_password("New password: ", 8);
     database
@@ -165,4 +186,18 @@ pub fn change_password(mut database: OTPDatabase) -> color_eyre::Result<OTPDatab
         .map_err(ErrReport::from)?;
     new_password.zeroize();
     Ok(database)
+}
+
+fn filter_extract(args: &ExtractArgs, index: &usize, code: &OTPElement) -> bool {
+    let match_by_index = args.index.map_or(true, |i| i == *index);
+
+    let match_by_issuer = args.issuer.as_ref().map_or(true, |issuer| {
+        code.issuer.to_lowercase() == issuer.to_lowercase()
+    });
+
+    let match_by_label = args.label.as_ref().map_or(true, |label| {
+        code.label.to_lowercase() == label.to_lowercase()
+    });
+
+    match_by_index && match_by_issuer && match_by_label
 }

@@ -4,15 +4,26 @@ use crate::path::get_db_path;
 use crate::utils;
 use color_eyre::eyre::{eyre, ErrReport};
 use std::fs::read_to_string;
-use std::io;
+use std::io::{self, BufRead};
 use zeroize::Zeroize;
 
 pub type ReadResult = (OTPDatabase, Vec<u8>, Vec<u8>);
 
-pub fn get_elements() -> color_eyre::Result<ReadResult> {
-    let mut pw = utils::password("Password: ", 8);
-    let (elements, key, salt) = read_from_file(&pw)?;
-    pw.zeroize();
+pub fn get_elements_from_input() -> color_eyre::Result<ReadResult> {
+    let pw = utils::password("Password: ", 8);
+    get_elements_with_password(pw)
+}
+
+pub fn get_elements_from_stdin() -> color_eyre::Result<ReadResult> {
+    if let Some(password) = io::stdin().lock().lines().next() {
+        return get_elements_with_password(password?);
+    }
+    Err(eyre!("Failure during stdin reading"))
+}
+
+fn get_elements_with_password(mut password: String) -> color_eyre::Result<ReadResult> {
+    let (elements, key, salt) = read_from_file(&password)?;
+    password.zeroize();
     Ok((elements, key, salt))
 }
 
