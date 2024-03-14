@@ -10,20 +10,17 @@ def fetch_json(filename):
 
 
 def object_to_cotp_json(d):
-    final = []
-    for element in d:
-        final.append(
-            {
-                'label': element['name'],
-                'secret': element['decryptedSecret'],
-                'issuer': "",
-                'type': "TOTP",
-                'digits': int(element['digits']),
-                'counter': 0,
-                "algorithm": "SHA1",
-            }
-        )
-    return final
+    return [
+        {
+            'label': element['name'],
+            'secret': element['decryptedSecret'],
+            'issuer': "",
+            'type': "TOTP",
+            'digits': int(element['digits']),
+            'counter': 0,
+            "algorithm": "SHA1",
+        } for element in d
+    ]
 
 
 def main():
