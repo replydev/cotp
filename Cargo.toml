@@ -51,4 +51,4 @@ md-5 = "0.10.6"
 ratatui = { version = "0.26.1", features = ["all-widgets"] }
 crossterm = "0.27.0"
 url = "2.5.0"
-color-eyre = "0.6.2"
+color-eyre = "0.6.3"
