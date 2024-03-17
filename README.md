@@ -57,6 +57,10 @@ an AUR package [cotp-git](https://aur.archlinux.org/packages/cotp-git) can be in
 [usual instructions](https://wiki.archlinux.org/title/Arch_User_Repository#Installing_and_upgrading_packages)
 or your favorite AUR helper like [paru](https://github.com/morganamilo/paru) (`paru -S cotp-git`).
 
+## NixOS
+
+Check the [official package](https://search.nixos.org/packages?channel=23.11&from=0&size=50&sort=relevance&type=packages&query=cotp).
+
 ## Other linux distributions and \*nix
 
 Before beginning check that you have the required build dependencies to use the rust compiler.
@@ -66,6 +70,12 @@ You need to install the **libxcb-devel** dependency, needed for clipboard coping
 - Debian based: `sudo apt install libxcb1-dev libx11-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev`
 - Fedora / RHEL based: `sudo dnf install libX11-devel`
 - Void Linux `sudo xbps-install -S libxcb-devel`
+
+## macOS
+
+```
+brew install cotp
+```
 
 ## Windows
 
