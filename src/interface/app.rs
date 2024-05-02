@@ -21,7 +21,7 @@ const LARGE_APPLICATION_WIDTH: u16 = 75;
 /// Application result type.
 pub type AppResult<T> = Result<T, Box<dyn error::Error>>;
 
-const DEFAULT_QRCODE_LABEL: &'static str = "Press enter to copy the OTP URI code";
+const DEFAULT_QRCODE_LABEL: &str = "Press enter to copy the OTP URI code";
 
 /// Application.
 pub struct App<'a> {
