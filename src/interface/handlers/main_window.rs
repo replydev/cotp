@@ -5,6 +5,7 @@ use super::{
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::{
+    clipboard::copy_string_to_clipboard,
     interface::{
         app::{App, Popup},
         enums::{Focus, Page, PopupAction},
@@ -102,10 +103,25 @@ pub(super) fn main_handler(key_event: KeyEvent, app: &mut App) {
 
         KeyCode::Char('/') => app.focus = Focus::SearchBar,
 
-        KeyCode::Enter => {
-            app.label_text = copy_selected_code_to_clipboard(app);
-            app.print_percentage = false;
-        }
+        KeyCode::Enter => match app.current_page {
+            Main => {
+                app.label_text = copy_selected_code_to_clipboard(app);
+                app.print_percentage = false;
+            }
+            Qrcode => {
+                let selected_element = app
+                    .table
+                    .state
+                    .selected()
+                    .and_then(|index| app.database.elements_ref().get(index));
+
+                if let Some(element) = selected_element {
+                    let otp_uri = element.get_otpauth_uri();
+                    let _ = copy_string_to_clipboard(&otp_uri);
+                    app.qr_code_page_label = "OTP URI Copied to clipboard";
+                }
+            }
+        },
         _ => {}
     }
 }
@@ -128,9 +144,8 @@ fn handle_counter_switch(app: &mut App, increment: bool) {
 }
 
 fn handle_switch_page(app: &mut App, page: Page) {
-    let default_page = Main;
     if app.current_page == page {
-        app.current_page = default_page;
+        app.reset();
     } else {
         app.current_page = page;
     }
