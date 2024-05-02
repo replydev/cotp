@@ -18,3 +18,9 @@ pub enum Page {
     Main,
     Qrcode,
 }
+
+impl Default for Page {
+    fn default() -> Self {
+        Self::Main
+    }
+}
