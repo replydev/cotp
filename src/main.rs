@@ -4,7 +4,7 @@ use clap::Parser;
 use color_eyre::eyre::eyre;
 use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
-use interface::handler::handle_key_events;
+use interface::handlers::handle_key_events;
 use interface::ui::Tui;
 use otp::otp_element::{OTPDatabase, CURRENT_DATABASE_VERSION};
 use ratatui::prelude::CrosstermBackend;

@@ -21,6 +21,8 @@ const LARGE_APPLICATION_WIDTH: u16 = 75;
 /// Application result type.
 pub type AppResult<T> = Result<T, Box<dyn error::Error>>;
 
+const DEFAULT_QRCODE_LABEL: &str = "Press enter to copy the OTP URI code";
+
 /// Application.
 pub struct App<'a> {
     /// Is the application running?
@@ -36,6 +38,9 @@ pub struct App<'a> {
     pub(crate) search_query: String,
     pub(crate) focus: Focus,
     pub(crate) popup: Popup,
+
+    /// Info text in the QRCode page
+    pub(crate) qr_code_page_label: &'static str,
 }
 
 pub struct Popup {
@@ -60,7 +65,7 @@ impl<'a> App<'a> {
             progress: percentage(),
             label_text: String::from(""),
             print_percentage: true,
-            current_page: Main,
+            current_page: Page::default(),
             search_query: String::from(""),
             focus: Focus::MainPage,
             popup: Popup {
@@ -69,7 +74,14 @@ impl<'a> App<'a> {
                 percent_x: 60,
                 percent_y: 20,
             },
+            qr_code_page_label: DEFAULT_QRCODE_LABEL,
         }
+    }
+
+    pub(crate) fn reset(&mut self) {
+        self.current_page = Page::default();
+        self.print_percentage = true;
+        self.qr_code_page_label = DEFAULT_QRCODE_LABEL;
     }
 
     /// Handles the tick event of the terminal.
@@ -105,11 +117,15 @@ impl<'a> App<'a> {
                 } else {
                     format!("{} - {}", &element.issuer, &element.label)
                 };
-                Paragraph::new(element.get_qrcode())
-                    .block(Block::default().title(title).borders(Borders::ALL))
-                    .style(Style::default().fg(Color::White).bg(Color::Reset))
-                    .alignment(Alignment::Center)
-                    .wrap(Wrap { trim: true })
+                Paragraph::new(format!(
+                    "{}\n{}",
+                    element.get_qrcode(),
+                    self.qr_code_page_label
+                ))
+                .block(Block::default().title(title).borders(Borders::ALL))
+                .style(Style::default().fg(Color::White).bg(Color::Reset))
+                .alignment(Alignment::Center)
+                .wrap(Wrap { trim: true })
             })
             .unwrap_or_else(|| {
                 Paragraph::new("No element is selected")
