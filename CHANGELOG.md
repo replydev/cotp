@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/replydev/cotp/compare/v1.5.0...v1.6.0) (2024-05-02)
+
+
+### Features
+
+* implement otp uri copying from QRCode page ([1120f07](https://github.com/replydev/cotp/commit/1120f070b09ea2ac6e86b9507714b881c768ac53))
+
 # [1.5.0](https://github.com/replydev/cotp/compare/v1.4.5...v1.5.0) (2024-03-12)
 
 
