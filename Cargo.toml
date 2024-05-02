@@ -33,7 +33,7 @@ dirs = "5.0.1"
 rpassword = "7.3.1"
 data-encoding = "2.5.0"
 copypasta-ext = "0.4.4"
-zeroize = { version = "1.7.0", features = ["zeroize_derive"]}
+zeroize = { version = "1.8.0", features = ["zeroize_derive"]}
 clap = { version = "4.5.4", features = ["derive"] }
 hmac = "0.12.1"
 sha-1 = "0.10.1"
