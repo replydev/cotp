@@ -1,0 +1,5 @@
+{
+    "items": [
+        "otpauth://totp/:test?secret=AA&algorithm=SHA1&digits=6&period=30&lock=false"
+    ]
+}
