@@ -7,6 +7,7 @@ use crate::importers::authy_remote_debug::AuthyExportedList;
 use crate::importers::converted::ConvertedJsonList;
 use crate::importers::freeotp_plus::FreeOTPPlusJson;
 use crate::importers::importer::import_from_path;
+use crate::otp::from_otp_uri::FromOtpUri;
 use crate::otp::otp_element::{OTPDatabase, OTPElement};
 use crate::{clipboard, utils};
 use color_eyre::eyre::{eyre, ErrReport};
@@ -48,8 +49,14 @@ pub fn import(matches: ImportArgs, mut database: OTPDatabase) -> color_eyre::Res
 }
 
 pub fn add(matches: AddArgs, mut database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
-    let otp_element = get_from_args(matches)?;
-
+    let otp_element = if matches.otp_uri {
+        let mut otp_uri = rpassword::prompt_password("Insert the otp uri: ").unwrap();
+        let result = OTPElement::from_otp_uri(otp_uri.as_str());
+        otp_uri.zeroize();
+        result?
+    } else {
+        get_from_args(matches)?
+    };
     if !otp_element.valid_secret() {
         return Err(ErrReport::msg("Invalid secret."));
     }
