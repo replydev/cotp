@@ -33,7 +33,7 @@ jobs:
     name: Build debug artifacts
     strategy:
       matrix:
-        build: [x86_64-linux, aarch64-linux, x86_64-macos, x86_64-win-msvc]
+        build: [x86_64-linux, aarch64-linux, x86_64-macos, aarch64-macos, x86_64-win-msvc]
         include:
           - build: x86_64-linux
             os: ubuntu-latest
@@ -44,6 +44,9 @@ jobs:
           - build: x86_64-macos
             os: macos-latest
             target: x86_64-apple-darwin
+          - build: aarch64-macos
+            os: macos-latest
+            target: aarch64-apple-darwin
           - build: x86_64-win-msvc
             os: windows-latest
             target: x86_64-pc-windows-msvc
