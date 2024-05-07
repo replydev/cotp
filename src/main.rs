@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-use args::CotpArgs;
+use arguments::{args_parser, CotpArgs};
 use clap::Parser;
 use color_eyre::eyre::eyre;
 use interface::app::AppResult;
@@ -13,8 +13,7 @@ use reading::{get_elements_from_input, get_elements_from_stdin, ReadResult};
 use std::{io, vec};
 use zeroize::Zeroize;
 
-mod args;
-mod argument_functions;
+mod arguments;
 mod clipboard;
 mod crypto;
 mod exporters;
@@ -61,7 +60,7 @@ fn main() -> AppResult<()> {
         }
     };
 
-    let mut reowned_database = match args::args_parser(cotp_args, database) {
+    let mut reowned_database = match args_parser(cotp_args, database) {
         Ok(d) => d,
         Err(e) => {
             eprintln!("An error occurred: {e}");
