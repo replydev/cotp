@@ -56,7 +56,7 @@ pub enum CotpSubcommands {
 
 pub fn args_parser(matches: CotpArgs, read_result: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
     if let Some(command) = matches.command {
-        CotpSubcommands::from(command).run_command(read_result)
+        command.run_command(read_result)
     } else {
         dashboard(read_result).map_err(|e| eyre!("An error occurred: {e}"))
     }
