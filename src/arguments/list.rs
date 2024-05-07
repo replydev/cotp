@@ -1,6 +1,8 @@
 use clap::Args;
+use color_eyre::eyre::{eyre, Result};
+use serde::Serialize;
 
-use crate::otp::otp_element::OTPDatabase;
+use crate::otp::otp_element::{OTPDatabase, OTPElement};
 
 use super::SubcommandExecutor;
 
@@ -33,13 +35,41 @@ impl Default for ListFormat {
     }
 }
 
+/// Defines JSON structure to output using the --json argument in the list subcommand
+#[derive(Serialize)]
+struct JsonOtpList<'a> {
+    issuer: &'a str,
+    label: &'a str,
+    otp_code: String,
+}
+
+impl<'a> TryFrom<&'a OTPElement> for JsonOtpList<'a> {
+    type Error = color_eyre::eyre::Error;
+
+    fn try_from(value: &'a OTPElement) -> Result<Self, Self::Error> {
+        let otp_code = value.get_otp_code()?;
+        Ok(JsonOtpList {
+            issuer: &value.issuer,
+            label: &value.label,
+            otp_code,
+        })
+    }
+}
+
 impl SubcommandExecutor for ListArgs {
     fn run_command(self, otp_database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
-        otp_database
-            .elements
-            .iter()
-            .enumerate()
-            .for_each(|(index, e)| {
+        let elements_iterator = otp_database.elements.iter().enumerate();
+
+        if self.format.unwrap_or_default().json {
+            let json_elements = elements_iterator
+                .map(|(_, element)| element.try_into())
+                .collect::<Result<Vec<JsonOtpList>>>()?;
+
+            let stringified = serde_json::to_string_pretty(&json_elements)
+                .map_err(|e| eyre!("Error during JSON serialization: {:?}", e))?;
+            print!("{stringified}");
+        } else {
+            elements_iterator.for_each(|(index, e)| {
                 println!(
                     "{}\t{}\t{}\t{}",
                     index,
@@ -53,6 +83,8 @@ impl SubcommandExecutor for ListArgs {
                         .unwrap_or("ERROR during calculation".to_string())
                 )
             });
+        }
+
         Ok(otp_database)
     }
 }
