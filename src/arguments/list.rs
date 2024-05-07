@@ -35,6 +35,24 @@ impl Default for ListFormat {
 
 impl SubcommandExecutor for ListArgs {
     fn run_command(self, otp_database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
-        todo!()
+        otp_database
+            .elements
+            .iter()
+            .enumerate()
+            .for_each(|(index, e)| {
+                println!(
+                    "{}\t{}\t{}\t{}",
+                    index,
+                    if e.issuer.is_empty() {
+                        "<No issuer>"
+                    } else {
+                        e.issuer.as_str()
+                    },
+                    &e.label,
+                    e.get_otp_code()
+                        .unwrap_or("ERROR during calculation".to_string())
+                )
+            });
+        Ok(otp_database)
     }
 }
