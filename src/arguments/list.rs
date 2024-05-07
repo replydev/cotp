@@ -69,9 +69,13 @@ impl SubcommandExecutor for ListArgs {
                 .map_err(|e| eyre!("Error during JSON serialization: {:?}", e))?;
             print!("{stringified}");
         } else {
+            println!(
+                "{0: <6} {1: <30} {2: <70} {3: <10}",
+                "Index", "Issuer", "Label", "OTP"
+            );
             elements_iterator.for_each(|(index, e)| {
                 println!(
-                    "{}\t{}\t{}\t{}",
+                    "{0: <6} {1: <30} {2: <70} {3: <10}",
                     index,
                     if e.issuer.is_empty() {
                         "<No issuer>"
@@ -79,8 +83,7 @@ impl SubcommandExecutor for ListArgs {
                         e.issuer.as_str()
                     },
                     &e.label,
-                    e.get_otp_code()
-                        .unwrap_or("ERROR during calculation".to_string())
+                    e.get_otp_code().unwrap_or("ERROR".to_string())
                 )
             });
         }
