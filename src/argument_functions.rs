@@ -1,4 +1,4 @@
-use crate::args::{AddArgs, EditArgs, ExportArgs, ExtractArgs, ImportArgs};
+use crate::args::{AddArgs, EditArgs, ExportArgs, ExtractArgs, ImportArgs, ListArgs};
 use crate::exporters::do_export;
 use crate::exporters::otp_uri::OtpUriList;
 use crate::importers::aegis::AegisJson;
@@ -131,6 +131,10 @@ pub fn edit(matches: EditArgs, mut database: OTPDatabase) -> color_eyre::Result<
     } else {
         Err(eyre!("{index} is an invalid index"))
     }
+}
+
+pub fn list(matches: ListArgs, mut database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
+    todo!()
 }
 
 pub fn export(matches: ExportArgs, database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {

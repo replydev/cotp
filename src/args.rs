@@ -9,7 +9,7 @@ use crate::{
 };
 
 #[derive(Parser)]
-#[command(author, version = env!("COTP_VERSION"), about, long_about = None)]
+#[command(author, version = env ! ("COTP_VERSION"), about, long_about = None)]
 pub struct CotpArgs {
     #[command(subcommand)]
     command: Option<CotpSubcommands>,
@@ -24,6 +24,8 @@ enum CotpSubcommands {
     Add(AddArgs),
     /// Edit an existing OTP Code
     Edit(EditArgs),
+    /// List codes
+    List(ListArgs),
     /// Import codes from other apps
     Import(ImportArgs),
     /// Export cotp database
@@ -123,6 +125,13 @@ pub struct EditArgs {
 }
 
 #[derive(Args)]
+pub struct ListArgs {
+    /// List output format
+    #[command(flatten)]
+    pub format: Option<ExportFormat>,
+}
+
+#[derive(Args)]
 pub struct ImportArgs {
     #[command(flatten)]
     pub backup_type: BackupType,
@@ -132,18 +141,40 @@ pub struct ImportArgs {
     pub path: PathBuf,
 }
 
+/// Defines the output formats of the list subcommand
+#[derive(Args)]
+#[group(required = false, multiple = false)]
+pub struct ListFormat {
+    /// List OTP codes in plain format
+    #[arg(short, long)]
+    pub plain: bool,
+
+    /// List OTP codes in JSON format
+    #[arg(short = 'e', long)]
+    pub json: bool,
+}
+
+impl Default for ListFormat {
+    fn default() -> Self {
+        Self {
+            plain: true,
+            json: false,
+        }
+    }
+}
+
 #[derive(Args)]
 pub struct ExtractArgs {
     /// Code Index
-    #[arg(short, long, required_unless_present_any=["issuer", "label"])]
+    #[arg(short, long, required_unless_present_any = ["issuer", "label"])]
     pub index: Option<usize>,
 
     /// Code issuer
-    #[arg(short = 's', long, required_unless_present_any=["index","label"])]
+    #[arg(short = 's', long, required_unless_present_any = ["index", "label"])]
     pub issuer: Option<String>,
 
     /// Code label
-    #[arg(short, long, required_unless_present_any=["index", "issuer"])]
+    #[arg(short, long, required_unless_present_any = ["index", "issuer"])]
     pub label: Option<String>,
 
     /// Copy the code to the clipboard
@@ -245,6 +276,7 @@ pub fn args_parser(matches: CotpArgs, read_result: OTPDatabase) -> color_eyre::R
     match matches.command {
         Some(CotpSubcommands::Add(args)) => argument_functions::add(args, read_result),
         Some(CotpSubcommands::Edit(args)) => argument_functions::edit(args, read_result),
+        Some(CotpSubcommands::List(args)) => argument_functions::list(args, read_result),
         Some(CotpSubcommands::Import(args)) => argument_functions::import(args, read_result),
         Some(CotpSubcommands::Export(args)) => argument_functions::export(args, read_result),
         Some(CotpSubcommands::Extract(args)) => argument_functions::extract(args, read_result),
