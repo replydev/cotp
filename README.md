@@ -79,7 +79,7 @@ brew install cotp
 
 ## Windows
 
-Windows installation/compilation is supported with both of toolchains.
+Building is supported with both `x86_64-pc-windows-gnu` and `x86_64-pc-windows-msvc` toolchains.
 
 If you want to use `x86_64-pc-windows-msvc` you will need to install
 the [Visual C++ 2019 Build Tools](https://visualstudio.microsoft.com/it/thank-you-downloading-visual-studio/?sku=BuildTools&rel=16)
