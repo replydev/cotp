@@ -130,6 +130,14 @@ It will convert the database in a json format readable by cotp.
 To terminate the import:
 `cotp import --authy --path path/to/converted_database.json`
 
+# Configuration
+
+By default database is located in `$HOME/.cotp/db.cotp`. If you want to use a different path, you can use `COTP_DB_PATH` environment variable. 
+Here is an example of how to do this in bash:
+```bash
+$ COTP_DB_PATH=/home/user/.local/custom-folder/db.cotp /usr/bin/cotp
+```
+
 # Planned features
 
 Currently, there is not any planned feature. If you need something new that could improve the software feel free to open
