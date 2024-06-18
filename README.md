@@ -22,6 +22,30 @@ dashboard. Type `i` to get some instruction. Otherwise just enter `cotp --help`.
 
 In the first run you will be prompted to insert a password to initialize the database.
 
+## Basic functionalities
+
+### Display all the OTP codes in the interactivee dashboard
+
+```
+cotp
+```
+
+### Add a new TOTP code from a BASE32 secret key
+
+```
+cotp add -l <label> -i <optional_issuer>
+Password: <insert your database password>
+Insert the secret: <BASE32 secret>
+```
+
+### Add a new HOTP code with custom algorithm and digits
+
+```
+cotp add --type hotp --algorithm SHA256 -d 8 --counter 10
+```
+
+BASE32 secret will be prompted as usual
+
 ## Encryption
 
 This program relies on only one database file encrypted
