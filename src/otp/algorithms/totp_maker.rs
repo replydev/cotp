@@ -30,17 +30,8 @@ mod tests {
     #[test]
     fn test_totp() {
         assert_eq!(
-            format_code(
-                generate_totp("BASE32SECRET3232", OTPAlgorithm::Sha1, 0, 30, 0).unwrap(),
-                6
-            ),
-            "260182"
+            455260182,
+            generate_totp("BASE32SECRET3232", OTPAlgorithm::Sha1, 0, 30, 0).unwrap()
         );
-    }
-
-    fn format_code(value: u32, digits: u32) -> String {
-        // Get the formatted code
-        let s = (value % 10_u32.pow(digits)).to_string();
-        "0".repeat(digits as usize - s.chars().count()) + s.as_str()
     }
 }
