@@ -1,3 +1,11 @@
+## [1.7.1](https://github.com/replydev/cotp/compare/v1.7.0...v1.7.1) (2024-06-19)
+
+
+### Bug Fixes
+
+* check for integer overflow if digits value is too high ([95cf5a2](https://github.com/replydev/cotp/commit/95cf5a28eeebb73b4aab3eb80787a614fe329da4))
+* validate digits input value from command line ([d03d4b8](https://github.com/replydev/cotp/commit/d03d4b8da72c25a6cab97b8f91a8ea28a7341bbb))
+
 # [1.7.0](https://github.com/replydev/cotp/compare/v1.6.1...v1.7.0) (2024-05-09)
 
 
