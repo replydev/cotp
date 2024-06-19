@@ -2,7 +2,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crossterm::event::{self, Event as CrosstermEvent, KeyEvent, KeyEventKind, MouseEvent};
+use crossterm::event::{self, Event as CrosstermEvent, KeyEvent, KeyEventKind};
 
 use crate::interface::app::AppResult;
 
@@ -14,15 +14,15 @@ pub enum Event {
     /// Key press.
     Key(KeyEvent),
     /// Mouse click/scroll.
-    Mouse(MouseEvent),
+    Mouse(()),
     /// Terminal resize.
-    Resize(u16, u16),
+    Resize((), ()),
     /// Focus gained
     FocusGained(),
     /// Focus lost
     FocusLost(),
     /// Paste text
-    Paste(String),
+    Paste(()),
 }
 
 /// Terminal event handler.
@@ -59,11 +59,11 @@ impl EventHandler {
                                 Ok(())
                             }
                         }
-                        CrosstermEvent::Mouse(e) => sender.send(Event::Mouse(e)),
-                        CrosstermEvent::Resize(w, h) => sender.send(Event::Resize(w, h)),
+                        CrosstermEvent::Mouse(_e) => sender.send(Event::Mouse(())),
+                        CrosstermEvent::Resize(_w, _h) => sender.send(Event::Resize((), ())),
                         CrosstermEvent::FocusGained => sender.send(Event::FocusGained()),
                         CrosstermEvent::FocusLost => sender.send(Event::FocusLost()),
-                        CrosstermEvent::Paste(e) => sender.send(Event::Paste(e)),
+                        CrosstermEvent::Paste(_e) => sender.send(Event::Paste(())),
                     }
                     .expect("failed to send terminal event")
                 }

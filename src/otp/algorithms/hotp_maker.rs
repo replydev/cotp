@@ -86,18 +86,16 @@ mod tests {
     #[test]
     fn test_hotp() {
         assert_eq!(
-            format_code(generate_hotp::<Sha1>("BASE32SECRET3232", 0).unwrap(), 6),
-            "260182"
-        );
-        assert_eq!(
-            format_code(generate_hotp::<Sha1>("BASE32SECRET3232", 1).unwrap(), 6),
-            "055283"
+            455260182,
+            generate_hotp::<Sha1>("BASE32SECRET3232", 0).unwrap()
         );
     }
 
-    fn format_code(value: u32, digits: u32) -> String {
-        // Get the formatted code
-        let s = (value % 10_u32.pow(digits)).to_string();
-        "0".repeat(digits as usize - s.chars().count()) + s.as_str()
+    #[test]
+    fn test_hotp_2() {
+        assert_eq!(
+            1617055283,
+            generate_hotp::<Sha1>("BASE32SECRET3232", 1).unwrap()
+        );
     }
 }

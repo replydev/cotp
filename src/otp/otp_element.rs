@@ -171,13 +171,13 @@ impl OTPElement {
             OTPType::Totp => {
                 let code = totp(&self.secret, self.algorithm)?;
 
-                Ok(self.format_code(code))
+                Ok(self.format_code(code)?)
             }
             OTPType::Hotp => match self.counter {
                 Some(counter) => {
                     let code = hotp(&self.secret, self.algorithm, counter)?;
 
-                    Ok(self.format_code(code))
+                    Ok(self.format_code(code)?)
                 }
                 None => Err(OtpError::MissingCounter),
             },
@@ -204,10 +204,13 @@ impl OTPElement {
         }
     }
 
-    pub fn format_code(&self, value: u32) -> String {
+    fn format_code(&self, value: u32) -> Result<String, OtpError> {
         // Get the formatted code
-        let s = (value % 10_u32.pow(self.digits as u32)).to_string();
-        "0".repeat(self.digits as usize - s.chars().count()) + s.as_str()
+        let exponential = 10_u32
+            .checked_pow(self.digits as u32)
+            .ok_or(OtpError::InvalidDigits)?;
+        let s = (value % exponential).to_string();
+        Ok("0".repeat(self.digits as usize - s.chars().count()) + s.as_str())
     }
 
     pub fn valid_secret(&self) -> bool {
@@ -231,6 +234,7 @@ mod test {
     use crate::otp::otp_element::OTPType::Totp;
 
     use crate::otp::from_otp_uri::FromOtpUri;
+    use crate::otp::otp_error::OtpError;
 
     #[test]
     fn test_serialization_otp_uri_full_element() {
@@ -286,5 +290,29 @@ mod test {
     fn test_deserialization_with_issuer_parameter() {
         let otp_uri = "otpauth://totp/2Ponies%40Github%20No.1?secret=JBSWY3DPEHPK3PXP&algorithm=SHA1&digits=6&period=30&lock=false&issuer=test";
         assert_eq!(true, OTPElement::from_otp_uri(otp_uri).is_ok())
+    }
+
+    #[test]
+    fn test_invalid_digits_should_not_overflow() {
+        // Arrange
+        let invalid_digits_value = 10;
+
+        let element = OTPElement {
+            secret: "xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g".to_uppercase(),
+            issuer: String::from("IssuerText"),
+            label: String::from("LabelText"),
+            digits: invalid_digits_value,
+            type_: Totp,
+            algorithm: Sha1,
+            period: 30,
+            counter: None,
+            pin: None,
+        };
+
+        // Act
+        let result = element.get_otp_code();
+
+        // Assert
+        assert_eq!(Err(OtpError::InvalidDigits), result)
     }
 }

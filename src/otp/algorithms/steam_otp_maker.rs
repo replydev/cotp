@@ -8,10 +8,7 @@ use super::totp_maker::totp;
 const STEAM_ALPHABET: &str = "23456789BCDFGHJKMNPQRTVWXY";
 
 pub fn steam(secret: &str, algorithm: OTPAlgorithm, digits: usize) -> Result<String, OtpError> {
-    match totp(secret, algorithm) {
-        Ok(v) => Ok(to_steam_string(v as usize, digits)),
-        Err(e) => Err(e),
-    }
+    totp(secret, algorithm).map(|v| to_steam_string(v as usize, digits))
 }
 
 fn to_steam_string(mut code: usize, digits: usize) -> String {
