@@ -58,11 +58,11 @@ impl<'a> TryFrom<&'a OTPElement> for JsonOtpList<'a> {
 
 impl SubcommandExecutor for ListArgs {
     fn run_command(self, otp_database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
-        let elements_iterator = otp_database.elements.iter().enumerate();
-
         if self.format.unwrap_or_default().json {
-            let json_elements = elements_iterator
-                .map(|(_, element)| element.try_into())
+            let json_elements = otp_database
+                .elements
+                .iter()
+                .map(|element| element.try_into())
                 .collect::<Result<Vec<JsonOtpList>>>()?;
 
             let stringified = serde_json::to_string_pretty(&json_elements)
@@ -73,19 +73,23 @@ impl SubcommandExecutor for ListArgs {
                 "{0: <6} {1: <30} {2: <70} {3: <10}",
                 "Index", "Issuer", "Label", "OTP"
             );
-            elements_iterator.for_each(|(index, e)| {
-                println!(
-                    "{0: <6} {1: <30} {2: <70} {3: <10}",
-                    index,
-                    if e.issuer.is_empty() {
-                        "<No issuer>"
-                    } else {
-                        e.issuer.as_str()
-                    },
-                    &e.label,
-                    e.get_otp_code().unwrap_or("ERROR".to_string())
-                )
-            });
+            otp_database
+                .elements
+                .iter()
+                .enumerate()
+                .for_each(|(index, e)| {
+                    println!(
+                        "{0: <6} {1: <30} {2: <70} {3: <10}",
+                        index,
+                        if e.issuer.is_empty() {
+                            "<No issuer>"
+                        } else {
+                            e.issuer.as_str()
+                        },
+                        &e.label,
+                        e.get_otp_code().unwrap_or("ERROR".to_string())
+                    )
+                });
         }
 
         Ok(otp_database)
