@@ -1,4 +1,4 @@
-use clap::Args;
+use clap::{value_parser, Args};
 use color_eyre::eyre::{eyre, ErrReport};
 
 use zeroize::Zeroize;
@@ -39,7 +39,8 @@ pub struct AddArgs {
         short,
         long,
         default_value_t = 6,
-        default_value_if("type", "STEAM", "5")
+        default_value_if("type", "STEAM", "5"),
+        value_parser=value_parser!(u64).range(0..=9)
     )]
     pub digits: u64,
 

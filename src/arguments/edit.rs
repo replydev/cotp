@@ -1,4 +1,4 @@
-use clap::Args;
+use clap::{value_parser, Args};
 use color_eyre::eyre::eyre;
 
 use crate::otp::{otp_algorithm::OTPAlgorithm, otp_element::OTPDatabase};
@@ -24,7 +24,7 @@ pub struct EditArgs {
     pub algorithm: Option<OTPAlgorithm>,
 
     /// Code digits
-    #[arg(short, long)]
+    #[arg(short, long, value_parser=value_parser!(u64).range(0..=9))]
     pub digits: Option<u64>,
 
     /// Code period
