@@ -171,13 +171,13 @@ impl OTPElement {
             OTPType::Totp => {
                 let code = totp(&self.secret, self.algorithm)?;
 
-                Ok(self.format_code(code))
+                Ok(self.format_code(code)?)
             }
             OTPType::Hotp => match self.counter {
                 Some(counter) => {
                     let code = hotp(&self.secret, self.algorithm, counter)?;
 
-                    Ok(self.format_code(code))
+                    Ok(self.format_code(code)?)
                 }
                 None => Err(OtpError::MissingCounter),
             },
@@ -204,10 +204,13 @@ impl OTPElement {
         }
     }
 
-    pub fn format_code(&self, value: u32) -> String {
+    pub fn format_code(&self, value: u32) -> Result<String, OtpError> {
         // Get the formatted code
-        let s = (value % 10_u32.pow(self.digits as u32)).to_string();
-        "0".repeat(self.digits as usize - s.chars().count()) + s.as_str()
+        let exponential = 10_u32
+            .checked_pow(self.digits as u32)
+            .ok_or(OtpError::InvalidDigits)?;
+        let s = (value % exponential).to_string();
+        Ok("0".repeat(self.digits as usize - s.chars().count()) + s.as_str())
     }
 
     pub fn valid_secret(&self) -> bool {
