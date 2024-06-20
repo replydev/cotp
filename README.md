@@ -22,7 +22,7 @@ In the first run you will be prompted to insert a password to initialize the dat
 
 ```bash
 # Display all the OTP codes in the interactive dashboard
-cotp
+cotp # select any code with arrow keys, press enter to copy into the clipboard, even in an SSH remote shell
 
 # Add a new TOTP code from a BASE32 secret key
 cotp add --label myaccount@gmail.com --issuer Google
@@ -48,13 +48,9 @@ cotp export
 
 ## Compatibility
 
-cotp can generate both **TOTP** and **HOTP** codes, compliant with **rfc6238** and **rfc4226** specifications. Also, it
-is possible to customize settings like **HMAC algorithm** and **digits**, to provide compatibility to other two-factor
-authentication systems.
+cotp can generate both **TOTP** and **HOTP** codes, compliant with **rfc6238** and **rfc4226** specifications. Also, it is possible to customize settings like **HMAC algorithm** and **digits**, to provide compatibility to other two-factor authentication systems.
 
-Latest releases also include support for Steam, Yandex, MOTP codes and code copying from SSH Remote Shell.
-
-BASE32 secret will be prompted as usual
+Latest releases also include support for **Steam**, **Yandex**, **MOTP** codes.
 
 ## Encryption
 
