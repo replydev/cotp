@@ -19,20 +19,21 @@ Type `i` to get some instruction. Otherwise just enter `cotp --help`.
 In the first run you will be prompted to insert a password to initialize the database.
 
 ## TL;DR
+
 ```bash
-# Display all the OTP codes in the interactivee dashboard
+# Display all the OTP codes in the interactive dashboard
 cotp
 
 # Add a new TOTP code from a BASE32 secret key
 cotp add -l <label> -i <optional_issuer>
 
-# Add a new HOTP code with custom algorithm and digits
-cotp add --type hotp --algorithm SHA256 -d 8 --counter 10
+# Add a new HOTP code with custom algorithm, digits and counter
+cotp add --type hotp --algorithm SHA256 --digits 8 --counter 10
 
 # Edit the digits of the 4th code
-cotp edit -i 4 --digits 8
+cotp edit --index 4 --digits 8
 
-# List all the codes in json format passing password through stdin
+# List all the codes in JSON format passing password through stdin
 echo "mysecretpassword" | cotp --password-stdin list --json
 
 # Import an encrypted Aegis Database backup
