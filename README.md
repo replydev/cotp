@@ -13,36 +13,39 @@ minimalist, secure, desktop accessible software to manage my two-factor authenti
 
 ## Interface
 
-cotp is written with simplicity in mind, the interface is quite minimalist and intuitive as command line apps should be.
-
 [![asciicast](https://asciinema.org/a/459912.svg)](https://asciinema.org/a/459912)
 
-If you are familiar with the command line interface using cotp will not be a problem. Just type `cotp` to enter the TUI
-dashboard. Type `i` to get some instruction. Otherwise just enter `cotp --help`.
-
+Type `i` to get some instruction. Otherwise just enter `cotp --help`.
 In the first run you will be prompted to insert a password to initialize the database.
 
-## Basic functionalities
-
-### Display all the OTP codes in the interactivee dashboard
-
-```
+## TL;DR
+```bash
+# Display all the OTP codes in the interactivee dashboard
 cotp
-```
 
-### Add a new TOTP code from a BASE32 secret key
-
-```
+# Add a new TOTP code from a BASE32 secret key
 cotp add -l <label> -i <optional_issuer>
-Password: <insert your database password>
-Insert the secret: <BASE32 secret>
-```
 
-### Add a new HOTP code with custom algorithm and digits
-
-```
+# Add a new HOTP code with custom algorithm and digits
 cotp add --type hotp --algorithm SHA256 -d 8 --counter 10
+
+# Edit the digits of the 4th code
+cotp edit -i 4 --digits 8
+
+# List all the codes in json format passing password through stdin
+echo "mysecretpassword" | cotp --password-stdin list --json
+
+# Import an encrypted Aegis Database backup
+cotp import --path my_db.json --aegis-encrypted
 ```
+
+## Compatibility
+
+cotp can generate both **TOTP** and **HOTP** codes, compliant with **rfc6238** and **rfc4226** specifications. Also, it
+is possible to customize settings like **HMAC algorithm** and **digits**, to provide compatibility to other two-factor
+authentication systems.
+
+Latest releases also include support for Steam, Yandex, MOTP codes and code copying from SSH Remote Shell.
 
 BASE32 secret will be prompted as usual
 
@@ -54,13 +57,6 @@ and [Argon2id](https://en.wikipedia.org/wiki/Argon2) for key derivation.
 
 It also uses [AES-GCM](https://docs.rs/aes-gcm/latest/aes_gcm/) to import from encrypted Aegis backups.
 
-## Compatibility
-
-cotp can generate both **TOTP** and **HOTP** codes, compliant with **rfc6238** and **rfc4226** specifications. Also, it
-is possible to customize settings like **HMAC algorithm** and **digits**, to provide compatibility to other two-factor
-authentication systems.
-
-Latest releases also include support for Steam, Yandex, MOTP codes and code copying from SSH Remote Shell.
 
 ## Cross Plaform
 
