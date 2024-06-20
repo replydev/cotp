@@ -25,12 +25,12 @@ In the first run you will be prompted to insert a password to initialize the dat
 cotp
 
 # Add a new TOTP code from a BASE32 secret key
-cotp add -l <label> -i <optional_issuer>
+cotp add --label myaccount@gmail.com --issuer Google
 
 # Add a new HOTP code with custom algorithm, digits and counter
-cotp add --type hotp --algorithm SHA256 --digits 8 --counter 10
+cotp add --label example --type hotp --algorithm SHA256 --digits 8 --counter 10
 
-# Edit the digits of the 4th code
+# Edit the digits of the 4th OTP code
 cotp edit --index 4 --digits 8
 
 # List all the codes in JSON format passing password through stdin
