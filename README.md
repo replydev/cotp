@@ -13,7 +13,7 @@ minimalist, secure, desktop accessible software to manage my two-factor authenti
 
 ## Interface
 
-[![asciicast](https://asciinema.org/a/459912.svg)](https://asciinema.org/a/459912)
+<p align="center"><img src="/img/demo.gif?raw=true"/></p>
 
 Type `i` to get some instruction. Otherwise just enter `cotp --help`.
 In the first run you will be prompted to insert a password to initialize the database.
