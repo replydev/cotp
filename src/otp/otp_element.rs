@@ -249,11 +249,11 @@ impl OTPElementBuilder {
         match self.type_.unwrap_or_default() {
             OTPType::Motp => hex::decode(&self.secret.as_ref().unwrap())
                 .map(|_| {})
-                .map_err(ErrReport::from),
+                .map_err(|e| eyre!("Invalid hex secret: {e}")),
             _ => BASE32_NOPAD
                 .decode(self.secret.as_ref().unwrap().as_bytes())
                 .map(|_| {})
-                .map_err(ErrReport::from),
+                .map_err(|e| eyre!("Invalid BASE32 secret: {e}")),
         }
     }
 }
@@ -272,6 +272,7 @@ mod test {
 
     use crate::otp::from_otp_uri::FromOtpUri;
     use crate::otp::otp_error::OtpError;
+    use crate::otp::otp_type::OTPType;
 
     #[test]
     fn test_serialization_otp_uri_full_element() {
@@ -364,5 +365,46 @@ mod test {
 
         // Assert
         assert_eq!("AA", result.unwrap().secret);
+    }
+
+    #[test]
+    fn test_invalid_secret_base32() {
+        let result = OTPElementBuilder::default()
+            .secret("aaa")
+            .label("label")
+            .issuer("")
+            .build();
+
+        assert_eq!(
+            "Invalid BASE32 secret: invalid length at 2",
+            result.unwrap_err().to_string()
+        )
+    }
+
+    #[test]
+    fn valid_hex_secret() {
+        let result = OTPElementBuilder::default()
+            .secret("aaaf")
+            .label("label")
+            .issuer("")
+            .type_(OTPType::Motp)
+            .build();
+
+        assert_eq!("aaaf", result.unwrap().secret)
+    }
+
+    #[test]
+    fn invalid_secret_hex() {
+        let result = OTPElementBuilder::default()
+            .secret("aaa")
+            .label("label")
+            .issuer("")
+            .type_(OTPType::Motp)
+            .build();
+
+        assert_eq!(
+            "Invalid hex secret: Odd number of digits",
+            result.unwrap_err().to_string()
+        )
     }
 }
