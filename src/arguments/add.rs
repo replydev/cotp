@@ -1,12 +1,12 @@
 use clap::{value_parser, Args};
-use color_eyre::eyre::{eyre, ErrReport};
+use color_eyre::eyre::{eyre, ErrReport, Result};
 
 use zeroize::Zeroize;
 
 use crate::otp::{
     from_otp_uri::FromOtpUri,
     otp_algorithm::OTPAlgorithm,
-    otp_element::{OTPDatabase, OTPElement},
+    otp_element::{OTPDatabase, OTPElement, OTPElementBuilder},
     otp_type::OTPType,
 };
 
@@ -72,9 +72,6 @@ impl SubcommandExecutor for AddArgs {
         } else {
             get_from_args(self)?
         };
-        if !otp_element.valid_secret() {
-            return Err(eyre!("Invalid secret."));
-        }
 
         database.add_element(otp_element);
         Ok(database)
@@ -83,19 +80,19 @@ impl SubcommandExecutor for AddArgs {
 
 fn get_from_args(matches: AddArgs) -> color_eyre::Result<OTPElement> {
     let secret = rpassword::prompt_password("Insert the secret: ").map_err(ErrReport::from)?;
-    Ok(map_args_to_code(secret, matches))
+    map_args_to_code(secret, matches).map_err(ErrReport::from)
 }
 
-fn map_args_to_code(secret: String, matches: AddArgs) -> OTPElement {
-    OTPElement {
-        secret,
-        issuer: matches.issuer,
-        label: matches.label.unwrap(),
-        digits: matches.digits,
-        type_: matches.otp_type,
-        algorithm: matches.algorithm,
-        period: matches.period,
-        counter: matches.counter,
-        pin: matches.pin,
-    }
+fn map_args_to_code(secret: String, matches: AddArgs) -> Result<OTPElement> {
+    OTPElementBuilder::default()
+        .secret(secret)
+        .issuer(matches.issuer)
+        .label(matches.label.unwrap())
+        .digits(matches.digits)
+        .type_(matches.otp_type)
+        .algorithm(matches.algorithm)
+        .period(matches.period)
+        .counter(matches.counter)
+        .pin(matches.pin)
+        .build()
 }

@@ -1,4 +1,5 @@
-use color_eyre::eyre::ErrReport;
+use color_eyre::eyre::{eyre, ErrReport};
+use derive_builder::Builder;
 use std::{fs::File, io::Write, vec};
 
 use crate::crypto::cryptography::{argon_derive_key, encrypt_string_with_key, gen_salt};
@@ -126,17 +127,30 @@ impl OTPDatabase {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Debug, Hash, Zeroize, ZeroizeOnDrop)]
+#[derive(
+    Serialize, Deserialize, Builder, Clone, PartialEq, Eq, Debug, Hash, Zeroize, ZeroizeOnDrop,
+)]
+#[builder(
+    setter(into),
+    build_fn(validate = "Self::validate", error = "ErrReport")
+)]
 pub struct OTPElement {
+    #[builder(setter(custom))]
     pub secret: String,
     pub issuer: String,
     pub label: String,
+    #[builder(default = "6")]
     pub digits: u64,
     #[serde(rename = "type")]
+    #[builder(default)]
     pub type_: OTPType,
+    #[builder(default)]
     pub algorithm: OTPAlgorithm,
+    #[builder(default = "30")]
     pub period: u64,
+    #[builder(setter(into), default)]
     pub counter: Option<u64>,
+    #[builder(setter(into), default)]
     pub pin: Option<String>,
 }
 
@@ -212,11 +226,34 @@ impl OTPElement {
         let s = (value % exponential).to_string();
         Ok("0".repeat(self.digits as usize - s.chars().count()) + s.as_str())
     }
+}
 
-    pub fn valid_secret(&self) -> bool {
-        match self.type_ {
-            OTPType::Motp => hex::decode(&self.secret).is_ok(),
-            _ => BASE32_NOPAD.decode(self.secret.as_bytes()).is_ok(),
+impl OTPElementBuilder {
+    /// Makes the secret insertion case insensitive
+    pub fn secret<VALUE: Into<String>>(&mut self, value: VALUE) -> &mut Self {
+        self.secret = Some(value.into().to_uppercase());
+        self
+    }
+
+    /// Check if the OTPElement is valid
+    fn validate(&self) -> Result<(), ErrReport> {
+        if self.secret.is_none() {
+            return Err(eyre!("Secret must be set",));
+        }
+
+        if self.secret.as_ref().unwrap().is_empty() {
+            return Err(eyre!("Secret must not be empty",));
+        }
+
+        // Validate secret encoding
+        match self.type_.unwrap_or_default() {
+            OTPType::Motp => hex::decode(&self.secret.as_ref().unwrap())
+                .map(|_| {})
+                .map_err(ErrReport::from),
+            _ => BASE32_NOPAD
+                .decode(self.secret.as_ref().unwrap().as_bytes())
+                .map(|_| {})
+                .map_err(ErrReport::from),
         }
     }
 }
@@ -230,8 +267,8 @@ fn get_label(issuer: &str, label: &str) -> String {
 #[cfg(test)]
 mod test {
     use crate::otp::otp_element::OTPAlgorithm::Sha1;
-    use crate::otp::otp_element::OTPElement;
     use crate::otp::otp_element::OTPType::Totp;
+    use crate::otp::otp_element::{OTPElement, OTPElementBuilder};
 
     use crate::otp::from_otp_uri::FromOtpUri;
     use crate::otp::otp_error::OtpError;
@@ -314,5 +351,18 @@ mod test {
 
         // Assert
         assert_eq!(Err(OtpError::InvalidDigits), result)
+    }
+
+    #[test]
+    fn test_lowercase_secret() {
+        // Arrange / Act
+        let result = OTPElementBuilder::default()
+            .secret("aa")
+            .label("label")
+            .issuer("")
+            .build();
+
+        // Assert
+        assert_eq!("AA", result.unwrap().secret);
     }
 }
