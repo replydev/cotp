@@ -24,6 +24,12 @@ pub enum OTPType {
     Motp,
 }
 
+impl Default for OTPType {
+    fn default() -> Self {
+        Self::Totp
+    }
+}
+
 impl fmt::Display for OTPType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let to_string = match self {

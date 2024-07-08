@@ -13,6 +13,12 @@ pub enum OTPAlgorithm {
     Md5,
 }
 
+impl Default for OTPAlgorithm {
+    fn default() -> Self {
+        Self::Sha1
+    }
+}
+
 impl fmt::Display for OTPAlgorithm {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let to_string = match self {
