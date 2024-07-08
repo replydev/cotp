@@ -142,7 +142,7 @@ pub struct OTPElement {
     #[builder(default = "6")]
     pub digits: u64,
     #[serde(rename = "type")]
-    #[builder(default)]
+    #[builder(setter(custom), default)]
     pub type_: OTPType,
     #[builder(default)]
     pub algorithm: OTPAlgorithm,
@@ -232,6 +232,22 @@ impl OTPElementBuilder {
     /// Makes the secret insertion case insensitive
     pub fn secret<VALUE: Into<String>>(&mut self, value: VALUE) -> &mut Self {
         self.secret = Some(value.into().to_uppercase());
+        self
+    }
+
+    /// Makes the secret insertion case insensitive
+    pub fn type_<VALUE: Into<OTPType>>(&mut self, value: VALUE) -> &mut Self {
+        let otp_type: OTPType = value.into();
+
+        if otp_type == OTPType::Motp {
+            // Motp codes must be lowercase
+            self.secret = self.secret.as_ref().map(|s| s.to_lowercase())
+        } else {
+            // Base32 codes must be uppercase
+            self.secret = self.secret.as_ref().map(|s| s.to_uppercase())
+        }
+
+        self.type_ = Some(otp_type);
         self
     }
 
@@ -384,7 +400,7 @@ mod test {
     #[test]
     fn valid_hex_secret() {
         let result = OTPElementBuilder::default()
-            .secret("aaaf")
+            .secret("aAAf")
             .label("label")
             .issuer("")
             .type_(OTPType::Motp)
