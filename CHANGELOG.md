@@ -1,3 +1,11 @@
+## [1.7.2](https://github.com/replydev/cotp/compare/v1.7.1...v1.7.2) (2024-07-08)
+
+
+### Bug Fixes
+
+* manipulate secret case by otp_type ([1bcfb17](https://github.com/replydev/cotp/commit/1bcfb172c32bfeacb1b1eabe45f10474fe67866c))
+* use builder pattern to build and validate OTPElement ([75242c3](https://github.com/replydev/cotp/commit/75242c3dd6cddd9e95fdce4ab0016fdec2ae73d3))
+
 ## [1.7.1](https://github.com/replydev/cotp/compare/v1.7.0...v1.7.1) (2024-06-19)
 
 
