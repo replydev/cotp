@@ -1,5 +1,5 @@
 use clap::{value_parser, Args};
-use color_eyre::eyre::{eyre, ErrReport, Result};
+use color_eyre::eyre::{ErrReport, Result};
 
 use zeroize::Zeroize;
 
