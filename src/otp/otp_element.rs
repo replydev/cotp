@@ -263,7 +263,7 @@ impl OTPElementBuilder {
 
         // Validate secret encoding
         match self.type_.unwrap_or_default() {
-            OTPType::Motp => hex::decode(&self.secret.as_ref().unwrap())
+            OTPType::Motp => hex::decode(self.secret.as_ref().unwrap())
                 .map(|_| {})
                 .map_err(|e| eyre!("Invalid hex secret: {e}")),
             _ => BASE32_NOPAD
