@@ -56,6 +56,8 @@ impl<'a> TryFrom<&'a OTPElement> for JsonOtpList<'a> {
     }
 }
 
+const NO_ISSUER_TEXT: &str = "<No issuer>";
+
 impl SubcommandExecutor for ListArgs {
     fn run_command(self, otp_database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
         if self.format.unwrap_or_default().json {
@@ -69,9 +71,24 @@ impl SubcommandExecutor for ListArgs {
                 .map_err(|e| eyre!("Error during JSON serialization: {:?}", e))?;
             print!("{stringified}");
         } else {
+            let issuer_width = calculate_width(&otp_database, |element| {
+                let issuer_length = element.issuer.chars().count();
+                if issuer_length > 0 {
+                    issuer_length
+                } else {
+                    NO_ISSUER_TEXT.chars().count()
+                }
+            });
+
+            let label_width =
+                calculate_width(&otp_database, |element| element.label.chars().count());
+
             println!(
-                "{0: <6} {1: <30} {2: <70} {3: <10}",
-                "Index", "Issuer", "Label", "OTP"
+                "{0: <6} {1} {2} {3: <10}",
+                "Index",
+                "Issuer".to_owned() + " ".repeat(issuer_width - 6).as_ref(),
+                "Label".to_owned() + " ".repeat(label_width - 5).as_ref(),
+                "OTP",
             );
             otp_database
                 .elements
@@ -79,14 +96,19 @@ impl SubcommandExecutor for ListArgs {
                 .enumerate()
                 .for_each(|(index, e)| {
                     println!(
-                        "{0: <6} {1: <30} {2: <70} {3: <10}",
+                        "{0: <6} {1} {2} {3: <10}",
                         index + 1,
                         if e.issuer.is_empty() {
-                            "<No issuer>"
+                            NO_ISSUER_TEXT.to_owned()
+                                + " "
+                                    .repeat(issuer_width - NO_ISSUER_TEXT.chars().count())
+                                    .as_str()
                         } else {
-                            e.issuer.as_str()
+                            e.issuer.to_owned()
+                                + " ".repeat(issuer_width - e.issuer.chars().count()).as_str()
                         },
-                        &e.label,
+                        e.label.to_owned()
+                            + " ".repeat(label_width - e.label.chars().count()).as_str(),
                         e.get_otp_code().unwrap_or("ERROR".to_string())
                     )
                 });
@@ -94,4 +116,17 @@ impl SubcommandExecutor for ListArgs {
 
         Ok(otp_database)
     }
+}
+
+fn calculate_width<F>(otp_database: &OTPDatabase, get_number_of_chars: F) -> usize
+where
+    F: Fn(&OTPElement) -> usize,
+{
+    otp_database
+        .elements
+        .iter()
+        .map(get_number_of_chars)
+        .max()
+        .unwrap_or_default()
+        + 3
 }
