@@ -80,7 +80,7 @@ impl SubcommandExecutor for ListArgs {
                 .for_each(|(index, e)| {
                     println!(
                         "{0: <6} {1: <30} {2: <70} {3: <10}",
-                        index,
+                        index + 1,
                         if e.issuer.is_empty() {
                             "<No issuer>"
                         } else {
