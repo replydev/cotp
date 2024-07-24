@@ -1,3 +1,12 @@
+## [1.7.3](https://github.com/replydev/cotp/compare/v1.7.2...v1.7.3) (2024-07-24)
+
+
+### Bug Fixes
+
+* optimize table width on list subcommand ([c182195](https://github.com/replydev/cotp/commit/c1821958c92dbd084a4e25dcc358b32dacbab8b9))
+* start code index at one as done in dashboard and in edit subcommand ([c90e910](https://github.com/replydev/cotp/commit/c90e910ee6b98529efa5d4beae0a3579a95a9122))
+* start code index from one as done in dashboard and in edit subcommand ([#458](https://github.com/replydev/cotp/issues/458)) ([6a36c8d](https://github.com/replydev/cotp/commit/6a36c8def24a36ccc5416ebe0d3063f7e888e5cf)), closes [#457](https://github.com/replydev/cotp/issues/457)
+
 ## [1.7.2](https://github.com/replydev/cotp/compare/v1.7.1...v1.7.2) (2024-07-08)
 
 
