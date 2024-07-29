@@ -10,6 +10,7 @@ use self::{
 };
 
 mod add;
+mod delete;
 mod edit;
 mod export;
 mod extract;
