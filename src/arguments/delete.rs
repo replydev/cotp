@@ -61,15 +61,12 @@ fn get_first_matching_element(
         .iter()
         .enumerate()
         .find(|(_, element)| {
-            element.issuer.contains(
-                delete_args
-                    .issuer
-                    .as_ref()
-                    .map(|s| s.as_str())
-                    .unwrap_or(""),
-            ) && element
-                .label
-                .contains(delete_args.label.as_ref().map(|s| s.as_str()).unwrap_or(""))
+            element
+                .issuer
+                .contains(delete_args.issuer.as_deref().unwrap_or_default())
+                && element
+                    .label
+                    .contains(delete_args.label.as_deref().unwrap_or_default())
         })
         .map(|(index, _)| index)
 }
