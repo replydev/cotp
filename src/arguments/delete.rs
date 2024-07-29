@@ -1,4 +1,4 @@
-use std::io::{self};
+use std::io::{self, Write};
 
 use clap::Args;
 use color_eyre::eyre::eyre;
@@ -33,14 +33,17 @@ impl SubcommandExecutor for DeleteArgs {
         let mut output = String::with_capacity(1);
 
         let element = otp_database.elements_ref().get(index_to_delete).unwrap();
-        println!(
+        print!(
             "Are you sure you want to delete the {}th code ({}, {}) [Y,N]: ",
-            index_to_delete, element.issuer, element.label
+            index_to_delete + 1,
+            element.issuer,
+            element.label
         );
+        io::stdout().flush()?;
 
         io::stdin().read_line(&mut output)?;
 
-        if output.eq_ignore_ascii_case("y") {
+        if output.trim().eq_ignore_ascii_case("y") {
             otp_database.delete_element(index_to_delete);
             Ok(otp_database)
         } else {
