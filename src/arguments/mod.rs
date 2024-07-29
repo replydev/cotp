@@ -2,6 +2,7 @@ use crate::otp::otp_element::OTPDatabase;
 use crate::{arguments::extract::ExtractArgs, dashboard};
 use clap::{Parser, Subcommand};
 use color_eyre::eyre::eyre;
+use delete::DeleteArgs;
 use enum_dispatch::enum_dispatch;
 
 use self::{
@@ -10,6 +11,7 @@ use self::{
 };
 
 mod add;
+mod delete;
 mod edit;
 mod export;
 mod extract;
@@ -44,6 +46,8 @@ pub enum CotpSubcommands {
     Edit(EditArgs),
     /// List codes
     List(ListArgs),
+    /// Delete codes
+    Delete(DeleteArgs),
     /// Import codes from other apps
     Import(ImportArgs),
     /// Export cotp database
