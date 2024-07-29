@@ -420,7 +420,7 @@ dependencies = [
 
 [[package]]
 name = "cotp"
-version = "1.7.3"
+version = "1.8.0"
 dependencies = [
  "aes-gcm",
  "base64 0.22.1",

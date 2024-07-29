@@ -1,3 +1,15 @@
+# [1.8.0](https://github.com/replydev/cotp/compare/v1.7.3...v1.8.0) (2024-07-29)
+
+
+### Bug Fixes
+
+* parse user import correctly in delete subcommand ([8ed354f](https://github.com/replydev/cotp/commit/8ed354f8df90e63494594e66f05afa4d27226f22))
+
+
+### Features
+
+* implement delete subcommand ([4d74db8](https://github.com/replydev/cotp/commit/4d74db8eed0f04c3f8788fe550a93d14e212d9f0))
+
 ## [1.7.3](https://github.com/replydev/cotp/compare/v1.7.2...v1.7.3) (2024-07-24)
 
 
