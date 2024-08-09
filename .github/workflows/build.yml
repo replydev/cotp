@@ -84,7 +84,8 @@ jobs:
 
       - name: Build custom cross Arm64 Windows MSVC Image
         if: matrix.build == 'aarch64-win-msvc'
-        run: git clone https://github.com/cross-rs/cross
+        run: |
+          git clone https://github.com/cross-rs/cross
           cd cross
           git submodule update --init --remote
           cargo build-docker-image aarch64-pc-windows-msvc-cross --tag local
