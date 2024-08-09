@@ -7,8 +7,8 @@ use crate::otp::otp_element::OTPDatabase;
 use ratatui::layout::Rect;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout};
 use ratatui::style::{Color, Modifier, Style};
-use ratatui::terminal::Frame;
 use ratatui::widgets::{Block, Borders, Cell, Clear, Gauge, Paragraph, Row, Table, Wrap};
+use ratatui::Frame;
 
 use crate::interface::stateful_table::{fill_table, StatefulTable};
 use crate::utils::percentage;
@@ -141,13 +141,13 @@ impl<'a> App<'a> {
         let rects = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Percentage(100)].as_ref())
-            .split(frame.size());
+            .split(frame.area());
 
         frame.render_widget(paragraph, rects[0]);
     }
 
     fn render_main_page(&mut self, frame: &mut Frame<'_>) {
-        let height = frame.size().height;
+        let height = frame.area().height;
         let rects = Layout::default()
             .direction(Direction::Vertical)
             .constraints(
@@ -159,7 +159,7 @@ impl<'a> App<'a> {
                 .as_ref(),
             )
             .margin(2)
-            .split(frame.size());
+            .split(frame.area());
 
         let search_bar_title = "Press CTRL + F to search a code...";
         let search_bar = Paragraph::new(&*self.search_query)
@@ -207,7 +207,7 @@ impl<'a> App<'a> {
             .block(block)
             .alignment(Alignment::Center)
             .wrap(Wrap { trim: true });
-        let area = centered_rect(self.popup.percent_x, self.popup.percent_y, frame.size());
+        let area = centered_rect(self.popup.percent_x, self.popup.percent_y, frame.area());
         frame.render_widget(Clear, area);
         //this clears out the background
         frame.render_widget(paragraph, area);
@@ -305,6 +305,6 @@ impl<'a> App<'a> {
     }
 
     fn is_large_application(&self, frame: &mut Frame<'_>) -> bool {
-        frame.size().width >= LARGE_APPLICATION_WIDTH
+        frame.area().width >= LARGE_APPLICATION_WIDTH
     }
 }
