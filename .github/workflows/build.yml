@@ -81,7 +81,7 @@ jobs:
       - name: Override default target
         # Do not override the target for aarch64-linux as in that case I use cross
         if: matrix.build != 'aarch64-linux'
-        run: rustup default stable-${{ matrix.target }}
+        run: rustup default ${{ matrix.target }}
 
       - name: Install cross for arm64 compilation
         if: matrix.build == 'aarch64-linux'
