@@ -59,7 +59,8 @@ jobs:
             os: windows-latest
             target: x86_64-pc-windows-msvc
           - build: aarch64-win-msvc
-            os: windows-latest
+            # Ubuntu as we use cross for this release
+            os: ubuntu-latest
             target: aarch64-pc-windows-msvc
 
     runs-on: ${{ matrix.os }}
@@ -78,7 +79,7 @@ jobs:
           key: ${{ matrix.target }}
 
       - name: Install cross for arm64 compilation
-        if: matrix.build == 'aarch64-linux'
+        if: ${{ contains('aarch64-linux, aarch64-win-msvc', matrix.build) }}
         run: cargo install cross --git https://github.com/cross-rs/cross
 
       - name: Install Dependencies for Linux x86_64
@@ -86,27 +87,28 @@ jobs:
         run: sudo apt update && sudo apt install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev
 
       - name: Run tests (arm64)
-        if: matrix.build == 'aarch64-linux'
+        if: ${{ contains('aarch64-linux, aarch64-win-msvc', matrix.build) }}
         run: cross test --locked --target ${{ matrix.target }}
 
       - name: Build debug binary (arm64)
-        if: matrix.build == 'aarch64-linux'
+        if: ${{ contains('aarch64-linux, aarch64-win-msvc', matrix.build) }}
         run: cross build --locked --target ${{ matrix.target }}
 
       - name: Run tests (x86_64)
-        if: matrix.build != 'aarch64-linux'
+        if: ${{ contains('aarch64-linux, aarch64-win-msvc', matrix.build) }}
         run: cargo test
 
       - name: Build debug binary (x86_64)
-        if: matrix.build != 'aarch64-linux'
+        if: ${{ !contains('aarch64-linux, aarch64-win-msvc', matrix.build) }}
         run: cargo build
 
       - uses: actions/upload-artifact@v4.3.6
         with:
           name: bins-${{ matrix.build }}
-          # Two paths, the first for x86_64 jobs, the second for aarch64.
+          # Three paths, the first for x86_64 jobs, the second and third for aarch64.
           # No need to dispatch, if the path is not found we continue normally
           path: |
             target/debug/cotp*
             target/aarch64-unknown-linux-gnu/debug/cotp*
+            target/aarch64-pc-windows-msvc/debug/cotp*
           if-no-files-found: error
