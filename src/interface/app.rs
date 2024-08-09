@@ -7,8 +7,8 @@ use crate::otp::otp_element::OTPDatabase;
 use ratatui::layout::Rect;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout};
 use ratatui::style::{Color, Modifier, Style};
-use ratatui::terminal::Frame;
 use ratatui::widgets::{Block, Borders, Cell, Clear, Gauge, Paragraph, Row, Table, Wrap};
+use ratatui::Frame;
 
 use crate::interface::stateful_table::{fill_table, StatefulTable};
 use crate::utils::percentage;
