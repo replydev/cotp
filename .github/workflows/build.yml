@@ -77,6 +77,12 @@ jobs:
         with:
           key: ${{ matrix.target }}
 
+      # Always override the default target as some platforms may have already some toolchains installed
+      - name: Override default target
+        # Do not override the target for aarch64-linux as in that case I use cross
+        if: matrix.build != 'aarch64-linux'
+        run: rustup default ${{ matrix.target }}
+
       - name: Install cross for arm64 compilation
         if: matrix.build == 'aarch64-linux'
         run: cargo install cross --git https://github.com/cross-rs/cross
