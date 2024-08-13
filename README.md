@@ -37,7 +37,7 @@ cotp edit --index 4 --digits 8
 echo "mysecretpassword" | cotp --password-stdin list --json
 
 # Extract the first matching OTP code with "google" issuer and copy it into the clipboard
-echo "mysecretpassword" | cotp extract --issuer google --copy-clipboard
+cotp extract --issuer google --copy-clipboard
 
 # Import an encrypted Aegis Database backup
 cotp import --path my_db.json --aegis-encrypted
