@@ -1,8 +1,9 @@
-use crate::path::get_db_path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::path::DATABASE_PATH;
+
 pub fn init_app() -> Result<bool, ()> {
-    let db_path = get_db_path();
+    let db_path = DATABASE_PATH.get().unwrap(); // Safe to unwrap because we initialize
     let db_dir = db_path.parent().unwrap();
     if !db_dir.exists() {
         if let Err(_e) = std::fs::create_dir_all(db_dir) {
