@@ -1,3 +1,17 @@
+# [1.9.0](https://github.com/replydev/cotp/compare/v1.8.0...v1.9.0) (2024-08-31)
+
+
+### Features
+
+* add --database-path argument ([9fafde3](https://github.com/replydev/cotp/commit/9fafde3769b6fe87f4fb8ed39439d86a074c173b))
+* add --database-path argument ([#485](https://github.com/replydev/cotp/issues/485)) ([e32600c](https://github.com/replydev/cotp/commit/e32600c5a693a8cfd4887c052bd2aace32c94c46))
+* use new argument to be able to set database path by commandline ([effd184](https://github.com/replydev/cotp/commit/effd1848295e43426c715c3f2cb3b275a6015d88))
+
+
+### Performance Improvements
+
+* resolve clippy lints ([565d452](https://github.com/replydev/cotp/commit/565d4520ede6a5d9053445380f6a8079e0419f6c))
+
 # [1.8.0](https://github.com/replydev/cotp/compare/v1.7.3...v1.8.0) (2024-07-29)
 
 
