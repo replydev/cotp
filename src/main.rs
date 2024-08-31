@@ -7,6 +7,7 @@ use interface::event::{Event, EventHandler};
 use interface::handlers::handle_key_events;
 use interface::ui::Tui;
 use otp::otp_element::{OTPDatabase, CURRENT_DATABASE_VERSION};
+use path::init_path;
 use ratatui::prelude::CrosstermBackend;
 use ratatui::Terminal;
 use reading::{get_elements_from_input, get_elements_from_stdin, ReadResult};
@@ -24,7 +25,9 @@ mod path;
 mod reading;
 mod utils;
 
-fn init(read_password_from_stdin: bool) -> color_eyre::Result<ReadResult> {
+fn init(args: &CotpArgs) -> color_eyre::Result<ReadResult> {
+    init_path(args);
+
     match utils::init_app() {
         Ok(first_run) => {
             if first_run {
@@ -38,7 +41,7 @@ fn init(read_password_from_stdin: bool) -> color_eyre::Result<ReadResult> {
                 let save_result = database.save_with_pw(&pw);
                 pw.zeroize();
                 save_result.map(|(key, salt)| (database, key, salt.to_vec()))
-            } else if read_password_from_stdin {
+            } else if args.password_from_stdin {
                 get_elements_from_stdin()
             } else {
                 get_elements_from_input()
@@ -52,7 +55,7 @@ fn main() -> AppResult<()> {
     color_eyre::install()?;
 
     let cotp_args: CotpArgs = CotpArgs::parse();
-    let (database, mut key, salt) = match init(cotp_args.password_from_stdin) {
+    let (database, mut key, salt) = match init(&cotp_args) {
         Ok(v) => v,
         Err(e) => {
             println!("{e}");

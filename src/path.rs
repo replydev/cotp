@@ -3,16 +3,26 @@ use std::path::PathBuf;
 use std::sync::OnceLock;
 use std::{env, fs};
 
+use crate::arguments::CotpArgs;
+
 const CURRENT_DB_PATH: &str = "./db.cotp";
 const XDG_PATH: &str = "cotp/db.cotp";
 const HOME_PATH: &str = ".cotp/db.cotp";
 
-static ONCE_COMPUTED_PATH: OnceLock<PathBuf> = OnceLock::new();
+pub static DATABASE_PATH: OnceLock<PathBuf> = OnceLock::new();
 
-pub fn get_db_path() -> PathBuf {
-    env::var("COTP_DB_PATH")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| get_default_db_path())
+/// Initialize singleton database path
+pub fn init_path(args: &CotpArgs) -> PathBuf {
+    DATABASE_PATH
+        .get_or_init(|| {
+            args.database_path
+                .as_ref()
+                .map(String::from)
+                .or(env::var("COTP_DB_PATH").ok())
+                .map(PathBuf::from)
+                .unwrap_or_else(get_default_db_path)
+        })
+        .to_owned()
 }
 
 // Pushing an absolute path to a PathBuf replaces the entire PathBuf: https://doc.rust-lang.org/std/path/struct.PathBuf.html#method.push
@@ -26,26 +36,21 @@ fn get_default_db_path() -> PathBuf {
 
     let home_path = home_dir().map(|path| path.join(HOME_PATH));
 
-    ONCE_COMPUTED_PATH
-        .get_or_init(|| {
-            data_dir()
-                .map(PathBuf::from)
-                .map(|p| p.join(XDG_PATH))
-                .map(|xdg| {
-                    if !xdg.exists() {
-                        if let Some(home) = &home_path {
-                            if home.exists() {
-                                fs::create_dir_all(xdg.parent().unwrap())
-                                    .expect("Failed to create dir");
-                                fs::copy(home, xdg.as_path())
-                                    .expect("Failed on copy from legacy dir to XDG_DATA_HOME");
-                            }
-                        }
+    data_dir()
+        .map(PathBuf::from)
+        .map(|p| p.join(XDG_PATH))
+        .map(|xdg| {
+            if !xdg.exists() {
+                if let Some(home) = &home_path {
+                    if home.exists() {
+                        fs::create_dir_all(xdg.parent().unwrap()).expect("Failed to create dir");
+                        fs::copy(home, xdg.as_path())
+                            .expect("Failed on copy from legacy dir to XDG_DATA_HOME");
                     }
-                    xdg
-                })
-                .or(home_path)
-                .unwrap_or(portable_path)
+                }
+            }
+            xdg
         })
-        .to_owned()
+        .or(home_path)
+        .unwrap_or(portable_path)
 }

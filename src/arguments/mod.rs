@@ -27,13 +27,16 @@ pub trait SubcommandExecutor {
 
 /// Main structure defining the Clap argument for the cotp commandline utility
 #[derive(Parser)]
-#[command(author, version = env ! ("COTP_VERSION"), about, long_about = None)]
+#[command(author, version = env!("COTP_VERSION"), about, long_about = None)]
 pub struct CotpArgs {
     #[command(subcommand)]
     command: Option<CotpSubcommands>,
     /// Fetch the password from standard input
     #[arg(long = "password-stdin", default_value_t = false)]
     pub password_from_stdin: bool,
+    /// Set the database path
+    #[arg(short = 'd', long = "database-path")]
+    pub database_path: Option<String>,
 }
 
 /// Define available Subcommands

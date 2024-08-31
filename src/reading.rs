@@ -1,6 +1,6 @@
 use crate::crypto;
 use crate::otp::otp_element::{OTPDatabase, OTPElement};
-use crate::path::get_db_path;
+use crate::path::DATABASE_PATH;
 use crate::utils;
 use color_eyre::eyre::{eyre, ErrReport};
 use std::fs::read_to_string;
@@ -28,7 +28,8 @@ fn get_elements_with_password(mut password: String) -> color_eyre::Result<ReadRe
 }
 
 pub fn read_decrypted_text(password: &str) -> color_eyre::Result<(String, Vec<u8>, Vec<u8>)> {
-    let encrypted_contents = read_to_string(get_db_path()).map_err(ErrReport::from)?;
+    let encrypted_contents =
+        read_to_string(DATABASE_PATH.get().unwrap()).map_err(ErrReport::from)?;
     if encrypted_contents.is_empty() {
         return match delete_db() {
             Ok(_) => Err(eyre!(
@@ -58,5 +59,5 @@ pub fn read_from_file(password: &str) -> color_eyre::Result<ReadResult> {
 }
 
 fn delete_db() -> io::Result<()> {
-    std::fs::remove_file(get_db_path())
+    std::fs::remove_file(DATABASE_PATH.get().unwrap())
 }
