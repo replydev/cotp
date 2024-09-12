@@ -137,6 +137,7 @@ fn handle_counter_switch(app: &mut App, increment: bool) {
                 } else {
                     Some(counter.saturating_sub(1))
                 };
+                app.database.mark_modified();
                 app.tick(true);
             }
         }
