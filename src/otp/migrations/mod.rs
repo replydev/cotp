@@ -1,11 +1,9 @@
 use super::otp_element::OTPDatabase;
-
-pub struct Migration<'a> {
+struct Migration<'a> {
     to_version: u16, // Database version which we are migrating on
     migration_function: &'a dyn Fn(&mut OTPDatabase) -> color_eyre::Result<()>, // Function to execute the migration
 }
-
-pub const MIGRATIONS_LIST: [Migration; 1] = [Migration {
+const MIGRATIONS_LIST: [Migration; 1] = [Migration {
     to_version: 2,
     migration_function: &migrate_to_2,
 }];

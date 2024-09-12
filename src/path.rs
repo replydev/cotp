@@ -39,7 +39,7 @@ fn get_default_db_path() -> PathBuf {
     data_dir()
         .map(PathBuf::from)
         .map(|p| p.join(XDG_PATH))
-        .map(|xdg| {
+        .inspect(|xdg| {
             if !xdg.exists() {
                 if let Some(home) = &home_path {
                     if home.exists() {
@@ -49,7 +49,6 @@ fn get_default_db_path() -> PathBuf {
                     }
                 }
             }
-            xdg
         })
         .or(home_path)
         .unwrap_or(portable_path)
