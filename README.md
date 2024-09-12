@@ -155,10 +155,16 @@ To terminate the import:
 
 # Configuration
 
-By default database is located in `$HOME/.cotp/db.cotp`. If you want to use a different path, you can use `COTP_DB_PATH` environment variable. 
-Here is an example of how to do this in bash:
+By default database is located in `$HOME/.cotp/db.cotp`. If you want to use a different path, you can use `COTP_DB_PATH` environment variable or use the `--database-path` argument.
+The first can be configured in shell configuration files, the second in package managers where the configuration of environment variables is not allowed, like Scoop.
+
+These are examples of how to do this in bash:
 ```bash
-$ COTP_DB_PATH=/home/user/.local/custom-folder/db.cotp /usr/bin/cotp
+$ COTP_DB_PATH=/home/user/.local/custom-folder/db.cotp cotp
+```
+or
+```bash
+$ cotp --database-path /home/user/.local/custom-folder/db.cotp
 ```
 
 # Planned features
