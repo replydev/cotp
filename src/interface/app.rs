@@ -255,7 +255,7 @@ impl<'a> App<'a> {
                     .borders(Borders::TOP | Borders::BOTTOM)
                     .title(self.title.as_str()),
             )
-            .highlight_style(
+            .row_highlight_style(
                 Style::default()
                     .bg(Color::White)
                     .fg(Color::Black)
