@@ -60,9 +60,7 @@ pub fn fill_table(table: &mut StatefulTable, elements: &[OTPElement]) {
     for (i, element) in elements.iter().enumerate() {
         let label = match element.type_ {
             OTPType::Hotp => match element.counter {
-                Some(result) => {
-                    element.label.clone() + (format!(" ({result} counter)").as_str())
-                }
+                Some(result) => element.label.clone() + (format!(" ({result} counter)").as_str()),
                 None => element.label.clone(),
             },
             _ => element.label.clone(),
