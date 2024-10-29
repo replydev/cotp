@@ -59,7 +59,7 @@ impl OTPDatabase {
 
     pub fn save(&mut self, key: &Vec<u8>, salt: &[u8]) -> color_eyre::Result<()> {
         self.needs_modification = false;
-        migrate(self);
+        migrate(self)?;
         match self.overwrite_database_key(key, salt) {
             Ok(()) => Ok(()),
             Err(e) => Err(ErrReport::from(e)),
