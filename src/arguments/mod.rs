@@ -72,5 +72,5 @@ pub fn args_parser(matches: CotpArgs, read_result: OTPDatabase) -> color_eyre::R
 #[test]
 fn verify_cli() {
     use clap::CommandFactory;
-    CotpArgs::command().debug_assert()
+    CotpArgs::command().debug_assert();
 }

@@ -64,7 +64,7 @@ impl SubcommandExecutor for ListArgs {
             let json_elements = otp_database
                 .elements
                 .iter()
-                .map(|element| element.try_into())
+                .map(TryInto::try_into)
                 .collect::<Result<Vec<JsonOtpList>>>()?;
 
             let stringified = serde_json::to_string_pretty(&json_elements)
@@ -104,13 +104,13 @@ impl SubcommandExecutor for ListArgs {
                                     .repeat(issuer_width - NO_ISSUER_TEXT.chars().count())
                                     .as_str()
                         } else {
-                            e.issuer.to_owned()
+                            e.issuer.clone()
                                 + " ".repeat(issuer_width - e.issuer.chars().count()).as_str()
                         },
-                        e.label.to_owned()
+                        e.label.clone()
                             + " ".repeat(label_width - e.label.chars().count()).as_str(),
                         e.get_otp_code().unwrap_or("ERROR".to_string())
-                    )
+                    );
                 });
         }
 

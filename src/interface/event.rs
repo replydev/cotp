@@ -65,7 +65,7 @@ impl EventHandler {
                         CrosstermEvent::FocusLost => sender.send(Event::FocusLost()),
                         CrosstermEvent::Paste(_e) => sender.send(Event::Paste(())),
                     }
-                    .expect("failed to send terminal event")
+                    .expect("failed to send terminal event");
                 }
 
                 if last_tick.elapsed() >= tick_rate {

@@ -47,6 +47,6 @@ mod tests {
 
         // Assert
         assert_eq!(1, imported.len());
-        assert_eq!(expected_element, imported.pop().unwrap())
+        assert_eq!(expected_element, imported.pop().unwrap());
     }
 }

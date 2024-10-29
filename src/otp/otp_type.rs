@@ -57,6 +57,6 @@ impl From<&str> for OTPType {
 
 impl Zeroize for OTPType {
     fn zeroize(&mut self) {
-        *self = OTPType::Totp
+        *self = OTPType::Totp;
     }
 }

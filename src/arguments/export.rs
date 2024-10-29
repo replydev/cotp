@@ -37,7 +37,7 @@ pub struct ExportFormat {
     #[arg(short, long = "otp-uri")]
     pub otp_uri: bool,
 
-    /// Export into the FreeOTP+ database format
+    /// Export into the `FreeOTP`+ database format
     #[arg(short, long = "freeotp-plus")]
     pub freeotp_plus: bool,
 }

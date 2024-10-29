@@ -23,8 +23,7 @@ pub(crate) struct AegisDb {
 
 #[derive(Serialize, Deserialize)]
 struct AegisElement {
-    #[serde(rename = "type")]
-    _type: String,
+    r#type: String,
     //uuid: String,
     name: String,
     issuer: String,
@@ -39,7 +38,7 @@ impl From<AegisElement> for OTPElement {
             issuer: value.issuer,
             label: value.name,
             digits: value.info.digits,
-            type_: OTPType::from(value._type.as_str()),
+            type_: OTPType::from(value.r#type.as_str()),
             algorithm: OTPAlgorithm::from(value.info.algo.as_str()),
             period: value.info.period.unwrap_or(30),
             counter: value.info.counter,
@@ -52,7 +51,7 @@ impl TryFrom<AegisDb> for Vec<OTPElement> {
     type Error = String;
 
     fn try_from(aegis_db: AegisDb) -> Result<Self, Self::Error> {
-        Ok(aegis_db.entries.into_iter().map(|e| e.into()).collect())
+        Ok(aegis_db.entries.into_iter().map(Into::into).collect())
     }
 }
 

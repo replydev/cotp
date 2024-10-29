@@ -32,7 +32,7 @@ pub struct OTPDatabase {
 }
 
 impl From<Vec<OTPElement>> for OTPDatabase {
-    /// Build the first version of OTPDatabase, which was only a vector of OTPElements
+    /// Build the first version of `OTPDatabase`, which was only a vector of `OTPElements`
     fn from(val: Vec<OTPElement>) -> Self {
         OTPDatabase {
             version: 1,
@@ -59,7 +59,7 @@ impl OTPDatabase {
 
     pub fn save(&mut self, key: &Vec<u8>, salt: &[u8]) -> color_eyre::Result<()> {
         self.needs_modification = false;
-        migrate(self)?;
+        migrate(self);
         match self.overwrite_database_key(key, salt) {
             Ok(()) => Ok(()),
             Err(e) => Err(ErrReport::from(e)),
@@ -68,7 +68,7 @@ impl OTPDatabase {
 
     fn overwrite_database_key(&self, key: &Vec<u8>, salt: &[u8]) -> Result<(), std::io::Error> {
         let json: &str = &serde_json::to_string(&self)?;
-        let encrypted = encrypt_string_with_key(json.to_string(), key, salt).unwrap();
+        let encrypted = encrypt_string_with_key(json, key, salt).unwrap();
         let mut file = File::create(DATABASE_PATH.get().unwrap())?;
         match serde_json::to_string(&encrypted) {
             Ok(content) => {
@@ -89,12 +89,12 @@ impl OTPDatabase {
 
     pub fn add_all(&mut self, mut elements: Vec<OTPElement>) {
         self.mark_modified();
-        self.elements.append(&mut elements)
+        self.elements.append(&mut elements);
     }
 
     pub fn add_element(&mut self, element: OTPElement) {
         self.mark_modified();
-        self.elements.push(element)
+        self.elements.push(element);
     }
 
     pub fn mark_modified(&mut self) {
@@ -123,7 +123,7 @@ impl OTPDatabase {
             c1.issuer
                 .to_ascii_lowercase()
                 .cmp(&c2.issuer.to_ascii_lowercase())
-        })
+        });
     }
 }
 
@@ -207,12 +207,12 @@ impl OTPElement {
                 None => Err(OtpError::MissingPin),
             },
             OTPType::Motp => match &self.pin {
-                Some(pin) => motp(
+                Some(pin) => Ok(motp(
                     &self.secret,
                     pin.as_str(),
                     self.period,
                     self.digits as usize,
-                ),
+                )),
                 None => Err(OtpError::MissingPin),
             },
         }
@@ -241,17 +241,17 @@ impl OTPElementBuilder {
 
         if otp_type == OTPType::Motp {
             // Motp codes must be lowercase
-            self.secret = self.secret.as_ref().map(|s| s.to_lowercase())
+            self.secret = self.secret.as_ref().map(|s| s.to_lowercase());
         } else {
             // Base32 codes must be uppercase
-            self.secret = self.secret.as_ref().map(|s| s.to_uppercase())
+            self.secret = self.secret.as_ref().map(|s| s.to_uppercase());
         }
 
         self.type_ = Some(otp_type);
         self
     }
 
-    /// Check if the OTPElement is valid
+    /// Check if the `OTPElement` is valid
     fn validate(&self) -> Result<(), ErrReport> {
         if self.secret.is_none() {
             return Err(eyre!("Secret must be set",));
@@ -310,7 +310,7 @@ mod test {
     fn test_serialization_otp_uri_no_issuer() {
         let otp_element = OTPElement {
             secret: String::from("xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g"),
-            issuer: String::from(""),
+            issuer: String::new(),
             label: String::from("LabelText"),
             digits: 6,
             type_: Totp,
@@ -337,13 +337,13 @@ mod test {
         };
         let otp_uri = "otpauth://totp/IssuerText:LabelText?secret=xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g&algorithm=SHA1&digits=6&period=30&lock=false";
 
-        assert_eq!(expected, OTPElement::from_otp_uri(otp_uri).unwrap())
+        assert_eq!(expected, OTPElement::from_otp_uri(otp_uri).unwrap());
     }
 
     #[test]
     fn test_deserialization_with_issuer_parameter() {
         let otp_uri = "otpauth://totp/2Ponies%40Github%20No.1?secret=JBSWY3DPEHPK3PXP&algorithm=SHA1&digits=6&period=30&lock=false&issuer=test";
-        assert_eq!(true, OTPElement::from_otp_uri(otp_uri).is_ok())
+        assert!(OTPElement::from_otp_uri(otp_uri).is_ok());
     }
 
     #[test]
@@ -367,7 +367,7 @@ mod test {
         let result = element.get_otp_code();
 
         // Assert
-        assert_eq!(Err(OtpError::InvalidDigits), result)
+        assert_eq!(Err(OtpError::InvalidDigits), result);
     }
 
     #[test]
@@ -394,7 +394,7 @@ mod test {
         assert_eq!(
             "Invalid BASE32 secret: invalid length at 2",
             result.unwrap_err().to_string()
-        )
+        );
     }
 
     #[test]
@@ -406,7 +406,7 @@ mod test {
             .type_(OTPType::Motp)
             .build();
 
-        assert_eq!("aaaf", result.unwrap().secret)
+        assert_eq!("aaaf", result.unwrap().secret);
     }
 
     #[test]
@@ -421,6 +421,6 @@ mod test {
         assert_eq!(
             "Invalid hex secret: Odd number of digits",
             result.unwrap_err().to_string()
-        )
+        );
     }
 }

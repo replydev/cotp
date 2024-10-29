@@ -61,11 +61,11 @@ pub fn fill_table(table: &mut StatefulTable, elements: &[OTPElement]) {
         let label = match element.type_ {
             OTPType::Hotp => match element.counter {
                 Some(result) => {
-                    element.label.to_owned() + (format!(" ({result} counter)").as_str())
+                    element.label.clone() + (format!(" ({result} counter)").as_str())
                 }
-                None => element.label.to_owned(),
+                None => element.label.clone(),
             },
-            _ => element.label.to_owned(),
+            _ => element.label.clone(),
         };
         let result = element.get_otp_code();
 
@@ -73,7 +73,7 @@ pub fn fill_table(table: &mut StatefulTable, elements: &[OTPElement]) {
         table.items.push(Row::new(
             vec![
                 (i + 1).to_string(),
-                element.issuer.to_owned(),
+                element.issuer.clone(),
                 label,
                 match result {
                     Ok(code) => code,

@@ -11,15 +11,15 @@ pub struct FreeOTPPlusJson {
 }
 
 impl FreeOTPPlusJson {
-    /// Creates a new instance of FreeOTPPlusJSON. Currently we clone the tokens label to retrieve the tokens order.
+    /// Creates a new instance of `FreeOTPPlusJSON`. Currently we clone the tokens label to retrieve the tokens order.
     pub fn new(tokens: Vec<FreeOTPElement>) -> Self {
         let token_order: Vec<String> = tokens
             .iter()
             .map(|e| {
                 if e.issuer_ext.is_empty() {
-                    e._label.clone()
+                    e.label.clone()
                 } else {
-                    format!("{}:{}", e.issuer_ext, e._label)
+                    format!("{}:{}", e.issuer_ext, e.label)
                 }
             })
             .collect();
@@ -38,12 +38,10 @@ pub struct FreeOTPElement {
     pub digits: u64,
     #[serde(rename = "issuerExt")]
     pub issuer_ext: String,
-    #[serde(rename = "label")]
-    pub _label: String,
+    pub label: String,
     pub period: u64,
     pub secret: Vec<i8>,
-    #[serde(rename = "type")]
-    pub _type: String,
+    pub r#type: String,
 }
 
 impl From<FreeOTPElement> for OTPElement {
@@ -57,9 +55,9 @@ impl From<FreeOTPElement> for OTPElement {
             counter,
             secret: encode_secret(&token.secret),
             issuer: token.issuer_ext,
-            label: token._label,
+            label: token.label,
             digits: token.digits,
-            type_: OTPType::from(token._type.as_str()),
+            type_: OTPType::from(token.r#type.as_str()),
             algorithm: OTPAlgorithm::from(token.algo.as_str()),
             period: token.period,
             pin: None,
@@ -70,7 +68,7 @@ impl From<FreeOTPElement> for OTPElement {
 impl TryFrom<FreeOTPPlusJson> for Vec<OTPElement> {
     type Error = String;
     fn try_from(freeotp: FreeOTPPlusJson) -> Result<Self, Self::Error> {
-        Ok(freeotp.tokens.into_iter().map(|e| e.into()).collect())
+        Ok(freeotp.tokens.into_iter().map(Into::into).collect())
     }
 }
 
@@ -145,7 +143,7 @@ mod tests {
                 }
             ],
             imported.unwrap()
-        )
+        );
     }
 
     #[test]
@@ -174,7 +172,7 @@ mod tests {
                     counter: 0,
                     digits: 6,
                     issuer_ext: String::default(),
-                    _label: "label1".to_string(),
+                    label: "label1".to_string(),
                     period: 30,
                     secret: vec![
                         7, -40, 73, 126, -112, -25, 37, 28, 72, -39, 115, 50, -127, 46, 74, 117,
@@ -185,24 +183,24 @@ mod tests {
                         -61, 75, -38, -116, -122, 106, 79, 37, 82, -62, -125, -30, -27, 116, 116,
                         82, -55, 72, 87, 41, 15, -25, -27, 65, 6, -104, 49, -26, -111, 10
                     ],
-                    _type: "TOTP".to_string()
+                    r#type: "TOTP".to_string()
                 },
                 FreeOTPElement {
                     algo: "SHA256".to_string(),
                     counter: 3,
                     digits: 6,
                     issuer_ext: "ciccio".to_string(),
-                    _label: "label2".to_string(),
+                    label: "label2".to_string(),
                     period: 30,
                     secret: vec![
                         35, -75, 13, 47, -2, -128, -100, -27, 64, -115, -72, 14, -78, -122, 88, 62,
                         -32, 57, 37, -111, 90, -70, -58, -15, -113, 111, -94, 91, -90, 90, -91, 61,
                         -9, -23, 54, 4, -31, -93, -8, -9, 27, 125, -21, 112, -80, -30, 64, 46, 10
                     ],
-                    _type: "HOTP".to_string()
+                    r#type: "HOTP".to_string()
                 }
             ],
             free_otp.tokens
-        )
+        );
     }
 }

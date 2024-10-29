@@ -30,12 +30,12 @@ impl SubcommandExecutor for ExtractArgs {
             .elements
             .iter()
             .enumerate()
-            .find(|(index, code)| filter_extract(&self, index, code))
+            .find(|(index, code)| filter_extract(&self, *index, code))
             .map(|(_, code)| code);
 
         if let Some(otp) = first_with_filters {
             let code = otp.get_otp_code()?;
-            println!("{}", code);
+            println!("{code}");
             if self.copy_to_clipboard {
                 let _ = clipboard::copy_string_to_clipboard(code.as_str())?;
                 println!("Copied to clipboard");
@@ -47,8 +47,8 @@ impl SubcommandExecutor for ExtractArgs {
     }
 }
 
-fn filter_extract(args: &ExtractArgs, index: &usize, code: &OTPElement) -> bool {
-    let match_by_index = args.index.map_or(true, |i| i == *index);
+fn filter_extract(args: &ExtractArgs, index: usize, code: &OTPElement) -> bool {
+    let match_by_index = args.index.map_or(true, |i| i == index);
 
     let match_by_issuer = args.issuer.as_ref().map_or(true, |issuer| {
         code.issuer.to_lowercase() == issuer.to_lowercase()

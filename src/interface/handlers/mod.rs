@@ -5,7 +5,7 @@ use crate::clipboard::{copy_string_to_clipboard, CopyType};
 use self::{main_window::main_handler, popup::popup_handler, search_bar::search_bar_handler};
 
 use super::{
-    app::{App, AppResult, Popup},
+    app::{App, Popup},
     enums::{Focus, PopupAction},
 };
 
@@ -14,13 +14,12 @@ mod popup;
 mod search_bar;
 
 /// Handles the key events and updates the state of [`App`].
-pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
+pub fn handle_key_events(key_event: KeyEvent, app: &mut App) {
     match app.focus {
         Focus::MainPage => main_handler(key_event, app),
         Focus::SearchBar => search_bar_handler(key_event, app),
         Focus::Popup => popup_handler(key_event, app),
     }
-    Ok(())
 }
 
 pub(super) fn handle_exit(app: &mut App) {
@@ -33,7 +32,7 @@ pub(super) fn handle_exit(app: &mut App) {
                 action: PopupAction::SaveBeforeQuit,
             },
             app,
-        )
+        );
     } else {
         app.running = false;
     }
