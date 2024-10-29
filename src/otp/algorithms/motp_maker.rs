@@ -1,9 +1,7 @@
+use md5::{Digest, Md5};
 use std::time::SystemTime;
 
-use crate::otp::otp_error::OtpError;
-use md5::{Digest, Md5};
-
-pub fn motp(secret: &str, pin: &str, period: u64, digits: usize) -> Result<String, OtpError> {
+pub fn motp(secret: &str, pin: &str, period: u64, digits: usize) -> String {
     let seconds = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
@@ -12,13 +10,7 @@ pub fn motp(secret: &str, pin: &str, period: u64, digits: usize) -> Result<Strin
     get_motp_code(secret, pin, period, digits, seconds)
 }
 
-fn get_motp_code(
-    secret: &str,
-    pin: &str,
-    period: u64,
-    digits: usize,
-    seconds: u64,
-) -> Result<String, OtpError> {
+fn get_motp_code(secret: &str, pin: &str, period: u64, digits: usize, seconds: u64) -> String {
     // TODO MOTP Secrets are hex encoded, so do not use BASE32 at all
     let hex_secret = secret;
     let counter = seconds / period;
@@ -27,7 +19,7 @@ fn get_motp_code(
     let mut md5_hasher = Md5::new();
     md5_hasher.update(data.as_bytes());
     let code = hex::encode(md5_hasher.finalize());
-    Ok(code.as_str()[0..digits].to_owned())
+    code.as_str()[0..digits].to_owned()
 }
 
 #[cfg(test)]
@@ -40,8 +32,8 @@ mod tests {
         let seconds: u64 = 165892298;
 
         assert_eq!(
-            Ok("e7d8b6".to_string()),
+            "e7d8b6".to_string(),
             get_motp_code("e3152afee62599c8", "1234", 10, 6, seconds)
-        )
+        );
     }
 }

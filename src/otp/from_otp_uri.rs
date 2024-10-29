@@ -13,8 +13,7 @@ impl FromOtpUri for OTPElement {
 
         let otp_type = parsed_uri
             .host_str()
-            .map(|r| r.to_uppercase())
-            .unwrap_or_else(|| "TOTP".to_string());
+            .map_or_else(|| "TOTP".to_string(), str::to_uppercase);
 
         let (issuer, label) = get_issuer_and_label(&parsed_uri)?;
 
@@ -27,8 +26,7 @@ impl FromOtpUri for OTPElement {
         let algorithm = parsed_uri
             .query_pairs()
             .find(|(k, _v)| k == "algorithm")
-            .map(|(_k, v)| v.to_uppercase())
-            .unwrap_or_else(|| "SHA1".to_string());
+            .map_or_else(|| "SHA1".to_string(), |(_k, v)| v.to_uppercase());
 
         let digits = parsed_uri
             .query_pairs()
@@ -62,14 +60,14 @@ impl FromOtpUri for OTPElement {
 fn get(parsed_uri: &Url) -> color_eyre::Result<Vec<String>> {
     let first_segment: Vec<String> = parsed_uri
         .path_segments()
-        .map(|c| c.collect::<Vec<_>>())
+        .map(Iterator::collect::<Vec<_>>)
         .ok_or(ErrReport::msg("Failed to collect path segments"))?
         .first()
         .ok_or(ErrReport::msg("No path segments found"))?
         .split(':')
         .collect::<Vec<_>>()
         .into_iter()
-        .map(|v| v.to_owned())
+        .map(std::borrow::ToOwned::to_owned)
         .collect();
     Ok(first_segment)
 }
@@ -78,13 +76,17 @@ fn get_issuer_and_label(parsed_uri: &Url) -> color_eyre::Result<(String, String)
     // Find the first path segments, OTP Uris should not have others
     let first_segment = get(parsed_uri)?;
 
-    let first = first_segment
-        .first()
-        .and_then(|v| urlencoding::decode(v.as_str()).map(|v| v.into_owned()).ok());
+    let first = first_segment.first().and_then(|v| {
+        urlencoding::decode(v.as_str())
+            .map(std::borrow::Cow::into_owned)
+            .ok()
+    });
 
-    let second = first_segment
-        .get(1)
-        .and_then(|v| urlencoding::decode(v).map(|v| v.into_owned()).ok());
+    let second = first_segment.get(1).and_then(|v| {
+        urlencoding::decode(v)
+            .map(std::borrow::Cow::into_owned)
+            .ok()
+    });
 
     match (first, second) {
         (Some(i), Some(l)) => Ok((i, l)),

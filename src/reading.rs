@@ -32,7 +32,7 @@ pub fn read_decrypted_text(password: &str) -> color_eyre::Result<(String, Vec<u8
         read_to_string(DATABASE_PATH.get().unwrap()).map_err(ErrReport::from)?;
     if encrypted_contents.is_empty() {
         return match delete_db() {
-            Ok(_) => Err(eyre!(
+            Ok(()) => Err(eyre!(
                 "Your database file was empty, please restart to create a new one.",
             )),
             Err(_) => Err(eyre!(
@@ -48,7 +48,7 @@ pub fn read_from_file(password: &str) -> color_eyre::Result<ReadResult> {
     match read_decrypted_text(password) {
         Ok((mut contents, key, salt)) => {
             let mut database: OTPDatabase = serde_json::from_str(&contents)
-                .or_else(|_| serde_json::from_str::<Vec<OTPElement>>(&contents).map(|r| r.into()))
+                .or_else(|_| serde_json::from_str::<Vec<OTPElement>>(&contents).map(Into::into))
                 .map_err(ErrReport::from)?;
             contents.zeroize();
             database.sort();

@@ -19,8 +19,7 @@ pub fn init_path(args: &CotpArgs) -> PathBuf {
                 .as_ref()
                 .map(String::from)
                 .or(env::var("COTP_DB_PATH").ok())
-                .map(PathBuf::from)
-                .unwrap_or_else(get_default_db_path)
+                .map_or_else(get_default_db_path, PathBuf::from)
         })
         .to_owned()
 }

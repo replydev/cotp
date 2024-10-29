@@ -44,11 +44,11 @@ pub struct BackupType {
     #[arg(short = 'k', long = "aegis-encrypted")]
     pub aegis_encrypted: bool,
 
-    /// Import from FreeOTP+ backup
+    /// Import from `FreeOTP`+ backup
     #[arg(short, long = "freeotp-plus")]
     pub freeotp_plus: bool,
 
-    /// Import from FreeOTP backup
+    /// Import from `FreeOTP` backup
     #[arg(short = 'r', long)]
     pub freeotp: bool,
 
@@ -60,7 +60,7 @@ pub struct BackupType {
     #[arg(short = 't', long)]
     pub authy: bool,
 
-    /// Import from Authy Database exported following this guide https://gist.github.com/gboudreau/94bb0c11a6209c82418d01a59d958c93
+    /// Import from Authy Database exported following this guide <https://gist.github.com/gboudreau/94bb0c11a6209c82418d01a59d958c93>
     #[arg(short = 'u', long = "authy-exported")]
     pub authy_exported: bool,
 

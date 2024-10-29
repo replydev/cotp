@@ -31,7 +31,7 @@ pub fn gen_salt() -> color_eyre::Result<[u8; ARGON2ID_SALT_LENGTH]> {
 }
 
 pub fn encrypt_string_with_key(
-    plain_text: String,
+    plain_text: &str,
     key: &Vec<u8>,
     salt: &[u8],
 ) -> color_eyre::Result<EncryptedDatabase> {
@@ -93,8 +93,7 @@ mod tests {
     fn test_encryption() {
         let salt = gen_salt().unwrap();
         let key = argon_derive_key(b"pa$$w0rd", salt.as_ref()).unwrap();
-        let encrypted =
-            encrypt_string_with_key(String::from("Secret data@#[]ò"), &key, salt.as_ref()).unwrap();
+        let encrypted = encrypt_string_with_key("Secret data@#[]ò", &key, salt.as_ref()).unwrap();
         let (decrypted, _key, _salt) =
             decrypt_string(&serde_json::to_string(&encrypted).unwrap(), "pa$$w0rd").unwrap();
         assert_eq!(String::from("Secret data@#[]ò"), decrypted);

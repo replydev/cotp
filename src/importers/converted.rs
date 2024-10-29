@@ -39,6 +39,6 @@ pub struct ConvertedJsonList(Vec<ConvertedJson>);
 impl TryFrom<ConvertedJsonList> for Vec<OTPElement> {
     type Error = String;
     fn try_from(value: ConvertedJsonList) -> Result<Self, Self::Error> {
-        Ok(value.0.into_iter().map(|e| e.into()).collect())
+        Ok(value.0.into_iter().map(Into::into).collect())
     }
 }

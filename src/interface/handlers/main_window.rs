@@ -22,7 +22,7 @@ pub(super) fn main_handler(key_event: KeyEvent, app: &mut App) {
             handle_exit(app);
         }
         // exit application on Ctrl-D
-        KeyCode::Char('d') | KeyCode::Char('D') | KeyCode::Char('c') => {
+        KeyCode::Char('d' | 'D' | 'c') => {
             if key_event.modifiers == KeyModifiers::CONTROL {
                 handle_exit(app);
             } else if app.table.state.selected().is_some() {
@@ -35,11 +35,11 @@ pub(super) fn main_handler(key_event: KeyEvent, app: &mut App) {
                         action: PopupAction::DeleteOtp,
                     },
                     app,
-                )
+                );
             }
         }
         // exit application on Q
-        KeyCode::Char('q') | KeyCode::Char('Q') => {
+        KeyCode::Char('q' | 'Q') => {
             if app.focus != Focus::SearchBar {
                 handle_exit(app);
             }
@@ -68,9 +68,9 @@ pub(super) fn main_handler(key_event: KeyEvent, app: &mut App) {
             handle_counter_switch(app, false);
         }
 
-        KeyCode::Char('k') | KeyCode::Char('K') => handle_switch_page(app, Qrcode),
+        KeyCode::Char('k' | 'K') => handle_switch_page(app, Qrcode),
 
-        KeyCode::Char('i') | KeyCode::Char('I') => {
+        KeyCode::Char('i' | 'I') => {
             let info_text = String::from(
                 "
             Press:
@@ -95,7 +95,7 @@ pub(super) fn main_handler(key_event: KeyEvent, app: &mut App) {
             );
         }
 
-        KeyCode::Char('f') | KeyCode::Char('F') => {
+        KeyCode::Char('f' | 'F') => {
             if key_event.modifiers == KeyModifiers::CONTROL {
                 app.focus = Focus::SearchBar;
             }

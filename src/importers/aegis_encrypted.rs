@@ -33,8 +33,7 @@ struct AegisEncryptedParams {
 
 #[derive(Deserialize)]
 struct AegisEncryptedSlot {
-    #[serde(rename = "type")]
-    _type: u32,
+    r#type: u32,
     //uuid: String,
     key: String,
     key_params: AegisEncryptedParams,
@@ -93,7 +92,7 @@ fn get_master_key(aegis_encrypted: &AegisEncryptedDatabase, password: &str) -> O
         .header
         .slots
         .iter()
-        .filter(|item| item._type == 1)
+        .filter(|item| item.r#type == 1)
     {
         match calc_master_key(slot, password) {
             Ok(value) => {
@@ -112,7 +111,7 @@ fn map_results(decrypted_db: Vec<u8>) -> Result<Vec<OTPElement>, String> {
 
     serde_json::from_str::<AegisDb>(json.as_str())
         .map_err(|e| e.to_string())
-        .and_then(|e| e.try_into())
+        .and_then(TryInto::try_into)
 }
 
 fn get_params(slot: &AegisEncryptedSlot) -> Result<Params, String> {

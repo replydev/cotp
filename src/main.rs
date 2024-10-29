@@ -73,15 +73,12 @@ fn main() -> AppResult<()> {
     };
 
     let error_code = if reowned_database.is_modified() {
-        match reowned_database.save(&key, &salt) {
-            Ok(_) => {
-                println!("Modifications has been persisted");
-                0
-            }
-            Err(_) => {
-                eprintln!("An error occurred during database overwriting");
-                -1
-            }
+        if let Ok(()) = reowned_database.save(&key, &salt) {
+            println!("Modifications has been persisted");
+            0
+        } else {
+            eprintln!("An error occurred during database overwriting");
+            -1
         }
     } else {
         0
@@ -111,12 +108,12 @@ fn dashboard(mut database: OTPDatabase) -> AppResult<OTPDatabase> {
             // Handle events.
             match tui.events.next()? {
                 Event::Tick => app.tick(false),
-                Event::Key(key_event) => handle_key_events(key_event, &mut app)?,
-                Event::Mouse(_) => {}
-                Event::Resize(_, _) => {}
-                Event::FocusGained() => {}
-                Event::FocusLost() => {}
-                Event::Paste(_) => {}
+                Event::Key(key_event) => handle_key_events(key_event, &mut app),
+                Event::Mouse(())
+                | Event::Resize((), ())
+                | Event::FocusGained()
+                | Event::FocusLost()
+                | Event::Paste(()) => {}
             }
         }
 

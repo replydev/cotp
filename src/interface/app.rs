@@ -39,7 +39,7 @@ pub struct App<'a> {
     pub(crate) focus: Focus,
     pub(crate) popup: Popup,
 
-    /// Info text in the QRCode page
+    /// Info text in the `QRCode` page
     pub(crate) qr_code_page_label: &'static str,
 }
 
@@ -63,13 +63,13 @@ impl<'a> App<'a> {
             table: StatefulTable::new(database.elements_ref()),
             database,
             progress: percentage(),
-            label_text: String::from(""),
+            label_text: String::new(),
             print_percentage: true,
             current_page: Page::default(),
-            search_query: String::from(""),
+            search_query: String::new(),
             focus: Focus::MainPage,
             popup: Popup {
-                text: String::from(""),
+                text: String::new(),
                 action: PopupAction::EditOtp,
                 percent_x: 60,
                 percent_y: 20,
@@ -111,33 +111,35 @@ impl<'a> App<'a> {
             .state
             .selected()
             .and_then(|index| self.database.elements_ref().get(index))
-            .map(|element| {
-                let title = if element.label.is_empty() {
-                    element.issuer.to_owned()
-                } else {
-                    format!("{} - {}", &element.issuer, &element.label)
-                };
-                Paragraph::new(format!(
-                    "{}\n{}",
-                    element.get_qrcode(),
-                    self.qr_code_page_label
-                ))
-                .block(Block::default().title(title).borders(Borders::ALL))
-                .style(Style::default().fg(Color::White).bg(Color::Reset))
-                .alignment(Alignment::Center)
-                .wrap(Wrap { trim: true })
-            })
-            .unwrap_or_else(|| {
-                Paragraph::new("No element is selected")
-                    .block(Block::default().title("Nope").borders(Borders::ALL))
+            .map_or_else(
+                || {
+                    Paragraph::new("No element is selected")
+                        .block(Block::default().title("Nope").borders(Borders::ALL))
+                        .style(Style::default().fg(Color::White).bg(Color::Reset))
+                        .alignment(Alignment::Center)
+                        .wrap(Wrap { trim: true })
+                },
+                |element| {
+                    let title = if element.label.is_empty() {
+                        element.issuer.clone()
+                    } else {
+                        format!("{} - {}", &element.issuer, &element.label)
+                    };
+                    Paragraph::new(format!(
+                        "{}\n{}",
+                        element.get_qrcode(),
+                        self.qr_code_page_label
+                    ))
+                    .block(Block::default().title(title).borders(Borders::ALL))
                     .style(Style::default().fg(Color::White).bg(Color::Reset))
                     .alignment(Alignment::Center)
                     .wrap(Wrap { trim: true })
-            });
-        self.render_paragraph(frame, paragraph);
+                },
+            );
+        Self::render_paragraph(frame, paragraph);
     }
 
-    fn render_paragraph(&self, frame: &mut Frame<'_>, paragraph: Paragraph) {
+    fn render_paragraph(frame: &mut Frame<'_>, paragraph: Paragraph) {
         let rects = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Percentage(100)].as_ref())
@@ -180,7 +182,7 @@ impl<'a> App<'a> {
         let progress_label = if self.print_percentage {
             format!("{}%", self.progress)
         } else {
-            self.label_text.to_owned()
+            self.label_text.clone()
         };
         let progress_bar = Gauge::default()
             .block(Block::default())
@@ -214,7 +216,7 @@ impl<'a> App<'a> {
     }
 
     fn render_table_box(&mut self, frame: &mut Frame<'_>, area: Rect) {
-        let constraints = if self.is_large_application(frame) {
+        let constraints = if Self::is_large_application(frame) {
             vec![Constraint::Percentage(80), Constraint::Percentage(20)]
         } else {
             vec![Constraint::Percentage(100)]
@@ -279,12 +281,11 @@ impl<'a> App<'a> {
                 element.algorithm,
                 element
                     .counter
-                    .map(|e| e.to_string())
-                    .unwrap_or_else(|| String::from("N/A")),
+                    .map_or_else(|| String::from("N/A"), |e| e.to_string()),
                 element.pin.clone().unwrap_or_else(|| String::from("N/A"))
             )
         } else {
-            String::from("")
+            String::new()
         };
 
         text.push_str(
@@ -299,12 +300,12 @@ impl<'a> App<'a> {
             .alignment(Alignment::Left)
             .wrap(Wrap { trim: true });
         frame.render_stateful_widget(t, chunks[0], &mut self.table.state);
-        if self.is_large_application(frame) {
+        if Self::is_large_application(frame) {
             frame.render_widget(paragraph, chunks[1]);
         }
     }
 
-    fn is_large_application(&self, frame: &mut Frame<'_>) -> bool {
+    fn is_large_application(frame: &mut Frame<'_>) -> bool {
         frame.area().width >= LARGE_APPLICATION_WIDTH
     }
 }

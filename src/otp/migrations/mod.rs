@@ -20,7 +20,7 @@ pub fn migrate(database: &mut OTPDatabase) -> color_eyre::Result<()> {
     for i in migrations {
         if database.version < i.to_version {
             // Do the migration
-            (i.migration_function)(database)?
+            (i.migration_function)(database)?;
         }
     }
     Ok(())
