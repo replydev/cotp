@@ -8,13 +8,13 @@ pub(super) fn search_bar_handler(key_event: KeyEvent, app: &mut App) {
     match key_event.code {
         KeyCode::Char(c) => {
             if key_event.modifiers == KeyModifiers::CONTROL {
-                match c {
-                    'f' | 'F' => {
+                match c.to_ascii_lowercase() {
+                    'f' => {
                         app.search_query.clear();
                         app.focus = Focus::MainPage;
                     }
-                    'c' | 'C' => handle_exit(app),
-                    'w' | 'W' => app.search_query.clear(),
+                    'c' => handle_exit(app),
+                    'w' | 'u' => app.search_query.clear(),
                     _ => {}
                 }
             } else {

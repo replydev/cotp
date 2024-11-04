@@ -17,9 +17,11 @@ use super::{handle_exit, show_popup};
 
 pub(super) fn main_handler(key_event: KeyEvent, app: &mut App) {
     match key_event.code {
-        // exit application on ESC
-        KeyCode::Esc => {
-            handle_exit(app);
+        // exit application on ESC or Q
+        KeyCode::Esc | KeyCode::Char('q' | 'Q') => {
+            if app.focus != Focus::SearchBar {
+                handle_exit(app);
+            }
         }
         // exit application on Ctrl-D
         KeyCode::Char('d' | 'D' | 'c') => {
@@ -38,21 +40,15 @@ pub(super) fn main_handler(key_event: KeyEvent, app: &mut App) {
                 );
             }
         }
-        // exit application on Q
-        KeyCode::Char('q' | 'Q') => {
-            if app.focus != Focus::SearchBar {
-                handle_exit(app);
-            }
-        }
 
         // Move into the table
-        KeyCode::Up => {
+        KeyCode::Up | KeyCode::Char('k') => {
             app.print_percentage = true;
             app.current_page = Main;
             app.table.previous();
         }
 
-        KeyCode::Down => {
+        KeyCode::Down | KeyCode::Char('j') => {
             app.print_percentage = true;
             app.current_page = Main;
             app.table.next();
@@ -68,19 +64,19 @@ pub(super) fn main_handler(key_event: KeyEvent, app: &mut App) {
             handle_counter_switch(app, false);
         }
 
-        KeyCode::Char('k' | 'K') => handle_switch_page(app, Qrcode),
+        KeyCode::Char(' ') => handle_switch_page(app, Qrcode),
 
-        KeyCode::Char('i' | 'I') => {
+        KeyCode::Char('?') => {
             let info_text = String::from(
                 "
             Press:
             d -> Delete selected code
             + -> Increment the HOTP counter
             - -> Decrement the HOTP counter
-            k -> Show QRCode of the selected element
+            Space -> Show QRCode of the selected element
             Enter -> Copy the OTP Code to the clipboard
-            CTRL-F -> Search codes
-            CTRL-W -> Clear the search query
+            CTRL-F | '/' -> Search codes
+            CTRL-W | CTRL-U -> Clear the search query
             q, CTRL-D, Esc -> Exit the application
             ",
             );

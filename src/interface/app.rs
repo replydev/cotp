@@ -288,12 +288,7 @@ impl<'a> App<'a> {
             String::new()
         };
 
-        text.push_str(
-            "
-        
-        Press I to get help
-        ",
-        );
+        text.push_str("\n\n         Press '?' to get help\n");
         let paragraph = Paragraph::new(text)
             .block(Block::default().title("Code info").borders(Borders::ALL))
             .style(Style::default().fg(Color::White).bg(Color::Reset))
