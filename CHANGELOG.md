@@ -1,3 +1,14 @@
+## [1.9.2](https://github.com/replydev/cotp/compare/v1.9.1...v1.9.2) (2024-11-04)
+
+
+### Bug Fixes
+
+* cargo clippy ([2c7e601](https://github.com/replydev/cotp/commit/2c7e601e83499a129c64daf3ff3cc197712c8fe4))
+* cargo fmt ([e2c3123](https://github.com/replydev/cotp/commit/e2c3123a91a694559663bd80690a9c56cdae70d9))
+* **keymaps:** some kind of vim-alike keymaps ([ef0cb98](https://github.com/replydev/cotp/commit/ef0cb98d2ea807632535d299e5880f5dbbc211b2))
+* **keymaps:** some kind of vim-alike keymaps ([#510](https://github.com/replydev/cotp/issues/510)) ([0ec3a47](https://github.com/replydev/cotp/commit/0ec3a47159fc4d2a0d6bed7cfe6181468bda9b9a))
+* **reverts:** results for the future ([a702acb](https://github.com/replydev/cotp/commit/a702acb50f2d7b053659dce9a9ca5216d12211aa))
+
 ## [1.9.1](https://github.com/replydev/cotp/compare/v1.9.0...v1.9.1) (2024-09-12)
 
 
