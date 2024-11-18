@@ -27,14 +27,14 @@ debug = false
 strip = "symbols"
 
 [dependencies]
-serde_json = "1.0.132"
 serde = { version = "1.0.215", features = ["derive"] }
+serde_json = "1.0.133"
 dirs = "5.0.1"
 rpassword = "7.3.1"
 data-encoding = "2.6.0"
 copypasta-ext = "0.4.4"
 zeroize = { version = "1.8.1", features = ["zeroize_derive"] }
-clap = { version = "4.5.20", features = ["derive"] }
+clap = { version = "4.5.21", features = ["derive"] }
 hmac = "0.12.1"
 sha1 = "0.10.6"
 sha2 = "0.10.8"
