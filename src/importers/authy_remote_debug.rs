@@ -43,7 +43,7 @@ impl AuthyExportedJsonElement {
             .and_then(|s| {
                 let mut args: Vec<&str> =
                     s.split('&').filter(|s| s.starts_with("digits=")).collect();
-                if args.first().is_some() {
+                if !args.is_empty() {
                     Some(args.swap_remove(0))
                 } else {
                     None
