@@ -76,7 +76,7 @@ where
 
     let parsed_secret = &decoded_secret.as_slice()[0..SECRET_LENGHT];
 
-    let mut pin_with_secret: Vec<u8> = Vec::with_capacity(pin.as_bytes().len() + SECRET_LENGHT);
+    let mut pin_with_secret: Vec<u8> = Vec::with_capacity(pin.len() + SECRET_LENGHT);
 
     pin_with_secret.append(&mut pin.as_bytes().to_vec());
     pin_with_secret.append(&mut parsed_secret.to_vec());
