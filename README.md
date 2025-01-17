@@ -63,26 +63,16 @@ It also uses [AES-GCM](https://docs.rs/aes-gcm/latest/aes_gcm/) to import from e
 
 ## Cross Plaform
 
-cotp should be easily compiled on the most used platform, but it is mostly tested on Linux and Windows.
+cotp should be easily compiled on the most used platforms, but it is mostly tested on Linux, Windows and macOS.
 
 # Install
 
-## Arch Linux and arch-based distributions
+## Arch Linux / Manjaro / Debian / Ubuntu / NixOS / others...
 
-Arch Linux has an [official package](https://archlinux.org/packages/extra/x86_64/cotp) in the [extra] repository:
+cotp is distributed in some of the mayor Linux distro repositories. Please check the repology badge at the top to know if your distribution already provides a package.
+I will try to push to more repositories over time.
 
-```
-pacman -S cotp
-```
-
-Additionally if you wish to compile and run the Git HEAD version instead of the current stable release,
-an AUR package [cotp-git](https://aur.archlinux.org/packages/cotp-git) can be installed using the
-[usual instructions](https://wiki.archlinux.org/title/Arch_User_Repository#Installing_and_upgrading_packages)
-or your favorite AUR helper like [paru](https://github.com/morganamilo/paru) (`paru -S cotp-git`).
-
-## NixOS
-
-Check the [official package](https://search.nixos.org/packages?channel=23.11&from=0&size=50&sort=relevance&type=packages&query=cotp).
+Otherwise you have other options as explained in the next paragraph.
 
 ## Other linux distributions and \*nix
 
