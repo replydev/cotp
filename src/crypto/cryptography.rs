@@ -26,7 +26,7 @@ pub fn argon_derive_key(password_bytes: &[u8], salt: &[u8]) -> color_eyre::Resul
 
 pub fn gen_salt() -> color_eyre::Result<[u8; ARGON2ID_SALT_LENGTH]> {
     let mut salt: [u8; ARGON2ID_SALT_LENGTH] = [0; ARGON2ID_SALT_LENGTH];
-    getrandom::getrandom(&mut salt).map_err(ErrReport::from)?;
+    getrandom::fill(&mut salt).map_err(ErrReport::from)?;
     Ok(salt)
 }
 
@@ -41,7 +41,7 @@ pub fn encrypt_string_with_key(
     let mut nonce_bytes: [u8; XCHACHA20_POLY1305_NONCE_LENGTH] =
         [0; XCHACHA20_POLY1305_NONCE_LENGTH];
 
-    getrandom::getrandom(&mut nonce_bytes).map_err(ErrReport::from)?;
+    getrandom::fill(&mut nonce_bytes).map_err(ErrReport::from)?;
 
     let nonce = XNonce::from_slice(&nonce_bytes);
     let cipher_text = aead
