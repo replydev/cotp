@@ -28,7 +28,7 @@ strip = "symbols"
 
 [dependencies]
 serde = { version = "1.0.217", features = ["derive"] }
-serde_json = "1.0.137"
+serde_json = "1.0.138"
 dirs = "5.0.1"
 rpassword = "7.3.1"
 data-encoding = "2.7.0"
