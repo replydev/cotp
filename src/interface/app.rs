@@ -265,10 +265,12 @@ impl<'a> App<'a> {
             )
             .highlight_symbol("-> ");
 
-        let selected_element = match self.table.state.selected() {
-            Some(index) => self.database.get_element(index),
-            None => None,
-        };
+        let selected_element = self
+            .table
+            .state
+            .selected()
+            .and_then(|i| self.database.get_element(i));
+
         let mut text = if let Some(element) = selected_element {
             format!(
                 "
