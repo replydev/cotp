@@ -48,15 +48,17 @@ impl SubcommandExecutor for ExtractArgs {
 }
 
 fn filter_extract(args: &ExtractArgs, index: usize, code: &OTPElement) -> bool {
-    let match_by_index = args.index.map_or(true, |i| i == index);
+    let match_by_index = args.index.is_none_or(|i| i == index);
 
-    let match_by_issuer = args.issuer.as_ref().map_or(true, |issuer| {
-        code.issuer.to_lowercase() == issuer.to_lowercase()
-    });
+    let match_by_issuer = args
+        .issuer
+        .as_ref()
+        .is_none_or(|issuer| code.issuer.to_lowercase() == issuer.to_lowercase());
 
-    let match_by_label = args.label.as_ref().map_or(true, |label| {
-        code.label.to_lowercase() == label.to_lowercase()
-    });
+    let match_by_label = args
+        .label
+        .as_ref()
+        .is_none_or(|label| code.label.to_lowercase() == label.to_lowercase());
 
     match_by_index && match_by_issuer && match_by_label
 }
