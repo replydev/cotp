@@ -2,11 +2,11 @@ use crate::otp::otp_element::OTPDatabase;
 use crate::{clipboard, otp::otp_element::OTPElement};
 use clap::Args;
 use color_eyre::eyre::eyre;
-use globset::{Glob, GlobMatcher};
+use globset::{GlobBuilder, GlobMatcher};
 
 use super::SubcommandExecutor;
 
-#[derive(Args)]
+#[derive(Args, Default)]
 pub struct ExtractArgs {
     /// Code Index
     #[arg(short, long, required_unless_present_any = ["issuer", "label"])]
@@ -36,14 +36,14 @@ impl TryFrom<ExtractArgs> for ExtractFilterGlob {
     type Error = color_eyre::eyre::ErrReport;
 
     fn try_from(value: ExtractArgs) -> Result<Self, Self::Error> {
-        let issuer_glob = if value.issuer.is_some() {
-            Some(Glob::new(&value.issuer.unwrap())?.compile_matcher())
+        let issuer_glob = if let Some(issuer) = value.issuer {
+            Some(create_matcher(&issuer)?)
         } else {
             None
         };
 
-        let label_glob = if value.label.is_some() {
-            Some(Glob::new(&value.label.unwrap())?.compile_matcher())
+        let label_glob = if let Some(label) = value.label {
+            Some(create_matcher(&label)?)
         } else {
             None
         };
@@ -54,6 +54,15 @@ impl TryFrom<ExtractArgs> for ExtractFilterGlob {
             index: value.index,
         })
     }
+}
+
+fn create_matcher(
+    glob: &str,
+) -> Result<GlobMatcher, <ExtractFilterGlob as TryFrom<ExtractArgs>>::Error> {
+    Ok(GlobBuilder::new(glob)
+        .case_insensitive(true)
+        .build()?
+        .compile_matcher())
 }
 
 impl SubcommandExecutor for ExtractArgs {
@@ -104,11 +113,13 @@ fn filter_extract(args: &ExtractFilterGlob, index: usize, candidate: &OTPElement
 
 #[cfg(test)]
 mod tests {
-    use globset::Glob;
 
-    use crate::otp::otp_element::{OTPDatabase, OTPElementBuilder};
+    use crate::{
+        arguments::extract::ExtractArgs,
+        otp::otp_element::{OTPDatabase, OTPElementBuilder},
+    };
 
-    use super::{find_match, ExtractFilterGlob};
+    use super::find_match;
 
     #[test]
     fn test_glob_filtering_good_issuer() {
@@ -132,14 +143,13 @@ mod tests {
                 .unwrap(),
         );
 
-        let filter = ExtractFilterGlob {
-            issuer_glob: Some(Glob::new("test-iss*").unwrap().compile_matcher()),
-            label_glob: None,
-            index: None,
+        let filter = ExtractArgs {
+            issuer: Some("test-iss*".to_string()),
+            ..Default::default()
         };
 
         // Act
-        let found_match = find_match(&otp_database, filter);
+        let found_match = find_match(&otp_database, filter.try_into().unwrap());
 
         // Assert
         assert!(found_match.is_some());
@@ -167,14 +177,13 @@ mod tests {
                 .unwrap(),
         );
 
-        let filter = ExtractFilterGlob {
-            issuer_glob: None,
-            label_glob: Some(Glob::new("test-la*").unwrap().compile_matcher()),
-            index: None,
+        let filter = ExtractArgs {
+            label: Some("test-la*".to_string()),
+            ..Default::default()
         };
 
         // Act
-        let found_match = find_match(&otp_database, filter);
+        let found_match = find_match(&otp_database, filter.try_into().unwrap());
 
         // Assert
         assert!(found_match.is_some());
@@ -202,14 +211,13 @@ mod tests {
                 .unwrap(),
         );
 
-        let filter = ExtractFilterGlob {
-            issuer_glob: None,
-            label_glob: Some(Glob::new("test-lala*").unwrap().compile_matcher()),
-            index: None,
+        let filter = ExtractArgs {
+            label: Some("test-lala*".to_string()),
+            ..Default::default()
         };
 
         // Act
-        let found_match = find_match(&otp_database, filter);
+        let found_match = find_match(&otp_database, filter.try_into().unwrap());
 
         // Assert
         assert!(found_match.is_none());
@@ -237,14 +245,14 @@ mod tests {
                 .unwrap(),
         );
 
-        let filter = ExtractFilterGlob {
-            issuer_glob: Some(Glob::new("test*").unwrap().compile_matcher()),
-            label_glob: Some(Glob::new("test-la*").unwrap().compile_matcher()),
-            index: None,
+        let filter = ExtractArgs {
+            issuer: Some("test*".to_string()),
+            label: Some("test-la*".to_string()),
+            ..Default::default()
         };
 
         // Act
-        let found_match = find_match(&otp_database, filter);
+        let found_match = find_match(&otp_database, filter.try_into().unwrap());
 
         // Assert
         assert!(found_match.is_some());
@@ -272,16 +280,50 @@ mod tests {
                 .unwrap(),
         );
 
-        let filter = ExtractFilterGlob {
-            issuer_glob: Some(Glob::new("test-no*").unwrap().compile_matcher()),
-            label_glob: Some(Glob::new("test-la*").unwrap().compile_matcher()),
-            index: None,
+        let filter = ExtractArgs {
+            issuer: Some("test-no*".to_string()),
+            label: Some("test-la*".to_string()),
+            ..Default::default()
         };
 
         // Act
-        let found_match = find_match(&otp_database, filter);
+        let found_match = find_match(&otp_database, filter.try_into().unwrap());
 
         // Assert
         assert!(found_match.is_none());
+    }
+
+    #[test]
+    fn test_glob_filtering_case_insensitive() {
+        // Arrange
+        let mut otp_database = OTPDatabase::default();
+        otp_database.add_element(
+            OTPElementBuilder::default()
+                .issuer("test-issuer")
+                .label("test-label")
+                .secret("AA")
+                .build()
+                .unwrap(),
+        );
+
+        otp_database.add_element(
+            OTPElementBuilder::default()
+                .issuer("test-issuer2")
+                .label("test-label2")
+                .secret("AA")
+                .build()
+                .unwrap(),
+        );
+
+        let filter = ExtractArgs {
+            issuer: Some("TeSt-iSS*".to_string()),
+            ..Default::default()
+        };
+
+        // Act
+        let found_match = find_match(&otp_database, filter.try_into().unwrap());
+
+        // Assert
+        assert!(found_match.is_some());
     }
 }
