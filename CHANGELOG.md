@@ -1,3 +1,11 @@
+## [1.9.3](https://github.com/replydev/cotp/compare/v1.9.2...v1.9.3) (2025-04-06)
+
+
+### Bug Fixes
+
+* implement first glob matching logic for extract subcommand ([2422c9d](https://github.com/replydev/cotp/commit/2422c9d32ca08c17f793d5d67488ee54ff96012e))
+* make matching case insensitive again ([0d564ee](https://github.com/replydev/cotp/commit/0d564ee911c954c2c16a751bc7e660a7a3558521))
+
 ## [1.9.2](https://github.com/replydev/cotp/compare/v1.9.1...v1.9.2) (2024-11-04)
 
 
