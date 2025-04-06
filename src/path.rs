@@ -36,7 +36,6 @@ fn get_default_db_path() -> PathBuf {
     let home_path = home_dir().map(|path| path.join(HOME_PATH));
 
     data_dir()
-        .map(PathBuf::from)
         .map(|p| p.join(XDG_PATH))
         .inspect(|xdg| {
             if !xdg.exists() {

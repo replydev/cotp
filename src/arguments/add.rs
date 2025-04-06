@@ -80,7 +80,7 @@ impl SubcommandExecutor for AddArgs {
 
 fn get_from_args(matches: AddArgs) -> color_eyre::Result<OTPElement> {
     let secret = rpassword::prompt_password("Insert the secret: ").map_err(ErrReport::from)?;
-    map_args_to_code(secret, matches).map_err(ErrReport::from)
+    map_args_to_code(secret, matches)
 }
 
 fn map_args_to_code(secret: String, matches: AddArgs) -> Result<OTPElement> {
