@@ -9,7 +9,8 @@ pub trait FromOtpUri: Sized {
 
 impl FromOtpUri for OTPElement {
     fn from_otp_uri(otp_uri: &str) -> color_eyre::Result<Self> {
-        let parsed_uri = Url::parse(otp_uri).map_err(ErrReport::from)?;
+        let decoded = urlencoding::decode(otp_uri).map_err(ErrReport::from)?;
+        let parsed_uri = Url::parse(&decoded).map_err(ErrReport::from)?;
 
         let otp_type = parsed_uri
             .host_str()
