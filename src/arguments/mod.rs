@@ -55,7 +55,7 @@ pub enum CotpSubcommands {
     Import(ImportArgs),
     /// Export cotp database
     Export(ExportArgs),
-    /// Copies the selected code into the clipboard
+    /// Copies the selected code into the clipboard, supports glob matching
     Extract(ExtractArgs),
     /// Change database password
     Passwd(PasswdArgs),

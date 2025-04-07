@@ -12,11 +12,11 @@ pub struct ExtractArgs {
     #[arg(short, long, required_unless_present_any = ["issuer", "label"])]
     pub index: Option<usize>,
 
-    /// Code issuer
+    /// Code issuer, may be a glob pattern
     #[arg(short = 's', long, required_unless_present_any = ["index", "label"])]
     pub issuer: Option<String>,
 
-    /// Code label
+    /// Code label, may be a glob pattern
     #[arg(short, long, required_unless_present_any = ["index", "issuer"])]
     pub label: Option<String>,
 
