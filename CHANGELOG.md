@@ -1,3 +1,10 @@
+## [1.9.4](https://github.com/replydev/cotp/compare/v1.9.3...v1.9.4) (2025-04-08)
+
+
+### Bug Fixes
+
+* decode otp uri before parsing ([f5f974d](https://github.com/replydev/cotp/commit/f5f974dc767a84350e6b5610615f71c948711fd4))
+
 ## [1.9.3](https://github.com/replydev/cotp/compare/v1.9.2...v1.9.3) (2025-04-06)
 
 
