@@ -423,4 +423,34 @@ mod test {
             result.unwrap_err().to_string()
         );
     }
+
+    #[test]
+    fn gh_issue_548_invalid_otp_uri_label_url_encoded() {
+        // Arrange
+        let otp_uri = "otpauth://totp/foo%3abar?issuer=foo&secret=JBSWY3DPEHPK3PXP";
+
+        // Act
+        let result = OTPElement::from_otp_uri(otp_uri);
+
+        // Assert
+        assert!(result.is_ok());
+        let actual = result.unwrap();
+        assert_eq!("foo", actual.issuer.as_str());
+        assert_eq!("bar", actual.label.as_str());
+    }
+
+    #[test]
+    fn gh_issue_548_invalid_otp_uri_label_non_url_encoded() {
+        // Arrange
+        let otp_uri = "otpauth://totp/foo:bar?issuer=foo&secret=JBSWY3DPEHPK3PXP";
+
+        // Act
+        let result = OTPElement::from_otp_uri(otp_uri);
+
+        // Assert
+        assert!(result.is_ok());
+        let actual = result.unwrap();
+        assert_eq!("foo", actual.issuer.as_str());
+        assert_eq!("bar", actual.label.as_str());
+    }
 }
