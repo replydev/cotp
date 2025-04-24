@@ -21,7 +21,7 @@ use crate::otp::otp_error::OtpError;
 use super::hotp_maker::hotp_hash;
 
 const EN_ALPHABET_LENGTH: u64 = 26;
-const SECRET_LENGHT: usize = 16;
+const SECRET_LENGTH: usize = 16;
 
 pub fn yandex(
     secret: &str,
@@ -70,13 +70,13 @@ where
         Err(e) => return Err(OtpError::SecretEncoding(e.kind, e.position)),
     };
 
-    if decoded_secret.len() < SECRET_LENGHT {
+    if decoded_secret.len() < SECRET_LENGTH {
         return Err(OtpError::ShortSecret);
     }
 
-    let parsed_secret = &decoded_secret.as_slice()[0..SECRET_LENGHT];
+    let parsed_secret = &decoded_secret.as_slice()[0..SECRET_LENGTH];
 
-    let mut pin_with_secret: Vec<u8> = Vec::with_capacity(pin.len() + SECRET_LENGHT);
+    let mut pin_with_secret: Vec<u8> = Vec::with_capacity(pin.len() + SECRET_LENGTH);
 
     pin_with_secret.append(&mut pin.as_bytes().to_vec());
     pin_with_secret.append(&mut parsed_secret.to_vec());

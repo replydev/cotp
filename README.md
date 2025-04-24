@@ -61,7 +61,7 @@ and [Argon2id](https://en.wikipedia.org/wiki/Argon2) for key derivation.
 It also uses [AES-GCM](https://docs.rs/aes-gcm/latest/aes_gcm/) to import from encrypted Aegis backups.
 
 
-## Cross Plaform
+## Cross Platform
 
 cotp should be easily compiled on the most used platforms, but it is mostly tested on Linux, Windows and macOS.
 

@@ -126,7 +126,7 @@ fn handle_counter_switch(app: &mut App, increment: bool) {
     if let Some(selected) = app.table.state.selected() {
         if let Some(element) = app.database.mut_element(selected) {
             if element.type_ == OTPType::Hotp {
-                // safe to unwrap becouse the element type is HOTP
+                // safe to unwrap because the element type is HOTP
                 let counter = element.counter.unwrap();
                 element.counter = if increment {
                     Some(counter.checked_add(1).unwrap_or(u64::MAX))
