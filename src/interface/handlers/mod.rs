@@ -1,6 +1,6 @@
 use crossterm::event::KeyEvent;
 
-use crate::clipboard::{copy_string_to_clipboard, CopyType};
+use crate::clipboard::{CopyType, copy_string_to_clipboard};
 
 use self::{main_window::main_handler, popup::popup_handler, search_bar::search_bar_handler};
 

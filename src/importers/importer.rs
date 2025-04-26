@@ -1,6 +1,6 @@
 use std::{fmt::Debug, fs::read_to_string, path::PathBuf};
 
-use color_eyre::eyre::{eyre, Result};
+use color_eyre::eyre::{Result, eyre};
 use serde::Deserialize;
 
 use crate::otp::otp_element::OTPElement;

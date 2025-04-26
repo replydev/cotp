@@ -1,4 +1,4 @@
-use clap::{value_parser, Args};
+use clap::{Args, value_parser};
 use color_eyre::eyre::eyre;
 
 use crate::otp::{otp_algorithm::OTPAlgorithm, otp_element::OTPDatabase};

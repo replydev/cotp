@@ -1,16 +1,16 @@
 #![forbid(unsafe_code)]
-use arguments::{args_parser, CotpArgs};
+use arguments::{CotpArgs, args_parser};
 use clap::Parser;
 use color_eyre::eyre::eyre;
 use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
 use interface::handlers::handle_key_events;
 use interface::ui::Tui;
-use otp::otp_element::{OTPDatabase, CURRENT_DATABASE_VERSION};
+use otp::otp_element::{CURRENT_DATABASE_VERSION, OTPDatabase};
 use path::init_path;
-use ratatui::prelude::CrosstermBackend;
 use ratatui::Terminal;
-use reading::{get_elements_from_input, get_elements_from_stdin, ReadResult};
+use ratatui::prelude::CrosstermBackend;
+use reading::{ReadResult, get_elements_from_input, get_elements_from_stdin};
 use std::{io, vec};
 use zeroize::Zeroize;
 

@@ -4,13 +4,13 @@ use crate::interface::enums::Focus;
 use crate::interface::enums::Page;
 use crate::interface::enums::Page::{Main, Qrcode};
 use crate::otp::otp_element::OTPDatabase;
+use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Block, Borders, Cell, Clear, Gauge, Paragraph, Row, Table, Wrap};
-use ratatui::Frame;
 
-use crate::interface::stateful_table::{fill_table, StatefulTable};
+use crate::interface::stateful_table::{StatefulTable, fill_table};
 use crate::utils::percentage;
 
 use super::enums::PopupAction;

@@ -1,4 +1,4 @@
-use base64::{engine::general_purpose, Engine as _};
+use base64::{Engine as _, engine::general_purpose};
 use color_eyre::eyre::eyre;
 use copypasta_ext::prelude::*;
 #[cfg(target_os = "linux")]

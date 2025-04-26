@@ -2,7 +2,7 @@ use crate::crypto;
 use crate::otp::otp_element::{OTPDatabase, OTPElement};
 use crate::path::DATABASE_PATH;
 use crate::utils;
-use color_eyre::eyre::{eyre, ErrReport};
+use color_eyre::eyre::{ErrReport, eyre};
 use std::fs::read_to_string;
 use std::io::{self, BufRead};
 use zeroize::Zeroize;
