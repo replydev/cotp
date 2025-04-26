@@ -73,12 +73,15 @@ fn main() -> AppResult<()> {
     };
 
     let error_code = if reowned_database.is_modified() {
-        if let Ok(()) = reowned_database.save(&key, &salt) {
-            println!("Modifications have been persisted");
-            0
-        } else {
-            eprintln!("An error occurred during database overwriting");
-            -1
+        match reowned_database.save(&key, &salt) {
+            Ok(()) => {
+                println!("Modifications have been persisted");
+                0
+            }
+            _ => {
+                eprintln!("An error occurred during database overwriting");
+                -1
+            }
         }
     } else {
         0
