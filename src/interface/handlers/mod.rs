@@ -1,6 +1,6 @@
 use crossterm::event::KeyEvent;
 
-use crate::clipboard::{copy_string_to_clipboard, CopyType};
+use crate::clipboard::{CopyType, copy_string_to_clipboard};
 
 use self::{main_window::main_handler, popup::popup_handler, search_bar::search_bar_handler};
 
@@ -42,16 +42,13 @@ pub(crate) fn copy_selected_code_to_clipboard(app: &mut App) -> String {
     match app.table.state.selected() {
         Some(selected) => match app.table.items.get(selected) {
             Some(element) => match element.values.get(3) {
-                Some(otp_code) => {
-                    if let Ok(result) = copy_string_to_clipboard(otp_code) {
-                        match result {
-                            CopyType::Native => "Copied!".to_string(),
-                            CopyType::OSC52 => "Remote copied!".to_string(),
-                        }
-                    } else {
-                        "Cannot copy".to_string()
-                    }
-                }
+                Some(otp_code) => match copy_string_to_clipboard(otp_code) {
+                    Ok(result) => match result {
+                        CopyType::Native => "Copied!".to_string(),
+                        CopyType::OSC52 => "Remote copied!".to_string(),
+                    },
+                    _ => "Cannot copy".to_string(),
+                },
                 None => "Cannot get OTP Code column".to_string(),
             },
             None => format!("Cannot fetch element from index: {selected}"),

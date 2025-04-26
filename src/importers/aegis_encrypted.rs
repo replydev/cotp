@@ -1,5 +1,5 @@
-use aes_gcm::aead::generic_array::GenericArray;
 use aes_gcm::aead::Aead;
+use aes_gcm::aead::generic_array::GenericArray;
 use aes_gcm::{Aes256Gcm, KeyInit, Nonce}; // Or `Aes128Gcm`
 use data_encoding::BASE64;
 use hex::FromHex;
@@ -8,7 +8,7 @@ use zeroize::Zeroize;
 
 use crate::otp::otp_element::OTPElement;
 use crate::utils;
-use scrypt::{scrypt, Params};
+use scrypt::{Params, scrypt};
 
 use super::aegis::AegisDb;
 

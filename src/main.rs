@@ -1,16 +1,16 @@
 #![forbid(unsafe_code)]
-use arguments::{args_parser, CotpArgs};
+use arguments::{CotpArgs, args_parser};
 use clap::Parser;
 use color_eyre::eyre::eyre;
 use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
 use interface::handlers::handle_key_events;
 use interface::ui::Tui;
-use otp::otp_element::{OTPDatabase, CURRENT_DATABASE_VERSION};
+use otp::otp_element::{CURRENT_DATABASE_VERSION, OTPDatabase};
 use path::init_path;
-use ratatui::prelude::CrosstermBackend;
 use ratatui::Terminal;
-use reading::{get_elements_from_input, get_elements_from_stdin, ReadResult};
+use ratatui::prelude::CrosstermBackend;
+use reading::{ReadResult, get_elements_from_input, get_elements_from_stdin};
 use std::{io, vec};
 use zeroize::Zeroize;
 
@@ -73,12 +73,15 @@ fn main() -> AppResult<()> {
     };
 
     let error_code = if reowned_database.is_modified() {
-        if let Ok(()) = reowned_database.save(&key, &salt) {
-            println!("Modifications have been persisted");
-            0
-        } else {
-            eprintln!("An error occurred during database overwriting");
-            -1
+        match reowned_database.save(&key, &salt) {
+            Ok(()) => {
+                println!("Modifications have been persisted");
+                0
+            }
+            _ => {
+                eprintln!("An error occurred during database overwriting");
+                -1
+            }
         }
     } else {
         0

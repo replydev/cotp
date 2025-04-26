@@ -96,7 +96,7 @@ mod tests {
     use crate::otp::otp_element::OTPDatabase;
     use color_eyre::Result;
 
-    use super::{encode_secret, FreeOTPPlusJson};
+    use super::{FreeOTPPlusJson, encode_secret};
 
     #[test]
     fn test_secret_conversion() {

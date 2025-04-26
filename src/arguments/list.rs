@@ -1,5 +1,5 @@
 use clap::Args;
-use color_eyre::eyre::{eyre, Result};
+use color_eyre::eyre::{Result, eyre};
 use serde::Serialize;
 
 use crate::otp::otp_element::{OTPDatabase, OTPElement};

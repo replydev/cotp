@@ -7,10 +7,10 @@ use chacha20poly1305::consts::U256;
 
 use data_encoding::BASE32_NOPAD;
 use hmac::digest::{
+    HashMarker,
     block_buffer::Eager,
     core_api::{BufferKindUser, CoreProxy, FixedOutputCore, UpdateCore},
     typenum::{IsLess, Le, NonZero},
-    HashMarker,
 };
 use sha1::{Digest, Sha1};
 use sha2::{Sha256, Sha512};

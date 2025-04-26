@@ -1,4 +1,4 @@
-use color_eyre::eyre::{eyre, ErrReport};
+use color_eyre::eyre::{ErrReport, eyre};
 use derive_builder::Builder;
 use std::{fs::File, io::Write, vec};
 
@@ -6,8 +6,8 @@ use crate::crypto::cryptography::{argon_derive_key, encrypt_string_with_key, gen
 use crate::otp::otp_error::OtpError;
 use crate::path::DATABASE_PATH;
 use data_encoding::BASE32_NOPAD;
-use qrcode::render::unicode;
 use qrcode::QrCode;
+use qrcode::render::unicode;
 use serde::{Deserialize, Serialize};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -162,7 +162,9 @@ impl OTPElement {
         let algorithm = self.algorithm.to_string().to_uppercase();
         let digits = self.digits;
         let period = self.period;
-        let mut uri: String = format!("otpauth://{otp_type}/{label}?secret={secret}&algorithm={algorithm}&digits={digits}&period={period}&lock=false");
+        let mut uri: String = format!(
+            "otpauth://{otp_type}/{label}?secret={secret}&algorithm={algorithm}&digits={digits}&period={period}&lock=false"
+        );
 
         if self.type_ == OTPType::Hotp {
             uri.push_str("&counter=");
@@ -303,7 +305,10 @@ mod test {
             counter: None,
             pin: None,
         };
-        assert_eq!("otpauth://totp/IssuerText:LabelText?secret=xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g&algorithm=SHA1&digits=6&period=30&lock=false",otp_element.get_otpauth_uri().as_str());
+        assert_eq!(
+            "otpauth://totp/IssuerText:LabelText?secret=xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g&algorithm=SHA1&digits=6&period=30&lock=false",
+            otp_element.get_otpauth_uri().as_str()
+        );
     }
 
     #[test]
@@ -319,7 +324,10 @@ mod test {
             counter: None,
             pin: None,
         };
-        assert_eq!("otpauth://totp/:LabelText?secret=xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g&algorithm=SHA1&digits=6&period=30&lock=false",otp_element.get_otpauth_uri().as_str());
+        assert_eq!(
+            "otpauth://totp/:LabelText?secret=xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g&algorithm=SHA1&digits=6&period=30&lock=false",
+            otp_element.get_otpauth_uri().as_str()
+        );
     }
 
     #[test]
