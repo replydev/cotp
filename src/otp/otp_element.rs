@@ -222,10 +222,10 @@ impl OTPElement {
 
     fn format_code(&self, value: u32) -> Result<String, OtpError> {
         // Get the formatted code
-        let exponential = 10_u32
+        let exponential = 10_u64
             .checked_pow(self.digits as u32)
             .ok_or(OtpError::InvalidDigits)?;
-        let s = (value % exponential).to_string();
+        let s = (value as u64 % exponential).to_string();
         Ok("0".repeat(self.digits as usize - s.chars().count()) + s.as_str())
     }
 }
