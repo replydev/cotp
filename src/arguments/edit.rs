@@ -24,7 +24,7 @@ pub struct EditArgs {
     pub algorithm: Option<OTPAlgorithm>,
 
     /// Code digits
-    #[arg(short, long, value_parser=value_parser!(u64).range(0..=9))]
+    #[arg(short, long, value_parser=value_parser!(u64).range(1..=10))]
     pub digits: Option<u64>,
 
     /// Code period

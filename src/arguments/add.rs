@@ -40,7 +40,7 @@ pub struct AddArgs {
         long,
         default_value_t = 6,
         default_value_if("type", "STEAM", "5"),
-        value_parser=value_parser!(u64).range(0..=9)
+        value_parser=value_parser!(u64).range(1..=10)
     )]
     pub digits: u64,
 
