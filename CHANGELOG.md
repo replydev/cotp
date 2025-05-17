@@ -1,3 +1,12 @@
+## [1.9.5](https://github.com/replydev/cotp/compare/v1.9.4...v1.9.5) (2025-05-17)
+
+
+### Bug Fixes
+
+* fix code format when using 10 digits ([45b4a5f](https://github.com/replydev/cotp/commit/45b4a5f65675939b45ffc6e1a3643f331bac6279))
+* handle integer underflow on code format ([71d3933](https://github.com/replydev/cotp/commit/71d393392f73f005b0721f2fd0b482992e7f5111))
+* update allowed digits range from command-line interface ([b167d02](https://github.com/replydev/cotp/commit/b167d0275e6eba77b2259ced99efb3e519a79862))
+
 ## [1.9.4](https://github.com/replydev/cotp/compare/v1.9.3...v1.9.4) (2025-04-08)
 
 

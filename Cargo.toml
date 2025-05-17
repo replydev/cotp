@@ -1,6 +1,6 @@
 [package]
 name = "cotp"
-version = "1.9.4"
+version = "1.9.5"
 authors = ["replydev <commoncargo@tutanota.com>"]
 edition = "2024"
 description = "Trustworthy, encrypted, command-line TOTP/HOTP authenticator app with import functionality."
