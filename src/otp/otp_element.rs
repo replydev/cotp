@@ -154,6 +154,8 @@ pub struct OTPElement {
     pub pin: Option<String>,
 }
 
+static ALLOWED_DIGITS_RANGE: std::ops::RangeInclusive<u64> = 1..=10;
+
 impl OTPElement {
     pub fn get_otpauth_uri(&self) -> String {
         let otp_type = self.type_.to_string().to_lowercase();
@@ -183,6 +185,10 @@ impl OTPElement {
     }
 
     pub fn get_otp_code(&self) -> Result<String, OtpError> {
+        if !ALLOWED_DIGITS_RANGE.contains(&self.digits) {
+            return Err(OtpError::InvalidDigits);
+        }
+
         match self.type_ {
             OTPType::Totp => {
                 let code = totp(&self.secret, self.algorithm)?;
@@ -361,7 +367,7 @@ mod test {
     #[test]
     fn test_invalid_digits_should_not_overflow() {
         // Arrange
-        let invalid_digits_value = 10;
+        let invalid_digits_value = 11;
 
         let element = OTPElement {
             secret: "xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g".to_uppercase(),
@@ -380,6 +386,30 @@ mod test {
 
         // Assert
         assert_eq!(Err(OtpError::InvalidDigits), result);
+    }
+
+    #[test]
+    fn test_10_digits_should_be_allowed() {
+        // Arrange
+        let invalid_digits_value = 10;
+
+        let element = OTPElement {
+            secret: "xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g".to_uppercase(),
+            issuer: String::from("IssuerText"),
+            label: String::from("LabelText"),
+            digits: invalid_digits_value,
+            type_: Totp,
+            algorithm: Sha1,
+            period: 30,
+            counter: None,
+            pin: None,
+        };
+
+        // Act
+        let result = element.get_otp_code();
+
+        // Assert
+        assert!(result.is_ok());
     }
 
     #[test]
