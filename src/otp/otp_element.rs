@@ -226,7 +226,11 @@ impl OTPElement {
             .checked_pow(self.digits as u32)
             .ok_or(OtpError::InvalidDigits)?;
         let s = (value as u64 % exponential).to_string();
-        Ok("0".repeat(self.digits as usize - s.chars().count()) + s.as_str())
+        Ok("0".repeat(
+            (self.digits as usize)
+                .checked_sub(s.chars().count())
+                .unwrap_or(0),
+        ) + s.as_str())
     }
 }
 
