@@ -1,3 +1,11 @@
+## [1.9.6](https://github.com/replydev/cotp/compare/v1.9.5...v1.9.6) (2025-06-02)
+
+
+### Bug Fixes
+
+* do not throw error on empty otp database, in list subcommand ([0222faf](https://github.com/replydev/cotp/commit/0222fafe1a855a7ad41e04a09084ebde223c5874))
+* do not throw error on empty otp database, in list subcommand ([#568](https://github.com/replydev/cotp/issues/568)) ([1c921ef](https://github.com/replydev/cotp/commit/1c921efcdf57e74bd041bc7ec9142109d0245b92))
+
 ## [1.9.5](https://github.com/replydev/cotp/compare/v1.9.4...v1.9.5) (2025-05-17)
 
 
