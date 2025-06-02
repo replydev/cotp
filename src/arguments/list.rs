@@ -71,6 +71,10 @@ impl SubcommandExecutor for ListArgs {
                 .map_err(|e| eyre!("Error during JSON serialization: {:?}", e))?;
             print!("{stringified}");
         } else {
+            if otp_database.elements.is_empty() {
+                println!("No elements to list");
+                return Ok(otp_database);
+            }
             let issuer_width = calculate_width(&otp_database, |element| {
                 let issuer_length = element.issuer.chars().count();
                 if issuer_length > 0 {
