@@ -7,9 +7,6 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: read
-
 env:
   BIN_NAME: cotp
   PROJECT_NAME: cotp
@@ -19,6 +16,8 @@ jobs:
   dist:
     name: Dist
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
     strategy:
       fail-fast: false # don't fail other jobs if one fails
       matrix:
@@ -145,7 +144,7 @@ jobs:
     needs: [dist]
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
