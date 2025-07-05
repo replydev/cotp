@@ -6,6 +6,8 @@ jobs:
   lints:
     name: Lints
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -31,6 +33,8 @@ jobs:
         run: cargo clippy -- -D warnings
   test:
     name: Build debug artifacts
+    permissions:
+      contents: read
     strategy:
       matrix:
         build: [x86_64-linux, aarch64-linux, x86_64-macos, aarch64-macos, x86_64-win-msvc]
