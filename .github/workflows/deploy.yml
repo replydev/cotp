@@ -7,6 +7,9 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
 env:
   BIN_NAME: cotp
   PROJECT_NAME: cotp
@@ -86,6 +89,8 @@ jobs:
     name: "Publish binaries to release page"
     needs: [dist]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -139,6 +144,8 @@ jobs:
     name: "Publish crate on crates.io"
     needs: [dist]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
