@@ -1,5 +1,7 @@
+use std::io::{self, BufRead};
+
 use clap::{Args, value_parser};
-use color_eyre::eyre::{ErrReport, Result};
+use color_eyre::eyre::{self, ErrReport, Result};
 
 use zeroize::Zeroize;
 
@@ -60,6 +62,10 @@ pub struct AddArgs {
         required_if_eq("otp_type", "MOTP")
     )]
     pub pin: Option<String>,
+
+    /// Pass the secret through the standard input
+    #[arg(long = "secret-stdin", default_value_t = false)]
+    take_secret_from_stdin: bool,
 }
 
 impl SubcommandExecutor for AddArgs {
@@ -79,7 +85,15 @@ impl SubcommandExecutor for AddArgs {
 }
 
 fn get_from_args(matches: AddArgs) -> color_eyre::Result<OTPElement> {
-    let secret = rpassword::prompt_password("Insert the secret: ").map_err(ErrReport::from)?;
+    let secret = if matches.take_secret_from_stdin {
+        if let Some(password) = io::stdin().lock().lines().next() {
+            password.map_err(ErrReport::from)
+        } else {
+            Err(eyre::eyre!("Error during reading from stdin"))
+        }
+    } else {
+        rpassword::prompt_password("Insert the secret: ").map_err(ErrReport::from)
+    }?;
     map_args_to_code(secret, matches)
 }
 
