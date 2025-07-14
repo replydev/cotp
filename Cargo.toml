@@ -55,3 +55,6 @@ color-eyre = "0.6.5"
 enum_dispatch = "0.3.13"
 derive_builder = "0.20.1"
 globset = "0.4.16"
+
+[dev-dependencies]
+assert_cmd = "2.0.17"
