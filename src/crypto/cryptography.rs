@@ -1,4 +1,4 @@
-use argon2::{Config, Variant, Version};
+use argon2::{Config, ThreadMode, Variant, Version};
 use chacha20poly1305::aead::Aead;
 use chacha20poly1305::{Key, KeyInit, XChaCha20Poly1305, XNonce};
 use color_eyre::eyre::{ErrReport, eyre};
@@ -18,6 +18,7 @@ const KEY_DERIVATION_CONFIG: Config = Config {
     secret: &[],
     ad: &[],
     hash_length: XCHACHA20_POLY1305_KEY_LENGTH as u32,
+    thread_mode: ThreadMode::Sequential,
 };
 
 pub fn argon_derive_key(password_bytes: &[u8], salt: &[u8]) -> color_eyre::Result<Vec<u8>> {
