@@ -38,14 +38,13 @@ fn get_default_db_path() -> PathBuf {
     data_dir()
         .map(|p| p.join(XDG_PATH))
         .inspect(|xdg| {
-            if !xdg.exists() {
-                if let Some(home) = &home_path {
-                    if home.exists() {
-                        fs::create_dir_all(xdg.parent().unwrap()).expect("Failed to create dir");
-                        fs::copy(home, xdg.as_path())
-                            .expect("Failed on copy from legacy dir to XDG_DATA_HOME");
-                    }
-                }
+            if !xdg.exists()
+                && let Some(home) = &home_path
+                && home.exists()
+            {
+                fs::create_dir_all(xdg.parent().unwrap()).expect("Failed to create dir");
+                fs::copy(home, xdg.as_path())
+                    .expect("Failed on copy from legacy dir to XDG_DATA_HOME");
             }
         })
         .or(home_path)
