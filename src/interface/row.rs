@@ -21,7 +21,7 @@ impl Row {
             + 1) as u16
     }
 
-    pub fn cells(&self) -> Vec<Cell> {
+    pub fn cells(&self) -> Vec<Cell<'_>> {
         self.values
             .iter()
             .map(|c| {
