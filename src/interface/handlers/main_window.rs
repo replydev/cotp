@@ -130,8 +130,7 @@ fn handle_counter_switch(app: &mut App, increment: bool) {
         // safe to unwrap because the element type is HOTP
         let counter = element.counter.unwrap();
         element.counter = if increment {
-            #[allow(clippy::manual_saturating_arithmetic)]
-            Some(counter.checked_add(1).unwrap_or(u64::MAX))
+            Some(counter.saturating_add(1))
         } else {
             Some(counter.saturating_sub(1))
         };
