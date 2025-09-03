@@ -1,3 +1,10 @@
+## [1.9.7](https://github.com/replydev/cotp/compare/v1.9.6...v1.9.7) (2025-09-03)
+
+
+### Bug Fixes
+
+* `mismatched_lifetime_syntaxes` & clippy compiler warnings ([#584](https://github.com/replydev/cotp/issues/584)) ([fd6f717](https://github.com/replydev/cotp/commit/fd6f717a43b342bf7fcbce0c3b2668d9f5fc2022))
+
 ## [1.9.6](https://github.com/replydev/cotp/compare/v1.9.5...v1.9.6) (2025-06-02)
 
 
