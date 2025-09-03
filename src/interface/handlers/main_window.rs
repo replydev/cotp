@@ -123,20 +123,19 @@ pub(super) fn main_handler(key_event: KeyEvent, app: &mut App) {
 }
 
 fn handle_counter_switch(app: &mut App, increment: bool) {
-    if let Some(selected) = app.table.state.selected() {
-        if let Some(element) = app.database.mut_element(selected) {
-            if element.type_ == OTPType::Hotp {
-                // safe to unwrap because the element type is HOTP
-                let counter = element.counter.unwrap();
-                element.counter = if increment {
-                    Some(counter.checked_add(1).unwrap_or(u64::MAX))
-                } else {
-                    Some(counter.saturating_sub(1))
-                };
-                app.database.mark_modified();
-                app.tick(true);
-            }
-        }
+    if let Some(selected) = app.table.state.selected()
+        && let Some(element) = app.database.mut_element(selected)
+        && element.type_ == OTPType::Hotp
+    {
+        // safe to unwrap because the element type is HOTP
+        let counter = element.counter.unwrap();
+        element.counter = if increment {
+            Some(counter.saturating_add(1))
+        } else {
+            Some(counter.saturating_sub(1))
+        };
+        app.database.mark_modified();
+        app.tick(true);
     }
 }
 
