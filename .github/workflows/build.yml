@@ -93,7 +93,7 @@ jobs:
         if: matrix.build != 'aarch64-linux'
         run: cargo build
 
-      - uses: actions/upload-artifact@v4.6.2
+      - uses: actions/upload-artifact@v5.0.0
         with:
           name: bins-${{ matrix.build }}
           # Two paths, the first for x86_64 jobs, the second for aarch64.
