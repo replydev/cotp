@@ -12,7 +12,7 @@ license-file = "LICENSE"
 categories = ["command-line-utilities", "authentication"]
 keywords = ["cotp", "totp", "authenticator", "google-authenticator", "argon2"]
 
-# Set bin name for CI 
+# Set bin name for CI
 [[bin]]
 name = "cotp"
 path = "src/main.rs"
@@ -27,19 +27,19 @@ debug = false
 strip = "symbols"
 
 [dependencies]
-serde = { version = "1.0.225", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 dirs = "6.0.0"
 rpassword = "7.3.1"
 data-encoding = "2.9.0"
 copypasta-ext = "0.4.4"
-zeroize = { version = "1.8.1", features = ["zeroize_derive"] }
-clap = { version = "4.5.47", features = ["derive"] }
+zeroize = { version = "1.8.2", features = ["zeroize_derive"] }
+clap = { version = "4.5.53", features = ["derive"] }
 hmac = "0.12.1"
 sha1 = "0.10.6"
 sha2 = "0.10.9"
 chacha20poly1305 = "0.10.1"
-getrandom = "0.3.3"
+getrandom = "0.3.4"
 rust-argon2 = "3.0.0"
 scrypt = "0.11.0"
 aes-gcm = "0.10.3"
@@ -54,10 +54,10 @@ url = "2.5.7"
 color-eyre = "0.6.5"
 enum_dispatch = "0.3.13"
 derive_builder = "0.20.1"
-globset = "0.4.16"
+globset = "0.4.18"
 
 [dev-dependencies]
-assert_cmd = "2.0.17"
+assert_cmd = "2.1.1"
 assert_fs = "1.1.3"
 predicates = "3.1.3"
 test-case = "3.3.1"

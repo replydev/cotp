@@ -4,11 +4,12 @@ use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use zeroize::Zeroize;
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Copy, ValueEnum, Hash)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Copy, ValueEnum, Hash, Default)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum OTPType {
     #[serde(alias = "totp")]
     #[serde(alias = "TOTP")]
+    #[default]
     Totp,
     #[serde(alias = "hotp")]
     #[serde(alias = "HOTP")]
@@ -22,12 +23,6 @@ pub enum OTPType {
     #[serde(alias = "motp")]
     #[serde(alias = "MOTP")]
     Motp,
-}
-
-impl Default for OTPType {
-    fn default() -> Self {
-        Self::Totp
-    }
 }
 
 impl fmt::Display for OTPType {

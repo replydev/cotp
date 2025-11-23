@@ -10,6 +10,7 @@ pub struct AegisJson {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct AegisHeader {
     //slots: Option<String>,
     //params: Option<String>,

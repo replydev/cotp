@@ -13,14 +13,9 @@ pub enum PopupAction {
     SaveBeforeQuit,
 }
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Default)]
 pub enum Page {
+    #[default]
     Main,
     Qrcode,
-}
-
-impl Default for Page {
-    fn default() -> Self {
-        Self::Main
-    }
 }

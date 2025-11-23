@@ -41,7 +41,7 @@ jobs:
 
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -79,7 +79,7 @@ jobs:
             cp "target/${{ matrix.target }}/release/$BIN_NAME" "dist/"
           fi
 
-      - uses: actions/upload-artifact@v4.6.2
+      - uses: actions/upload-artifact@v5.0.0
         with:
           name: cotp-${{ matrix.build }}
           path: dist
@@ -92,11 +92,11 @@ jobs:
       contents: write
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: false
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
       - run: ls -al cotp-*
 
       - name: Build archive
@@ -147,7 +147,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: false
 

@@ -4,19 +4,14 @@ use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use zeroize::Zeroize;
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Copy, ValueEnum, Hash)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Copy, ValueEnum, Hash, Default)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum OTPAlgorithm {
+    #[default]
     Sha1,
     Sha256,
     Sha512,
     Md5,
-}
-
-impl Default for OTPAlgorithm {
-    fn default() -> Self {
-        Self::Sha1
-    }
 }
 
 impl fmt::Display for OTPAlgorithm {
