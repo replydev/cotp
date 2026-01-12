@@ -31,7 +31,7 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 dirs = "6.0.0"
 rpassword = "7.3.1"
-data-encoding = "2.9.0"
+data-encoding = "2.10.0"
 copypasta-ext = "0.4.4"
 zeroize = { version = "1.8.2", features = ["zeroize_derive"] }
 clap = { version = "4.5.53", features = ["derive"] }
