@@ -80,21 +80,11 @@ jobs:
         if: contains(matrix.build, 'linux')
         run: sudo apt update && sudo apt install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev
 
-      - name: Run tests (arm64)
-        if: matrix.build == 'aarch64-linux'
-        run: cargo test --locked --target ${{ matrix.target }}
+      - name: Run tests
+        run: cargo test --locked --frozen
 
-      - name: Build debug binary (arm64)
-        if: matrix.build == 'aarch64-linux'
-        run: cargo build --locked --target ${{ matrix.target }}
-
-      - name: Run tests (x86_64)
-        if: matrix.build != 'aarch64-linux'
-        run: cargo test
-
-      - name: Build debug binary (x86_64)
-        if: matrix.build != 'aarch64-linux'
-        run: cargo build
+      - name: Build debug binary
+        run: cargo build --locked --frozen
 
       - uses: actions/upload-artifact@v5.0.0
         with:
