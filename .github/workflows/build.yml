@@ -37,13 +37,20 @@ jobs:
       contents: read
     strategy:
       matrix:
-        build: [x86_64-linux, aarch64-linux, x86_64-macos, aarch64-macos, x86_64-win-msvc]
+        build:
+          [
+            x86_64-linux,
+            aarch64-linux,
+            x86_64-macos,
+            aarch64-macos,
+            x86_64-win-msvc,
+          ]
         include:
           - build: x86_64-linux
             os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
           - build: aarch64-linux
-            os: ubuntu-latest
+            os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
           - build: x86_64-macos
             os: macos-latest
@@ -69,21 +76,17 @@ jobs:
         with:
           key: ${{ matrix.target }}
 
-      - name: Install cross for arm64 compilation
-        if: matrix.build == 'aarch64-linux'
-        run: cargo install cross --git https://github.com/cross-rs/cross
-
-      - name: Install Dependencies for Linux x86_64
-        if: matrix.build == 'x86_64-linux'
+      - name: Install Dependencies for Linux
+        if: contains(matrix.build, 'linux')
         run: sudo apt update && sudo apt install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev
 
       - name: Run tests (arm64)
         if: matrix.build == 'aarch64-linux'
-        run: cross test --locked --target ${{ matrix.target }}
+        run: cargo test --locked --target ${{ matrix.target }}
 
       - name: Build debug binary (arm64)
         if: matrix.build == 'aarch64-linux'
-        run: cross build --locked --target ${{ matrix.target }}
+        run: cargo build --locked --target ${{ matrix.target }}
 
       - name: Run tests (x86_64)
         if: matrix.build != 'aarch64-linux'

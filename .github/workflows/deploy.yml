@@ -1,6 +1,6 @@
 name: Deploy
 on:
-   workflow_dispatch:
+  workflow_dispatch:
     inputs:
       new_version:
         description: New version to deploy
@@ -21,13 +21,20 @@ jobs:
     strategy:
       fail-fast: false # don't fail other jobs if one fails
       matrix:
-        build: [x86_64-linux, aarch64-linux, x86_64-macos, aarch64-macos, x86_64-win-msvc] 
+        build:
+          [
+            x86_64-linux,
+            aarch64-linux,
+            x86_64-macos,
+            aarch64-macos,
+            x86_64-win-msvc,
+          ]
         include:
           - build: x86_64-linux
             os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
           - build: aarch64-linux
-            os: ubuntu-latest
+            os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
           - build: x86_64-macos
             os: macos-latest
@@ -47,23 +54,19 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           target: ${{ matrix.target }}
-      
+
       # Cache dependencies
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.target }}-release
 
-      - name: Install cross for arm64 compilation
-        if: matrix.build == 'aarch64-linux'
-        run: cargo install cross --git https://github.com/cross-rs/cross
-
-      - name: Install Dependencies for Linux x86_64
-        if: matrix.build == 'x86_64-linux'
+      - name: Install Dependencies for Linux
+        if: contains(matrix.build, 'linux')
         run: sudo apt update && sudo apt install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev
 
       - name: Build release binary (arm64)
         if: matrix.build == 'aarch64-linux'
-        run: cross build --release --locked --target ${{ matrix.target }}
+        run: cargo build --release --locked --target ${{ matrix.target }}
 
       - name: Build release binary (x86_64)
         if: matrix.build != 'aarch64-linux'
