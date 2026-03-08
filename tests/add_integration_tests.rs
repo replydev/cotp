@@ -1,14 +1,14 @@
 #[cfg(not(target_os = "windows"))] // TODO, Integration tests currently does not work on Windows
 mod add_integration_tests {
-    use assert_cmd::Command;
+    use assert_cmd::cargo::cargo_bin_cmd;
     use predicates::{ord::eq, str::is_empty};
     use test_case::test_case;
 
     #[test]
     fn add_without_label_should_fail() {
         // Arrange / Act
-        let assertion = Command::cargo_bin("cotp")
-            .unwrap()
+        let mut command = cargo_bin_cmd!("cotp");
+        let assertion = command
             .arg("--database-path")
             .arg("test_samples/cli_integration_test/empty_database")
             .arg("add")
@@ -31,8 +31,8 @@ For more information, try '--help'.
     #[test_case("--label" ; "Long subcommand")]
     fn add_with_label_should_work(label_arg: &str) {
         // Arrange / Act
-        let assertion = Command::cargo_bin("cotp")
-            .unwrap()
+        let mut command = cargo_bin_cmd!("cotp");
+        let assertion = command
             .arg("--password-stdin")
             .arg("--database-path")
             .arg("test_samples/cli_integration_test/empty_database")

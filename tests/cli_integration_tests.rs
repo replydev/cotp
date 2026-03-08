@@ -1,16 +1,14 @@
 #[cfg(not(target_os = "windows"))] // TODO, Integration tests currently does not work on Windows
 mod cli_integration_test {
 
-    use assert_cmd::Command;
+    use assert_cmd::cargo::cargo_bin_cmd;
     use predicates::str::{is_empty, is_match, starts_with};
 
     #[test]
     fn test_version_subcommand() {
         // Arrange / Act
-        let assertion = Command::cargo_bin("cotp")
-            .unwrap()
-            .arg("--version")
-            .assert();
+        let mut command = cargo_bin_cmd!("cotp");
+        let assertion = command.arg("--version").assert();
 
         // Assert
         assertion
@@ -22,7 +20,8 @@ mod cli_integration_test {
     #[test]
     fn test_help_subcommand() {
         // Arrange / Act
-        let assertion = Command::cargo_bin("cotp").unwrap().arg("--help").assert();
+        let mut command = cargo_bin_cmd!("cotp");
+        let assertion = command.arg("--help").assert();
 
         // Assert
         assertion
