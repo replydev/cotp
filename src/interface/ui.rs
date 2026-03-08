@@ -29,7 +29,10 @@ impl<B: Backend> Tui<B> {
     /// Initializes the terminal interface.
     ///
     /// It enables the raw mode and sets terminal properties.
-    pub fn init(&mut self) -> AppResult<()> {
+    pub fn init(&mut self) -> AppResult<()>
+    where
+        <B as Backend>::Error: 'static,
+    {
         terminal::enable_raw_mode()?;
         crossterm::execute!(io::stderr(), EnterAlternateScreen, EnableMouseCapture)?;
         self.terminal.hide_cursor()?;
@@ -41,7 +44,10 @@ impl<B: Backend> Tui<B> {
     ///
     /// [`Draw`]: tui::Terminal::draw
     /// [`rendering`]: crate::app::App::render
-    pub fn draw(&mut self, app: &mut App) -> AppResult<()> {
+    pub fn draw(&mut self, app: &mut App) -> AppResult<()>
+    where
+        <B as Backend>::Error: 'static,
+    {
         self.terminal.draw(|frame| app.render(frame))?;
         Ok(())
     }
@@ -49,7 +55,10 @@ impl<B: Backend> Tui<B> {
     /// Exits the terminal interface.
     ///
     /// It disables the raw mode and reverts back the terminal properties.
-    pub fn exit(&mut self) -> AppResult<()> {
+    pub fn exit(&mut self) -> AppResult<()>
+    where
+        <B as Backend>::Error: 'static,
+    {
         terminal::disable_raw_mode()?;
         crossterm::execute!(io::stderr(), LeaveAlternateScreen, DisableMouseCapture)?;
         self.terminal.show_cursor()?;
