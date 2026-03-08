@@ -65,7 +65,7 @@ jobs:
         run: sudo apt update && sudo apt install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev
 
       - name: Build release binary
-        run: cargo build --release --locked --frozen --target ${{ matrix.target }}
+        run: cargo build --release --locked --target ${{ matrix.target }}
 
       - name: Build archive
         shell: bash
