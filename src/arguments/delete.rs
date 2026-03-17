@@ -29,28 +29,36 @@ pub struct DeleteArgs {
 
 impl SubcommandExecutor for DeleteArgs {
     fn run_command(self, mut otp_database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
+        if otp_database.elements_ref().is_empty() {
+            return Err(eyre!("There are no elements to delete"));
+        }
+
         let index_to_delete = self
             .index
             .and_then(|i| i.checked_sub(1))
+            // Match by issues or label if index filter is missing
             .or_else(|| get_first_matching_element(&otp_database, &self))
             .ok_or(eyre!("No code has been found using the given arguments"))?;
 
-        let element = otp_database.elements_ref().get(index_to_delete).unwrap();
-        print!(
-            "Are you sure you want to delete the {}th code ({}, {}) [Y,N]: ",
-            index_to_delete + 1,
-            element.issuer,
-            element.label
-        );
-        io::stdout().flush()?;
+        if let Some(element) = otp_database.elements_ref().get(index_to_delete) {
+            print!(
+                "Are you sure you want to delete the {}th code ({}, {}) [Y,N]: ",
+                index_to_delete + 1,
+                element.issuer,
+                element.label
+            );
+            io::stdout().flush()?;
 
-        let output = read_confirmation_line()?;
+            let output = read_confirmation_line()?;
 
-        if output.trim().eq_ignore_ascii_case("y") {
-            otp_database.delete_element(index_to_delete);
-            Ok(otp_database)
+            if output.trim().eq_ignore_ascii_case("y") {
+                otp_database.delete_element(index_to_delete);
+                Ok(otp_database)
+            } else {
+                Err(eyre!("Operation interrupt by the user"))
+            }
         } else {
-            Err(eyre!("Operation interrupt by the user"))
+            Err(eyre!("Missing {}th code to delete", index_to_delete + 1))
         }
     }
 }
