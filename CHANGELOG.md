@@ -1,3 +1,12 @@
+## [1.9.8](https://github.com/replydev/cotp/compare/v1.9.7...v1.9.8) (2026-03-17)
+
+
+### Bug Fixes
+
+* handle missing element index in delete subcommand ([f65ea62](https://github.com/replydev/cotp/commit/f65ea62181fd4be1fa223accfb758e2638476647))
+* read delete confirmation from tty when stdin is consumed ([b3d651c](https://github.com/replydev/cotp/commit/b3d651c272c32321606ec52f3a7ba69c5b7c0c43))
+* read delete confirmation from tty when stdin is consumed ([#642](https://github.com/replydev/cotp/issues/642)) ([9a4dcbf](https://github.com/replydev/cotp/commit/9a4dcbf152d55cafedd0b05c9b1e7a18983badea))
+
 ## [1.9.7](https://github.com/replydev/cotp/compare/v1.9.6...v1.9.7) (2025-09-03)
 
 
