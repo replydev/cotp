@@ -1,3 +1,10 @@
+## [1.9.9](https://github.com/replydev/cotp/compare/v1.9.8...v1.9.9) (2026-04-12)
+
+
+### Bug Fixes
+
+* fix integration test on production release ([6f655fb](https://github.com/replydev/cotp/commit/6f655fb45bf43d7f77bc2963e6af65c07688bc51))
+
 ## [1.9.8](https://github.com/replydev/cotp/compare/v1.9.7...v1.9.8) (2026-03-17)
 
 
