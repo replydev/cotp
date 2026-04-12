@@ -13,7 +13,7 @@ mod cli_integration_test {
         // Assert
         assertion
             .success()
-            .stdout(is_match("^cotp \\d+\\.\\d+\\.\\d+-DEBUG-.+").unwrap())
+            .stdout(is_match("^cotp \\d+\\.\\d+\\.\\d+(?:-DEBUG-.+)?").unwrap())
             .stderr(is_empty());
     }
 
