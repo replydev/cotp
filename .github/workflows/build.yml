@@ -82,6 +82,9 @@ jobs:
 
       - name: Run tests
         run: cargo test --locked
+      
+      - name: Run tests in production mode
+        run: cargo test --locked --release
 
       - name: Build debug binary
         run: cargo build --locked
