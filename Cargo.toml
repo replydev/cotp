@@ -34,7 +34,7 @@ rpassword = "7.4.0"
 data-encoding = "2.10.0"
 copypasta-ext = "0.4.4"
 zeroize = { version = "1.8.2", features = ["zeroize_derive"] }
-clap = { version = "4.6.0", features = ["derive"] }
+clap = { version = "4.6.1", features = ["derive"] }
 hmac = "0.12.1"
 sha1 = "0.10.6"
 sha2 = "0.10.9"
