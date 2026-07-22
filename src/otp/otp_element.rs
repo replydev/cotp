@@ -152,9 +152,7 @@ impl OTPDatabase {
     }
 }
 
-#[derive(
-    Serialize, Deserialize, Builder, Clone, PartialEq, Eq, Debug, Hash, Zeroize, ZeroizeOnDrop,
-)]
+#[derive(Serialize, Deserialize, Builder, Clone, PartialEq, Eq, Hash, Zeroize, ZeroizeOnDrop)]
 #[builder(
     setter(into),
     build_fn(validate = "Self::validate", error = "ErrReport")
@@ -177,6 +175,24 @@ pub struct OTPElement {
     pub counter: Option<u64>,
     #[builder(setter(into), default)]
     pub pin: Option<String>,
+}
+
+/// Hand-written Debug implementation which redacts the secret and the pin, so
+/// they cannot leak into logs, error reports or test output.
+impl std::fmt::Debug for OTPElement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OTPElement")
+            .field("secret", &"***")
+            .field("issuer", &self.issuer)
+            .field("label", &self.label)
+            .field("digits", &self.digits)
+            .field("type_", &self.type_)
+            .field("algorithm", &self.algorithm)
+            .field("period", &self.period)
+            .field("counter", &self.counter)
+            .field("pin", &self.pin.as_ref().map(|_| "***"))
+            .finish()
+    }
 }
 
 static ALLOWED_DIGITS_RANGE: std::ops::RangeInclusive<u64> = 1..=10;
