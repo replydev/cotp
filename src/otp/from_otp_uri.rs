@@ -1,7 +1,11 @@
 use color_eyre::eyre::ErrReport;
 use url::Url;
 
-use super::{otp_algorithm::OTPAlgorithm, otp_element::OTPElement, otp_type::OTPType};
+use super::{
+    otp_algorithm::OTPAlgorithm,
+    otp_element::{OTPElement, OTPElementBuilder},
+    otp_type::OTPType,
+};
 
 pub trait FromOtpUri: Sized {
     fn from_otp_uri(otp_uri: &str) -> color_eyre::Result<Self>;
@@ -23,10 +27,15 @@ impl FromOtpUri for OTPElement {
 
         let (issuer, label) = get_issuer_and_label(&parsed_uri)?;
 
+        // The secret is taken as-is: case normalization is applied by
+        // OTPElementBuilder depending on the OTP type. Base32 secrets
+        // (TOTP/HOTP/Steam/Yandex) are uppercased, while MOTP secrets are hex
+        // strings fed as text into MD5, so their case must not be folded to
+        // uppercase or the generated codes would be wrong.
         let secret = parsed_uri
             .query_pairs()
             .find(|(k, _v)| k == "secret")
-            .map(|(_k, v)| v.to_uppercase())
+            .map(|(_k, v)| v.to_string())
             .ok_or(ErrReport::msg("Secret not found in OTP Uri"))?;
 
         let algorithm = parsed_uri
@@ -49,17 +58,25 @@ impl FromOtpUri for OTPElement {
             .find(|(k, _v)| k == "counter")
             .and_then(|(_k, v)| v.parse::<u64>().ok());
 
-        Ok(OTPElement {
-            secret,
-            issuer,
-            label,
-            digits,
-            type_: OTPType::from(otp_type.as_str()),
-            algorithm: OTPAlgorithm::from(algorithm.as_str()),
-            period,
-            counter,
-            pin: None,
-        })
+        let pin = parsed_uri
+            .query_pairs()
+            .find(|(k, _v)| k == "pin")
+            .map(|(_k, v)| v.to_string());
+
+        // Build through OTPElementBuilder so its validation (secret encoding,
+        // period, digits) applies to URI imports too. The type must be set
+        // after the secret, so the builder can normalize the secret case.
+        OTPElementBuilder::default()
+            .secret(secret)
+            .type_(OTPType::from(otp_type.as_str()))
+            .issuer(issuer)
+            .label(label)
+            .digits(digits)
+            .algorithm(OTPAlgorithm::from(algorithm.as_str()))
+            .period(period)
+            .counter(counter)
+            .pin(pin)
+            .build()
     }
 }
 

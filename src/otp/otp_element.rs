@@ -172,6 +172,13 @@ impl OTPElement {
             uri.push_str("&counter=");
             uri.push_str(self.counter.unwrap_or(0).to_string().as_str());
         }
+
+        // Yandex / MOTP codes cannot be generated without their pin, so it
+        // must survive an export / import round-trip
+        if let Some(pin) = &self.pin {
+            uri.push_str("&pin=");
+            uri.push_str(&urlencoding::encode(pin));
+        }
         uri
     }
 
@@ -517,6 +524,81 @@ mod test {
             "Invalid hex secret: Odd number of digits",
             result.unwrap_err().to_string()
         );
+    }
+
+    fn assert_generation_relevant_fields_eq(expected: &OTPElement, actual: &OTPElement) {
+        assert_eq!(expected.secret, actual.secret);
+        assert_eq!(expected.type_, actual.type_);
+        assert_eq!(expected.algorithm, actual.algorithm);
+        assert_eq!(expected.digits, actual.digits);
+        assert_eq!(expected.period, actual.period);
+        assert_eq!(expected.counter, actual.counter);
+        assert_eq!(expected.pin, actual.pin);
+    }
+
+    #[test]
+    fn test_otp_uri_round_trip_totp() {
+        let element = OTPElementBuilder::default()
+            .secret("xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g")
+            .issuer("IssuerText")
+            .label("LabelText")
+            .build()
+            .unwrap();
+
+        let round_tripped = OTPElement::from_otp_uri(&element.get_otpauth_uri()).unwrap();
+
+        assert_generation_relevant_fields_eq(&element, &round_tripped);
+    }
+
+    #[test]
+    fn test_otp_uri_round_trip_motp_preserves_lowercase_secret_and_pin() {
+        let element = OTPElementBuilder::default()
+            .secret("e3152afee62599c8")
+            .type_(OTPType::Motp)
+            .issuer("IssuerText")
+            .label("LabelText")
+            .period(10u64)
+            .pin("1234".to_string())
+            .build()
+            .unwrap();
+
+        let round_tripped = OTPElement::from_otp_uri(&element.get_otpauth_uri()).unwrap();
+
+        assert_generation_relevant_fields_eq(&element, &round_tripped);
+        // MOTP secrets are hex text hashed with MD5: uppercasing them changes
+        // the generated codes
+        assert_eq!("e3152afee62599c8", round_tripped.secret);
+        assert_eq!(Some("1234".to_string()), round_tripped.pin);
+    }
+
+    #[test]
+    fn test_otp_uri_round_trip_yandex_preserves_pin() {
+        let element = OTPElementBuilder::default()
+            .secret("6SB2IKNM6OBZPAVBVTOHDKS4FAAAAAAADFUTQMBTRY")
+            .type_(OTPType::Yandex)
+            .issuer("Yandex")
+            .label("LabelText")
+            .digits(8u64)
+            .pin("5239".to_string())
+            .build()
+            .unwrap();
+
+        let round_tripped = OTPElement::from_otp_uri(&element.get_otpauth_uri()).unwrap();
+
+        assert_generation_relevant_fields_eq(&element, &round_tripped);
+        assert_eq!(Some("5239".to_string()), round_tripped.pin);
+        // Both must generate a code, not fail with a missing pin
+        assert_eq!(element.get_otp_code(), round_tripped.get_otp_code());
+    }
+
+    #[test]
+    fn test_from_otp_uri_rejects_invalid_base32_secret() {
+        // Construction goes through OTPElementBuilder, so its validation
+        // applies to URI imports too
+        // "aaa" has an invalid BASE32 length and "1" is not in the alphabet
+        let otp_uri = "otpauth://totp/Label?secret=aa1";
+
+        assert!(OTPElement::from_otp_uri(otp_uri).is_err());
     }
 
     #[test]
