@@ -41,6 +41,10 @@ pub struct App<'a> {
 
     /// Info text in the `QRCode` page
     pub(crate) qr_code_page_label: &'static str,
+
+    /// Cached rendered QR code for the `QRCode` page, keyed by the index of
+    /// the element it was generated from
+    qrcode_cache: Option<(usize, String)>,
 }
 
 pub struct Popup {
@@ -75,6 +79,7 @@ impl<'a> App<'a> {
                 percent_y: 20,
             },
             qr_code_page_label: DEFAULT_QRCODE_LABEL,
+            qrcode_cache: None,
         }
     }
 
@@ -82,6 +87,7 @@ impl<'a> App<'a> {
         self.current_page = Page::default();
         self.print_percentage = true;
         self.qr_code_page_label = DEFAULT_QRCODE_LABEL;
+        self.qrcode_cache = None;
     }
 
     /// Handles the tick event of the terminal.
@@ -93,6 +99,9 @@ impl<'a> App<'a> {
             // Update codes
             self.table.items.clear();
             fill_table(&mut self.table, self.database.elements_ref());
+            // Elements may have changed (e.g. HOTP counter increment or
+            // deletion), so the cached QR code may be stale
+            self.qrcode_cache = None;
         }
         self.progress = new_progress;
     }
@@ -105,37 +114,46 @@ impl<'a> App<'a> {
         }
     }
 
-    fn render_qrcode_page(&self, frame: &mut Frame<'_>) {
-        let paragraph = self
+    fn render_qrcode_page(&mut self, frame: &mut Frame<'_>) {
+        let selected_index = self
             .table
             .state
             .selected()
-            .and_then(|index| self.database.elements_ref().get(index))
-            .map_or_else(
-                || {
-                    Paragraph::new("No element is selected")
-                        .block(Block::default().title("Nope").borders(Borders::ALL))
-                        .style(Style::default().fg(Color::White).bg(Color::Reset))
-                        .alignment(Alignment::Center)
-                        .wrap(Wrap { trim: true })
-                },
-                |element| {
-                    let title = if element.label.is_empty() {
-                        element.issuer.clone()
-                    } else {
-                        format!("{} - {}", element.issuer, element.label)
-                    };
-                    Paragraph::new(format!(
-                        "{}\n{}",
-                        element.get_qrcode(),
-                        self.qr_code_page_label
-                    ))
-                    .block(Block::default().title(title).borders(Borders::ALL))
-                    .style(Style::default().fg(Color::White).bg(Color::Reset))
-                    .alignment(Alignment::Center)
-                    .wrap(Wrap { trim: true })
-                },
-            );
+            .filter(|index| *index < self.database.elements_ref().len());
+
+        let paragraph = if let Some(index) = selected_index {
+            // Building the QR code (URI + matrix + unicode rendering) is
+            // expensive, so cache the rendered string and rebuild it only
+            // when the selection changes
+            let cache_is_valid =
+                matches!(&self.qrcode_cache, Some((cached, _)) if *cached == index);
+            if !cache_is_valid {
+                let qrcode = self.database.elements_ref()[index].get_qrcode();
+                self.qrcode_cache = Some((index, qrcode));
+            }
+            let element = &self.database.elements_ref()[index];
+            let qrcode = self
+                .qrcode_cache
+                .as_ref()
+                .map(|(_, qrcode)| qrcode.as_str())
+                .unwrap_or_default();
+            let title = if element.label.is_empty() {
+                element.issuer.clone()
+            } else {
+                format!("{} - {}", element.issuer, element.label)
+            };
+            Paragraph::new(format!("{}\n{}", qrcode, self.qr_code_page_label))
+                .block(Block::default().title(title).borders(Borders::ALL))
+                .style(Style::default().fg(Color::White).bg(Color::Reset))
+                .alignment(Alignment::Center)
+                .wrap(Wrap { trim: true })
+        } else {
+            Paragraph::new("No element is selected")
+                .block(Block::default().title("Nope").borders(Borders::ALL))
+                .style(Style::default().fg(Color::White).bg(Color::Reset))
+                .alignment(Alignment::Center)
+                .wrap(Wrap { trim: true })
+        };
         Self::render_paragraph(frame, paragraph);
     }
 
