@@ -123,7 +123,7 @@ impl<'a> App<'a> {
                     let title = if element.label.is_empty() {
                         element.issuer.clone()
                     } else {
-                        format!("{} - {}", &element.issuer, &element.label)
+                        format!("{} - {}", element.issuer, element.label)
                     };
                     Paragraph::new(format!(
                         "{}\n{}",

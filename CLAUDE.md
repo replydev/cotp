@@ -20,6 +20,8 @@ cargo clippy -- -D warnings          # lint; warnings are errors (CI gate)
 
 CI (`.github/workflows/build.yml`) requires `cargo fmt`, `cargo clippy -D warnings`, and `cargo test` (debug + release) to pass across Linux/macOS/Windows. On Linux, building requires xcb dev libraries for clipboard support (see README "Other linux distributions").
 
+**Before finishing any work you MUST run clippy exactly as CI does — `cargo clippy -- -D warnings` — and fix every issue it reports.** CI treats warnings as errors, so any lint left unaddressed will fail the pipeline. Do not consider a task complete until this command exits cleanly.
+
 The Python converters have their own tests: `cd converters && python -m pytest` (or run `test_converters.py`), exercised against fixtures in `example_databases/`.
 
 ## Commit conventions & versioning
