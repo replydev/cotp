@@ -49,7 +49,7 @@ impl EventHandler {
                     .unwrap_or(tick_rate);
 
                 if event::poll(timeout).expect("no events available") {
-                    match event::read().expect("unable to read event") {
+                    let send_result = match event::read().expect("unable to read event") {
                         CrosstermEvent::Key(e) => {
                             // Workaround to fix double input on Windows
                             // Please check https://github.com/crossterm-rs/crossterm/issues/752
@@ -64,12 +64,19 @@ impl EventHandler {
                         CrosstermEvent::FocusGained => sender.send(Event::FocusGained()),
                         CrosstermEvent::FocusLost => sender.send(Event::FocusLost()),
                         CrosstermEvent::Paste(_e) => sender.send(Event::Paste(())),
+                    };
+                    if send_result.is_err() {
+                        // The receiver has been dropped: the dashboard has
+                        // exited, so stop the event thread gracefully.
+                        break;
                     }
-                    .expect("failed to send terminal event");
                 }
 
                 if last_tick.elapsed() >= tick_rate {
-                    sender.send(Event::Tick).expect("failed to send tick event");
+                    if sender.send(Event::Tick).is_err() {
+                        // Receiver dropped, see above.
+                        break;
+                    }
                     last_tick = Instant::now();
                 }
             }
