@@ -42,61 +42,35 @@ pub(super) fn search_bar_handler(key_event: KeyEvent, app: &mut App) {
 }
 
 fn search_and_select(app: &mut App) {
-    // Check for issuer
-    for iter in app.table.items.iter().enumerate() {
-        let (index, row) = iter;
-        if row
-            .values
-            .get(1)
-            .unwrap()
-            .to_lowercase()
-            .starts_with(&app.search_query.to_lowercase())
-        {
-            app.table.state.select(Some(index));
-            return;
-        }
-    }
-    // Check for label
-    for iter in app.table.items.iter().enumerate() {
-        let (index, row) = iter;
-        if row
-            .values
-            .get(2)
-            .unwrap()
-            .to_lowercase()
-            .starts_with(&app.search_query.to_lowercase())
-        {
-            app.table.state.select(Some(index));
-            return;
-        }
-    }
-    // Check if issuer contains the query
-    for iter in app.table.items.iter().enumerate() {
-        let (index, row) = iter;
-        if row
-            .values
-            .get(1)
-            .unwrap()
-            .to_lowercase()
-            .contains(&app.search_query.to_lowercase())
-        {
-            app.table.state.select(Some(index));
-            return;
-        }
-    }
-    // Check if label contains the query
-    for iter in app.table.items.iter().enumerate() {
-        let (index, row) = iter;
-        if row
-            .values
-            .get(2)
-            .unwrap()
-            .to_lowercase()
-            .contains(&app.search_query.to_lowercase())
-        {
-            app.table.state.select(Some(index));
-            return;
-        }
+    let query = app.search_query.to_lowercase();
+    // Single ranked pass over the rows: an issuer prefix match wins over a
+    // label prefix match, which wins over an issuer substring match, which
+    // wins over a label substring match; ties are broken by row order
+    let best_match = app
+        .table
+        .items
+        .iter()
+        .enumerate()
+        .filter_map(|(index, row)| {
+            let issuer = row.issuer.to_lowercase();
+            let label = row.label.to_lowercase();
+            let rank = if issuer.starts_with(&query) {
+                0
+            } else if label.starts_with(&query) {
+                1
+            } else if issuer.contains(&query) {
+                2
+            } else if label.contains(&query) {
+                3
+            } else {
+                return None;
+            };
+            Some((rank, index))
+        })
+        .min_by_key(|&(rank, index)| (rank, index));
+
+    if let Some((_, index)) = best_match {
+        app.table.state.select(Some(index));
     }
     // TODO Handle if no search results
 }

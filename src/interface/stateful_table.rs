@@ -69,15 +69,13 @@ pub fn fill_table(table: &mut StatefulTable, elements: &[OTPElement]) {
 
         let error = result.is_err();
         table.items.push(Row::new(
-            vec![
-                (i + 1).to_string(),
-                element.issuer.clone(),
-                label,
-                match result {
-                    Ok(code) => code,
-                    Err(e) => e.to_string(),
-                },
-            ],
+            (i + 1).to_string(),
+            element.issuer.clone(),
+            label,
+            match result {
+                Ok(code) => code,
+                Err(e) => e.to_string(),
+            },
             error,
         ));
     }
