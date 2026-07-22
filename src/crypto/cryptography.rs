@@ -1,6 +1,6 @@
 use argon2::{Config, ThreadMode, Variant, Version};
 use chacha20poly1305::aead::Aead;
-use chacha20poly1305::{Key, KeyInit, XChaCha20Poly1305, XNonce};
+use chacha20poly1305::{KeyInit, XChaCha20Poly1305, XNonce};
 use color_eyre::eyre::{ErrReport, eyre};
 use data_encoding::BASE64;
 
@@ -36,17 +36,16 @@ pub fn encrypt_string_with_key(
     key: &Vec<u8>,
     salt: &[u8],
 ) -> color_eyre::Result<EncryptedDatabase> {
-    let wrapped_key = Key::from_slice(key.as_slice());
-
-    let aead = XChaCha20Poly1305::new(wrapped_key);
+    let aead = XChaCha20Poly1305::new_from_slice(key.as_slice())
+        .map_err(|e| eyre!("Invalid encryption key length: {e}"))?;
     let mut nonce_bytes: [u8; XCHACHA20_POLY1305_NONCE_LENGTH] =
         [0; XCHACHA20_POLY1305_NONCE_LENGTH];
 
     getrandom::fill(&mut nonce_bytes).map_err(|e| eyre!(e))?;
 
-    let nonce = XNonce::from_slice(&nonce_bytes);
+    let nonce = XNonce::from(nonce_bytes);
     let cipher_text = aead
-        .encrypt(nonce, plain_text.as_bytes())
+        .encrypt(&nonce, plain_text.as_bytes())
         .map_err(|e| eyre!("Error during encryption: {e}"))?;
     Ok(EncryptedDatabase::new(
         1,
@@ -73,12 +72,12 @@ pub fn decrypt_string(
 
     let key: Vec<u8> = argon_derive_key(password.as_bytes(), salt.as_slice())?;
 
-    let wrapped_key = Key::from_slice(&key);
-
-    let aead = XChaCha20Poly1305::new(wrapped_key);
-    let nonce = XNonce::from_slice(nonce.as_slice());
+    let aead = XChaCha20Poly1305::new_from_slice(&key)
+        .map_err(|e| eyre!("Invalid encryption key length: {e}"))?;
+    let nonce = XNonce::try_from(nonce.as_slice())
+        .map_err(|_| eyre!("Invalid nonce length in encrypted database"))?;
     let decrypted = aead
-        .decrypt(nonce, cipher_text.as_slice())
+        .decrypt(&nonce, cipher_text.as_slice())
         .map_err(|_| eyre!("Wrong password"))?;
     let from_utf8 = String::from_utf8(decrypted).map_err(ErrReport::from)?;
     Ok((from_utf8, key, salt))
