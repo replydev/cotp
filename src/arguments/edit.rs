@@ -1,7 +1,10 @@
 use clap::{Args, value_parser};
 use color_eyre::eyre::eyre;
 
-use crate::otp::{otp_algorithm::OTPAlgorithm, otp_element::OTPDatabase};
+use crate::otp::{
+    otp_algorithm::OTPAlgorithm,
+    otp_element::{OTPDatabase, OTPElement, OTPElementBuilder},
+};
 
 use super::SubcommandExecutor;
 
@@ -60,6 +63,7 @@ impl SubcommandExecutor for EditArgs {
 
             match database.mut_element(real_index) {
                 Some(element) => {
+                    let unmodified_element = element.clone();
                     if let Some(v) = self.issuer {
                         element.issuer = v;
                     }
@@ -82,9 +86,13 @@ impl SubcommandExecutor for EditArgs {
                         element.pin = self.pin;
                     }
                     if let Some(s) = secret {
-                        element.secret = s;
+                        element.secret = validate_secret(element, s)?;
                     }
-                    database.mark_modified();
+                    // Only persist (re-encrypt and rewrite the database) if
+                    // the edit actually changed something
+                    if *element != unmodified_element {
+                        database.mark_modified();
+                    }
                 }
                 None => return Err(eyre!("No element found at index {index}")),
             }
@@ -93,4 +101,23 @@ impl SubcommandExecutor for EditArgs {
             Err(eyre!("{index} is an invalid index"))
         }
     }
+}
+
+/// Run the new secret through the same validation and case normalization that
+/// `add` gets via OTPElementBuilder (base32/hex checks depending on the OTP
+/// type), instead of persisting the raw string and only failing later at code
+/// generation time.
+fn validate_secret(element: &OTPElement, secret: String) -> color_eyre::Result<String> {
+    let validated = OTPElementBuilder::default()
+        .secret(secret)
+        .issuer(element.issuer.as_str())
+        .label(element.label.as_str())
+        .digits(element.digits)
+        .type_(element.type_)
+        .algorithm(element.algorithm)
+        .period(element.period)
+        .counter(element.counter)
+        .pin(element.pin.clone())
+        .build()?;
+    Ok(validated.secret.clone())
 }
