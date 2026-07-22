@@ -1,3 +1,11 @@
+# [1.10.0](https://github.com/replydev/cotp/compare/v1.9.10...v1.10.0) (2026-07-22)
+
+
+### Features
+
+* **import:** import Google Authenticator via otpauth-migration URIs ([e82ac01](https://github.com/replydev/cotp/commit/e82ac014370debc1c7d6921a831db603d45aec47))
+* **import:** import Google Authenticator via otpauth-migration URIs ([#674](https://github.com/replydev/cotp/issues/674)) ([e39ae83](https://github.com/replydev/cotp/commit/e39ae83d762502c58dc7122dbe5583d174b81b88))
+
 ## [1.9.10](https://github.com/replydev/cotp/compare/v1.9.9...v1.9.10) (2026-05-03)
 
 

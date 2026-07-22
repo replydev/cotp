@@ -2,16 +2,8 @@
 
 use std::time::SystemTime;
 
-use aes_gcm::aes::cipher::BlockSizeUser;
-use chacha20poly1305::consts::U256;
-
 use data_encoding::BASE32_NOPAD;
-use hmac::digest::{
-    HashMarker,
-    block_buffer::Eager,
-    core_api::{BufferKindUser, CoreProxy, FixedOutputCore, UpdateCore},
-    typenum::{IsLess, Le, NonZero},
-};
+use hmac::EagerHash;
 use sha1::{Digest, Sha1};
 use sha2::{Sha256, Sha512};
 
@@ -55,15 +47,7 @@ fn calculate_yandex_code<D>(
     seconds: u64,
 ) -> Result<String, OtpError>
 where
-    D: CoreProxy,
-    D::Core: HashMarker
-        + UpdateCore
-        + FixedOutputCore
-        + BufferKindUser<BufferKind = Eager>
-        + Default
-        + Clone,
-    <D::Core as BlockSizeUser>::BlockSize: IsLess<U256>,
-    Le<<D::Core as BlockSizeUser>::BlockSize, U256>: NonZero,
+    D: EagerHash,
 {
     let decoded_secret = match BASE32_NOPAD.decode(secret.as_bytes()) {
         Ok(r) => r,
