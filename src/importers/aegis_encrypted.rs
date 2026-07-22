@@ -1,7 +1,6 @@
 use aes_gcm::aead::{Aead, Nonce};
 use aes_gcm::{Aes256Gcm, KeyInit}; // Or `Aes128Gcm`
-use data_encoding::BASE64;
-use hex::FromHex;
+use data_encoding::{BASE64, DecodeError, HEXLOWER_PERMISSIVE};
 use serde::Deserialize;
 use zeroize::Zeroize;
 
@@ -58,14 +57,14 @@ impl AegisEncryptedDatabase {
                     .map_err(|e| format!("Invalid master key length: {e:?}"))?;
                 master_key.zeroize();
 
-                let nonce_bytes = Vec::from_hex(&self.header.params.nonce)
+                let nonce_bytes = decode_hex(&self.header.params.nonce)
                     .map_err(|e| format!("Failed to parse hex nonce: {e:?}"))?;
                 let nonce = Nonce::<Aes256Gcm>::try_from(nonce_bytes.as_slice())
                     .map_err(|e| format!("Invalid nonce length: {e:?}"))?;
 
                 let payload = [
                     content,
-                    Vec::from_hex(&self.header.params.tag)
+                    decode_hex(&self.header.params.tag)
                         .map_err(|e| format!("Failed to parse hex tag: {e:?}"))?,
                 ]
                 .concat();
@@ -79,6 +78,12 @@ impl AegisEncryptedDatabase {
             None => Err("Failed to derive master key".to_string()),
         }
     }
+}
+
+/// Decodes a hex string, accepting both lower- and uppercase digits like the
+/// previously used `hex` crate did (Aegis itself writes lowercase).
+fn decode_hex(input: &str) -> Result<Vec<u8>, DecodeError> {
+    HEXLOWER_PERMISSIVE.decode(input.as_bytes())
 }
 
 fn get_master_key(aegis_encrypted: &AegisEncryptedDatabase, password: &str) -> Option<Vec<u8>> {
@@ -134,7 +139,7 @@ fn get_params(slot: &AegisEncryptedSlot) -> Result<Params, String> {
 
 fn calc_master_key(slot: &AegisEncryptedSlot, password: &str) -> Result<Vec<u8>, String> {
     let salt_hex = slot.salt.as_ref().ok_or("Missing salt in backup slot")?;
-    let salt = Vec::from_hex(salt_hex).map_err(|e| format!("Failed to parse hex salt: {e:?}"))?;
+    let salt = decode_hex(salt_hex).map_err(|e| format!("Failed to parse hex salt: {e:?}"))?;
     let mut output: [u8; 32] = [0; 32];
     let params = get_params(slot)?;
 
@@ -151,13 +156,12 @@ fn calc_master_key(slot: &AegisEncryptedSlot, password: &str) -> Result<Vec<u8>,
     output.zeroize();
 
     let cipher_text = [
-        Vec::from_hex(&slot.key).map_err(|e| format!("Failed to parse hex key: {e:?}"))?,
-        Vec::from_hex(&slot.key_params.tag)
-            .map_err(|e| format!("Failed to parse hex tag: {e:?}"))?,
+        decode_hex(&slot.key).map_err(|e| format!("Failed to parse hex key: {e:?}"))?,
+        decode_hex(&slot.key_params.tag).map_err(|e| format!("Failed to parse hex tag: {e:?}"))?,
     ]
     .concat();
 
-    let nonce_bytes = Vec::from_hex(&slot.key_params.nonce)
+    let nonce_bytes = decode_hex(&slot.key_params.nonce)
         .map_err(|e| format!("Failed to parse hex nonce: {e:?}"))?;
     let nonce = Nonce::<Aes256Gcm>::try_from(nonce_bytes.as_slice())
         .map_err(|e| format!("Invalid nonce length: {e:?}"))?;

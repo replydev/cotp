@@ -5,7 +5,7 @@ use std::{fs::File, io::Write, vec};
 use crate::crypto::cryptography::{argon_derive_key, encrypt_string_with_key, gen_salt};
 use crate::otp::otp_error::OtpError;
 use crate::path::DATABASE_PATH;
-use data_encoding::BASE32_NOPAD;
+use data_encoding::{BASE32_NOPAD, HEXLOWER_PERMISSIVE};
 use qrcode::QrCode;
 use qrcode::render::unicode;
 use serde::{Deserialize, Serialize};
@@ -334,7 +334,8 @@ impl OTPElementBuilder {
 
         // Validate secret encoding
         match self.type_.unwrap_or_default() {
-            OTPType::Motp => hex::decode(self.secret.as_ref().unwrap())
+            OTPType::Motp => HEXLOWER_PERMISSIVE
+                .decode(self.secret.as_ref().unwrap().as_bytes())
                 .map(|_| {})
                 .map_err(|e| eyre!("Invalid hex secret: {e}")),
             _ => BASE32_NOPAD
@@ -567,7 +568,7 @@ mod test {
             .build();
 
         assert_eq!(
-            "Invalid hex secret: Odd number of digits",
+            "Invalid hex secret: invalid length at 2",
             result.unwrap_err().to_string()
         );
     }

@@ -1,3 +1,4 @@
+use data_encoding::HEXLOWER;
 use md5::{Digest, Md5};
 use std::time::SystemTime;
 
@@ -30,7 +31,7 @@ fn get_motp_code(
 
     let mut md5_hasher = Md5::new();
     md5_hasher.update(data.as_bytes());
-    let code = hex::encode(md5_hasher.finalize());
+    let code = HEXLOWER.encode(&md5_hasher.finalize());
     Ok(code.as_str()[0..digits].to_owned())
 }
 

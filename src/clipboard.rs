@@ -1,10 +1,10 @@
-use base64::{Engine as _, engine::general_purpose};
 use copypasta_ext::prelude::*;
 #[cfg(target_os = "linux")]
 use copypasta_ext::wayland_bin::WaylandBinClipboardContext;
 use copypasta_ext::x11_bin::ClipboardContext as BinClipboardContext;
 use copypasta_ext::x11_fork::ClipboardContext as ForkClipboardContext;
 use crossterm::style::Print;
+use data_encoding::BASE64;
 use eyre::eyre;
 use std::{env, io};
 
@@ -32,7 +32,7 @@ fn ssh_clipboard(content: &str) -> bool {
             io::stderr(),
             Print(format!(
                 "\x1B]52;c;{}\x07",
-                general_purpose::STANDARD.encode(content)
+                BASE64.encode(content.as_bytes())
             ))
         )
         .is_ok()

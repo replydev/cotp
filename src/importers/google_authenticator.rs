@@ -14,8 +14,7 @@
 
 use std::{fs::read_to_string, path::PathBuf};
 
-use base64::{Engine as _, engine::general_purpose};
-use data_encoding::BASE32_NOPAD;
+use data_encoding::{BASE32_NOPAD, BASE64, BASE64_NOPAD};
 use eyre::{Result, eyre};
 use prost::Message;
 use url::Url;
@@ -105,9 +104,12 @@ fn parse_migration_uri(uri: &str) -> Result<Vec<OTPElement>> {
         .ok_or_else(|| eyre!("Missing 'data' parameter in otpauth-migration URI"))?;
 
     // The url crate already percent-decodes the value, so we can decode the
-    // raw base64 (standard alphabet, with padding) directly.
-    let decoded = general_purpose::STANDARD
+    // raw base64 (standard alphabet) directly. Some QR scanners strip the
+    // trailing `=` padding when extracting the URI, so fall back to unpadded
+    // decoding instead of rejecting those exports.
+    let decoded = BASE64
         .decode(data.as_bytes())
+        .or_else(|_| BASE64_NOPAD.decode(data.as_bytes()))
         .map_err(|e| eyre!("Invalid base64 in otpauth-migration data: {e}"))?;
 
     let payload = MigrationPayload::decode(decoded.as_slice())
@@ -172,7 +174,7 @@ mod tests {
             otp_parameters: entries,
         }
         .encode_to_vec();
-        let data = general_purpose::STANDARD.encode(&payload);
+        let data = BASE64.encode(&payload);
         let encoded = urlencoding::encode(&data).into_owned();
         format!("otpauth-migration://offline?data={encoded}")
     }
@@ -286,6 +288,35 @@ mod tests {
     }
 
     #[test]
+    fn accepts_unpadded_base64_data() {
+        // Some QR scanners strip the trailing '=' padding from the migration
+        // URI; the importer must still decode it.
+        // Vary the label length so at least one payload is not a multiple of
+        // three bytes and therefore carries '=' padding in its base64 form.
+        let uri = (0..3)
+            .map(|i| {
+                build_uri(vec![otp_parameters(
+                    b"Hello",
+                    &"a".repeat(10 + i),
+                    "Example",
+                    1,
+                    1,
+                    2,
+                    0,
+                )])
+            })
+            .find(|uri| uri.ends_with("%3D"))
+            .expect("at least one fixture must carry base64 padding");
+        let unpadded = uri.trim_end_matches("%3D");
+        assert_ne!(uri, unpadded);
+
+        let elements = import_from_string(unpadded).unwrap();
+
+        assert_eq!(elements.len(), 1);
+        assert_eq!(elements[0].secret, "JBSWY3DP");
+    }
+
+    #[test]
     fn errors_on_invalid_base64() {
         let err = import_from_string("otpauth-migration://offline?data=not*base64").unwrap_err();
         assert!(err.to_string().contains("Invalid base64"));
@@ -294,7 +325,7 @@ mod tests {
     #[test]
     fn errors_on_invalid_protobuf() {
         // Valid base64 but not a valid protobuf message.
-        let data = general_purpose::STANDARD.encode([0xff, 0xff, 0xff, 0xff]);
+        let data = BASE64.encode(&[0xff, 0xff, 0xff, 0xff]);
         let encoded = urlencoding::encode(&data).into_owned();
         let uri = format!("otpauth-migration://offline?data={encoded}");
         let err = import_from_string(&uri).unwrap_err();
