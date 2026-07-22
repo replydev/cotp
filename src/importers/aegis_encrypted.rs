@@ -1,6 +1,5 @@
-use aes_gcm::aead::Aead;
-use aes_gcm::aead::generic_array::GenericArray;
-use aes_gcm::{Aes256Gcm, KeyInit, Nonce}; // Or `Aes128Gcm`
+use aes_gcm::aead::{Aead, Nonce};
+use aes_gcm::{Aes256Gcm, KeyInit}; // Or `Aes128Gcm`
 use data_encoding::BASE64;
 use hex::FromHex;
 use serde::Deserialize;
@@ -58,25 +57,24 @@ impl TryFrom<AegisEncryptedDatabase> for Vec<OTPElement> {
                     .decode(aegis_encrypted.db.as_bytes())
                     .map_err(|e| format!("Error during base64 decoding: {e:?}"))?;
 
-                let key = GenericArray::clone_from_slice(master_key.as_slice());
+                let cipher = Aes256Gcm::new_from_slice(master_key.as_slice())
+                    .map_err(|e| format!("Invalid master key length: {e:?}"))?;
                 master_key.zeroize();
-                let cipher = Aes256Gcm::new(&key);
+
+                let nonce_bytes = Vec::from_hex(&aegis_encrypted.header.params.nonce)
+                    .expect("Failed to parse hex nonce");
+                let nonce = Nonce::<Aes256Gcm>::try_from(nonce_bytes.as_slice())
+                    .map_err(|e| format!("Invalid nonce length: {e:?}"))?;
+
+                let payload = [
+                    content,
+                    Vec::from_hex(&aegis_encrypted.header.params.tag)
+                        .expect("Failed to parse hex tag"),
+                ]
+                .concat();
 
                 let decrypted_db = cipher
-                    .decrypt(
-                        Nonce::from_slice(
-                            Vec::from_hex(&aegis_encrypted.header.params.nonce)
-                                .expect("Failed to parse hex nonce")
-                                .as_slice(),
-                        ),
-                        [
-                            content,
-                            Vec::from_hex(&aegis_encrypted.header.params.tag)
-                                .expect("Failed to parse hex tag"),
-                        ]
-                        .concat()
-                        .as_slice(),
-                    )
+                    .decrypt(&nonce, payload.as_slice())
                     .map_err(|e| format!("Failed to derive master key: {e:?}"))?;
 
                 map_results(decrypted_db)
@@ -119,13 +117,8 @@ fn get_params(slot: &AegisEncryptedSlot) -> Result<Params, String> {
     let p = slot.p.unwrap();
     let r = slot.r.unwrap();
 
-    Params::new(
-        (n as f32).log2() as u8,
-        r,
-        p,
-        scrypt::Params::RECOMMENDED_LEN,
-    )
-    .map_err(|e| format!("Error during scrypt params creation: {e:?}"))
+    Params::new((n as f32).log2() as u8, r, p)
+        .map_err(|e| format!("Error during scrypt params creation: {e:?}"))
 }
 
 fn calc_master_key(slot: &AegisEncryptedSlot, password: &str) -> Result<Vec<u8>, String> {
@@ -141,24 +134,21 @@ fn calc_master_key(slot: &AegisEncryptedSlot, password: &str) -> Result<Vec<u8>,
     ) {
         return Err(format!("Error during scrypt key derivation: {e:?}"));
     }
-    let key = GenericArray::clone_from_slice(output.as_slice());
+    let cipher = Aes256Gcm::new_from_slice(output.as_slice())
+        .map_err(|e| format!("Invalid derived key length: {e:?}"))?;
     output.zeroize();
 
-    let cipher = Aes256Gcm::new(&key);
     let cipher_text = [
         Vec::from_hex(&slot.key).expect("Failed to parse hex key"),
         Vec::from_hex(&slot.key_params.tag).expect("Failed to parse hex tag"),
     ]
     .concat();
 
+    let nonce_bytes = Vec::from_hex(&slot.key_params.nonce).expect("Failed to parse hex nonce");
+    let nonce = Nonce::<Aes256Gcm>::try_from(nonce_bytes.as_slice())
+        .map_err(|e| format!("Invalid nonce length: {e:?}"))?;
+
     cipher
-        .decrypt(
-            Nonce::from_slice(
-                Vec::from_hex(&slot.key_params.nonce)
-                    .expect("Failed to parse hex nonce")
-                    .as_slice(),
-            ),
-            cipher_text.as_slice(),
-        )
+        .decrypt(&nonce, cipher_text.as_slice())
         .map_err(|e| format!("Failed to derive master key: {e:?}"))
 }
