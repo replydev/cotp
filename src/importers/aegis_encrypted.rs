@@ -6,7 +6,6 @@ use serde::Deserialize;
 use zeroize::Zeroize;
 
 use crate::otp::otp_element::OTPElement;
-use crate::utils;
 use scrypt::{Params, scrypt};
 
 use super::aegis::AegisDb;
@@ -43,33 +42,31 @@ struct AegisEncryptedSlot {
     //repaired: Option<bool>,
 }
 
-impl TryFrom<AegisEncryptedDatabase> for Vec<OTPElement> {
-    type Error = String;
-
-    fn try_from(aegis_encrypted: AegisEncryptedDatabase) -> Result<Self, Self::Error> {
-        let mut password = utils::password("Insert your Aegis password: ", 0);
-        let master_key: Option<Vec<u8>> = get_master_key(&aegis_encrypted, &password);
-        password.zeroize();
+impl AegisEncryptedDatabase {
+    /// Decrypts the backup contents using the given password and maps the
+    /// entries into `OTPElement` values.
+    pub fn decrypt(self, password: &str) -> Result<Vec<OTPElement>, String> {
+        let master_key: Option<Vec<u8>> = get_master_key(&self, password);
 
         match master_key {
             Some(mut master_key) => {
                 let content = BASE64
-                    .decode(aegis_encrypted.db.as_bytes())
+                    .decode(self.db.as_bytes())
                     .map_err(|e| format!("Error during base64 decoding: {e:?}"))?;
 
                 let cipher = Aes256Gcm::new_from_slice(master_key.as_slice())
                     .map_err(|e| format!("Invalid master key length: {e:?}"))?;
                 master_key.zeroize();
 
-                let nonce_bytes = Vec::from_hex(&aegis_encrypted.header.params.nonce)
-                    .expect("Failed to parse hex nonce");
+                let nonce_bytes = Vec::from_hex(&self.header.params.nonce)
+                    .map_err(|e| format!("Failed to parse hex nonce: {e:?}"))?;
                 let nonce = Nonce::<Aes256Gcm>::try_from(nonce_bytes.as_slice())
                     .map_err(|e| format!("Invalid nonce length: {e:?}"))?;
 
                 let payload = [
                     content,
-                    Vec::from_hex(&aegis_encrypted.header.params.tag)
-                        .expect("Failed to parse hex tag"),
+                    Vec::from_hex(&self.header.params.tag)
+                        .map_err(|e| format!("Failed to parse hex tag: {e:?}"))?,
                 ]
                 .concat();
 
@@ -104,25 +101,40 @@ fn get_master_key(aegis_encrypted: &AegisEncryptedDatabase, password: &str) -> O
 }
 
 fn map_results(decrypted_db: Vec<u8>) -> Result<Vec<OTPElement>, String> {
-    let json = String::from_utf8(decrypted_db)
-        .map_err(|e| format!("Failed to decode from utf-8 bytes: {e:?}"))?;
+    let mut json = match String::from_utf8(decrypted_db) {
+        Ok(json) => json,
+        Err(e) => {
+            let error = format!("Failed to decode from utf-8 bytes: {:?}", e.utf8_error());
+            e.into_bytes().zeroize();
+            return Err(error);
+        }
+    };
 
-    serde_json::from_str::<AegisDb>(json.as_str())
+    let result = serde_json::from_str::<AegisDb>(json.as_str())
         .map_err(|e| e.to_string())
-        .and_then(TryInto::try_into)
+        .and_then(TryInto::try_into);
+    json.zeroize();
+    result
 }
 
 fn get_params(slot: &AegisEncryptedSlot) -> Result<Params, String> {
-    let n = slot.n.unwrap();
-    let p = slot.p.unwrap();
-    let r = slot.r.unwrap();
+    let n = slot.n.ok_or("Missing scrypt parameter n in backup slot")?;
+    let p = slot.p.ok_or("Missing scrypt parameter p in backup slot")?;
+    let r = slot.r.ok_or("Missing scrypt parameter r in backup slot")?;
 
-    Params::new((n as f32).log2() as u8, r, p)
+    if !n.is_power_of_two() {
+        return Err(format!(
+            "Invalid scrypt parameter n: {n} is not a power of two"
+        ));
+    }
+
+    Params::new(n.trailing_zeros() as u8, r, p)
         .map_err(|e| format!("Error during scrypt params creation: {e:?}"))
 }
 
 fn calc_master_key(slot: &AegisEncryptedSlot, password: &str) -> Result<Vec<u8>, String> {
-    let salt = Vec::from_hex(slot.salt.as_ref().unwrap()).expect("Failed to parse hex salt");
+    let salt_hex = slot.salt.as_ref().ok_or("Missing salt in backup slot")?;
+    let salt = Vec::from_hex(salt_hex).map_err(|e| format!("Failed to parse hex salt: {e:?}"))?;
     let mut output: [u8; 32] = [0; 32];
     let params = get_params(slot)?;
 
@@ -139,16 +151,145 @@ fn calc_master_key(slot: &AegisEncryptedSlot, password: &str) -> Result<Vec<u8>,
     output.zeroize();
 
     let cipher_text = [
-        Vec::from_hex(&slot.key).expect("Failed to parse hex key"),
-        Vec::from_hex(&slot.key_params.tag).expect("Failed to parse hex tag"),
+        Vec::from_hex(&slot.key).map_err(|e| format!("Failed to parse hex key: {e:?}"))?,
+        Vec::from_hex(&slot.key_params.tag)
+            .map_err(|e| format!("Failed to parse hex tag: {e:?}"))?,
     ]
     .concat();
 
-    let nonce_bytes = Vec::from_hex(&slot.key_params.nonce).expect("Failed to parse hex nonce");
+    let nonce_bytes = Vec::from_hex(&slot.key_params.nonce)
+        .map_err(|e| format!("Failed to parse hex nonce: {e:?}"))?;
     let nonce = Nonce::<Aes256Gcm>::try_from(nonce_bytes.as_slice())
         .map_err(|e| format!("Invalid nonce length: {e:?}"))?;
 
     cipher
         .decrypt(&nonce, cipher_text.as_slice())
         .map_err(|e| format!("Failed to derive master key: {e:?}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{AegisEncryptedDatabase, AegisEncryptedSlot, calc_master_key, get_params};
+
+    fn slot_from_json(json: &str) -> AegisEncryptedSlot {
+        serde_json::from_str(json).expect("Invalid test slot JSON")
+    }
+
+    #[test]
+    fn decrypt_with_no_usable_slot_returns_error() {
+        // The only type-1 slot is malformed (missing scrypt parameters), so no
+        // master key can be derived and decrypt must fail gracefully.
+        let database: AegisEncryptedDatabase = serde_json::from_str(
+            r#"{
+                "version": 1,
+                "header": {
+                    "slots": [
+                        {
+                            "type": 1,
+                            "key": "00",
+                            "key_params": {"nonce": "00", "tag": "00"},
+                            "salt": "00"
+                        }
+                    ],
+                    "params": {"nonce": "00", "tag": "00"}
+                },
+                "db": "AAAA"
+            }"#,
+        )
+        .expect("Invalid test database JSON");
+
+        let result = database.decrypt("password");
+        assert_eq!(Err("Failed to derive master key".to_string()), result);
+    }
+
+    #[test]
+    fn missing_scrypt_params_return_error() {
+        let slot = slot_from_json(
+            r#"{
+                "type": 1,
+                "key": "00",
+                "key_params": {"nonce": "00", "tag": "00"},
+                "salt": "00"
+            }"#,
+        );
+
+        let result = calc_master_key(&slot, "password");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Missing scrypt parameter"));
+    }
+
+    #[test]
+    fn missing_salt_returns_error() {
+        let slot = slot_from_json(
+            r#"{
+                "type": 1,
+                "key": "00",
+                "key_params": {"nonce": "00", "tag": "00"},
+                "n": 2,
+                "r": 8,
+                "p": 1
+            }"#,
+        );
+
+        let result = calc_master_key(&slot, "password");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Missing salt"));
+    }
+
+    #[test]
+    fn non_power_of_two_n_returns_error() {
+        let slot = slot_from_json(
+            r#"{
+                "type": 1,
+                "key": "00",
+                "key_params": {"nonce": "00", "tag": "00"},
+                "n": 15000,
+                "r": 8,
+                "p": 1,
+                "salt": "00"
+            }"#,
+        );
+
+        let result = get_params(&slot);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("not a power of two"));
+    }
+
+    #[test]
+    fn non_hex_salt_returns_error() {
+        let slot = slot_from_json(
+            r#"{
+                "type": 1,
+                "key": "00",
+                "key_params": {"nonce": "00", "tag": "00"},
+                "n": 2,
+                "r": 8,
+                "p": 1,
+                "salt": "not-hex"
+            }"#,
+        );
+
+        let result = calc_master_key(&slot, "password");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Failed to parse hex salt"));
+    }
+
+    #[test]
+    fn non_hex_key_returns_error() {
+        let slot = slot_from_json(
+            r#"{
+                "type": 1,
+                "key": "zz",
+                "key_params": {"nonce": "00", "tag": "00"},
+                "n": 2,
+                "r": 8,
+                "p": 1,
+                "salt": "00"
+            }"#,
+        );
+
+        let result = calc_master_key(&slot, "password");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Failed to parse hex key"));
+    }
 }

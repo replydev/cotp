@@ -46,7 +46,7 @@ pub struct FreeOTPElement {
 
 impl From<FreeOTPElement> for OTPElement {
     fn from(token: FreeOTPElement) -> Self {
-        let counter: Option<u64> = if token.algo.to_uppercase().as_str() == "HOTP" {
+        let counter: Option<u64> = if token.r#type.to_uppercase().as_str() == "HOTP" {
             Some(token.counter)
         } else {
             None
@@ -142,6 +142,28 @@ mod tests {
                     pin: None
                 }
             ],
+            imported.unwrap()
+        );
+    }
+
+    #[test]
+    fn test_hotp_conversion_keeps_counter() {
+        let imported = import_from_path::<FreeOTPPlusJson>(PathBuf::from(
+            "test_samples/freeotp_plus_hotp.json",
+        ));
+
+        assert_eq!(
+            vec![OTPElement {
+                secret: "AAAAAAAAAAAAAAAA".to_string(),
+                issuer: "Example3".to_string(),
+                label: "Label3".to_string(),
+                digits: 6,
+                type_: OTPType::Hotp,
+                algorithm: OTPAlgorithm::Sha1,
+                period: 30,
+                counter: Some(4),
+                pin: None
+            }],
             imported.unwrap()
         );
     }

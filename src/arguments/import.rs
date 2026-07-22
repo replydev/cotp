@@ -1,7 +1,9 @@
+use std::fs::read_to_string;
 use std::path::PathBuf;
 
 use clap::Args;
 use color_eyre::eyre::eyre;
+use zeroize::Zeroize;
 
 use crate::{
     exporters::otp_uri::OtpUriList,
@@ -12,6 +14,7 @@ use crate::{
         importer::import_from_path,
     },
     otp::otp_element::{OTPDatabase, OTPElement},
+    utils,
 };
 
 use super::SubcommandExecutor;
@@ -88,7 +91,7 @@ impl SubcommandExecutor for ImportArgs {
         } else if backup_type.aegis {
             import_from_path::<AegisJson>(path)
         } else if backup_type.aegis_encrypted {
-            import_from_path::<AegisEncryptedDatabase>(path)
+            import_aegis_encrypted(path)
         } else if backup_type.freeotp_plus {
             import_from_path::<FreeOTPPlusJson>(path)
         } else if backup_type.authy_exported {
@@ -108,4 +111,26 @@ impl SubcommandExecutor for ImportArgs {
         database.add_all(elements);
         Ok(database)
     }
+}
+
+/// Imports an encrypted Aegis backup, prompting the user for the backup
+/// password before decrypting it.
+fn import_aegis_encrypted(path: PathBuf) -> color_eyre::Result<Vec<OTPElement>> {
+    let json = read_to_string(path)?;
+    let encrypted: AegisEncryptedDatabase = serde_json::from_str(json.as_str()).map_err(|e| {
+        eyre!(
+            "Invalid JSON import format.
+            Please check the file you are trying to import. For further information please check these guidelines:
+            https://github.com/replydev/cotp?tab=readme-ov-file#migration-from-other-apps
+
+            Specific error: {:?}",
+            e
+        )
+    })?;
+
+    let mut password = utils::password("Insert your Aegis password: ", 0);
+    let result = encrypted.decrypt(password.as_str());
+    password.zeroize();
+
+    result.map_err(|e| eyre!("{e}"))
 }
