@@ -64,7 +64,7 @@ impl SubcommandExecutor for ListArgs {
     fn run_command(self, otp_database: OTPDatabase) -> eyre::Result<OTPDatabase> {
         if self.format.unwrap_or_default().json {
             let json_elements = otp_database
-                .elements
+                .elements_ref()
                 .iter()
                 .map(Into::into)
                 .collect::<Vec<JsonOtpList>>();
@@ -73,7 +73,7 @@ impl SubcommandExecutor for ListArgs {
                 .map_err(|e| eyre!("Error during JSON serialization: {:?}", e))?;
             println!("{stringified}");
         } else {
-            if otp_database.elements.is_empty() {
+            if otp_database.elements_ref().is_empty() {
                 println!("No elements to list");
                 return Ok(otp_database);
             }
@@ -102,7 +102,7 @@ impl SubcommandExecutor for ListArgs {
                 "Index", ISSUER_HEADER, LABEL_HEADER, "OTP",
             );
             otp_database
-                .elements
+                .elements_ref()
                 .iter()
                 .enumerate()
                 .for_each(|(index, e)| {
@@ -130,7 +130,7 @@ where
     F: Fn(&OTPElement) -> usize,
 {
     otp_database
-        .elements
+        .elements_ref()
         .iter()
         .map(get_number_of_chars)
         .max()

@@ -90,7 +90,7 @@ impl SubcommandExecutor for ExportArgs {
         match export_kind {
             ExportKind::Cotp => do_export(&database, exported_path),
             ExportKind::Andotp => {
-                let andotp: &Vec<OTPElement> = (&database).into();
+                let andotp: &[OTPElement] = (&database).into();
                 do_export(&andotp, exported_path)
             }
             ExportKind::OtpUri => {

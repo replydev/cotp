@@ -33,7 +33,7 @@ pub(super) fn popup_handler(key_event: KeyEvent, app: &mut App) {
                 app.running = false;
             }
             KeyCode::Char('n' | 'N') => {
-                app.database.needs_modification = false;
+                app.database.clear_modified();
                 app.running = false;
             }
             KeyCode::Esc => {

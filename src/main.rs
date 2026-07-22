@@ -5,13 +5,13 @@ use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
 use interface::handlers::handle_key_events;
 use interface::ui::Tui;
-use otp::otp_element::{CURRENT_DATABASE_VERSION, OTPDatabase};
+use otp::otp_element::OTPDatabase;
 use path::init_path;
 use ratatui::Terminal;
 use ratatui::prelude::CrosstermBackend;
 use reading::{ReadResult, get_elements_from_input, get_elements_from_stdin};
+use std::io;
 use std::process::ExitCode;
-use std::{io, vec};
 use zeroize::Zeroize;
 
 mod arguments;
@@ -32,11 +32,7 @@ fn init(args: &CotpArgs) -> eyre::Result<ReadResult> {
     if first_run {
         // Let's initialize the database file
         let mut pw = utils::try_verified_password("Choose a password: ", 8)?;
-        let mut database = OTPDatabase {
-            version: CURRENT_DATABASE_VERSION,
-            elements: vec![],
-            ..Default::default()
-        };
+        let mut database = OTPDatabase::default();
         let save_result = database.save_with_pw(&pw);
         pw.zeroize();
         save_result.map(|(key, salt)| (database, key, salt.to_vec()))

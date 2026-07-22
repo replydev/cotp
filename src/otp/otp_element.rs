@@ -47,9 +47,12 @@ fn create_database_file() -> std::io::Result<File> {
 #[derive(Serialize, Deserialize, PartialEq, Hash)]
 pub struct OTPDatabase {
     pub(crate) version: u16,
-    pub(crate) elements: Vec<OTPElement>,
+    elements: Vec<OTPElement>,
+    /// Dirty flag gating the final save in `main()`. Private on purpose: it is
+    /// only toggled through [`OTPDatabase::mark_modified`] and
+    /// [`OTPDatabase::clear_modified`].
     #[serde(skip)]
-    pub(crate) needs_modification: bool,
+    needs_modification: bool,
 }
 
 impl From<Vec<OTPElement>> for OTPDatabase {
@@ -78,13 +81,23 @@ impl OTPDatabase {
         self.needs_modification
     }
 
+    /// Encrypts the database with the given key and writes it to disk.
+    ///
+    /// The modified flag is cleared only AFTER a successful write, so a failed
+    /// save leaves the database marked dirty.
+    ///
+    /// Clearing the flag on success is also what makes the `passwd` flow safe:
+    /// `passwd` persists the database itself via [`Self::save_with_pw`] (new
+    /// salt + key derived from the new password), and the cleared flag makes
+    /// the final `is_modified()` check in `main()` skip its own save — which
+    /// would otherwise re-encrypt the database with the OLD key and silently
+    /// undo the password change.
     pub fn save(&mut self, key: &Vec<u8>, salt: &[u8]) -> eyre::Result<()> {
-        self.needs_modification = false;
         migrate(self)?;
-        match self.overwrite_database_key(key, salt) {
-            Ok(()) => Ok(()),
-            Err(e) => Err(ErrReport::from(e)),
-        }
+        self.overwrite_database_key(key, salt)
+            .map_err(ErrReport::from)?;
+        self.clear_modified();
+        Ok(())
     }
 
     fn overwrite_database_key(&self, key: &Vec<u8>, salt: &[u8]) -> Result<(), std::io::Error> {
@@ -122,8 +135,15 @@ impl OTPDatabase {
         self.elements.push(element);
     }
 
+    /// Marks the database as dirty so `main()` persists it on exit.
     pub fn mark_modified(&mut self) {
         self.needs_modification = true;
+    }
+
+    /// Discards the dirty flag so the database will NOT be persisted on exit
+    /// (e.g. the user answered "don't save" when quitting the dashboard).
+    pub fn clear_modified(&mut self) {
+        self.needs_modification = false;
     }
 
     pub fn delete_element(&mut self, index: usize) {
@@ -135,10 +155,21 @@ impl OTPDatabase {
         &self.elements
     }
 
+    /// Consumes the database and returns its elements, for exporters that
+    /// need owned values.
+    pub fn into_elements(self) -> Vec<OTPElement> {
+        self.elements
+    }
+
     pub fn get_element(&self, i: usize) -> Option<&OTPElement> {
         self.elements.get(i)
     }
 
+    /// Mutable access to an element. Deliberately does NOT mark the database
+    /// as modified: callers must call [`Self::mark_modified`] themselves once
+    /// they know an actual change happened, which lets no-op edits (e.g.
+    /// `cotp edit` with values identical to the current ones) skip the
+    /// re-encryption and rewrite of the database file.
     pub fn mut_element(&mut self, i: usize) -> Option<&mut OTPElement> {
         self.elements.get_mut(i)
     }

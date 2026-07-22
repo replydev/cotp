@@ -9,7 +9,7 @@ pub struct OtpUriList {
 impl<'a> From<&'a OTPDatabase> for OtpUriList {
     fn from(value: &'a OTPDatabase) -> Self {
         let items: Vec<String> = value
-            .elements
+            .elements_ref()
             .iter()
             .map(super::super::otp::otp_element::OTPElement::get_otpauth_uri)
             .collect();

@@ -110,7 +110,7 @@ impl SubcommandExecutor for ExtractArgs {
 
 fn find_match(otp_database: &OTPDatabase, filter: ExtractFilter) -> Option<&OTPElement> {
     otp_database
-        .elements
+        .elements_ref()
         .iter()
         .enumerate()
         .find(|(index, code)| filter_extract(&filter, *index, code))
