@@ -1,10 +1,7 @@
 use derive_builder::Builder;
 use eyre::{ErrReport, eyre};
-use std::{fs::File, io::Write, vec};
 
-use crate::crypto::cryptography::{argon_derive_key, encrypt_string_with_key, gen_salt};
 use crate::otp::otp_error::OtpError;
-use crate::path::DATABASE_PATH;
 use data_encoding::{BASE32_NOPAD, HEXLOWER_PERMISSIVE};
 use qrcode::QrCode;
 use qrcode::render::unicode;
@@ -16,33 +13,11 @@ use super::{
         hotp_maker::hotp, motp_maker::motp, steam_otp_maker::steam, totp_maker::totp,
         yandex_otp_maker::yandex,
     },
-    migrations::migrate,
     otp_algorithm::OTPAlgorithm,
     otp_type::OTPType,
 };
 
 pub const CURRENT_DATABASE_VERSION: u16 = 2;
-
-/// Creates (or truncates) the database file.
-///
-/// On unix the file is created with mode 0600 so other users cannot read it.
-/// The database is encrypted, so this is defense in depth rather than a
-/// confidentiality requirement.
-#[cfg(unix)]
-fn create_database_file() -> std::io::Result<File> {
-    use std::os::unix::fs::OpenOptionsExt;
-    std::fs::OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .mode(0o600)
-        .open(DATABASE_PATH.get().unwrap())
-}
-
-#[cfg(not(unix))]
-fn create_database_file() -> std::io::Result<File> {
-    File::create(DATABASE_PATH.get().unwrap())
-}
 
 #[derive(Serialize, Deserialize, PartialEq, Hash)]
 pub struct OTPDatabase {
@@ -79,50 +54,6 @@ impl Default for OTPDatabase {
 impl OTPDatabase {
     pub fn is_modified(&self) -> bool {
         self.needs_modification
-    }
-
-    /// Encrypts the database with the given key and writes it to disk.
-    ///
-    /// The modified flag is cleared only AFTER a successful write, so a failed
-    /// save leaves the database marked dirty.
-    ///
-    /// Clearing the flag on success is also what makes the `passwd` flow safe:
-    /// `passwd` persists the database itself via [`Self::save_with_pw`] (new
-    /// salt + key derived from the new password), and the cleared flag makes
-    /// the final `is_modified()` check in `main()` skip its own save — which
-    /// would otherwise re-encrypt the database with the OLD key and silently
-    /// undo the password change.
-    pub fn save(&mut self, key: &Vec<u8>, salt: &[u8]) -> eyre::Result<()> {
-        migrate(self)?;
-        self.overwrite_database_key(key, salt)
-            .map_err(ErrReport::from)?;
-        self.clear_modified();
-        Ok(())
-    }
-
-    fn overwrite_database_key(&self, key: &Vec<u8>, salt: &[u8]) -> Result<(), std::io::Error> {
-        // The plaintext JSON contains every secret in the database: wipe it
-        // from memory as soon as it has been encrypted
-        let mut json = serde_json::to_string(&self)?;
-        let encrypted = encrypt_string_with_key(&json, key, salt);
-        json.zeroize();
-        let encrypted = encrypted.unwrap();
-        let mut file = create_database_file()?;
-        match serde_json::to_string(&encrypted) {
-            Ok(content) => {
-                file.write_all(content.as_bytes())?;
-                file.sync_all()?;
-                Ok(())
-            }
-            Err(e) => Err(std::io::Error::from(e)),
-        }
-    }
-
-    pub fn save_with_pw(&mut self, password: &str) -> eyre::Result<(Vec<u8>, [u8; 16])> {
-        let salt = gen_salt()?;
-        let key = argon_derive_key(password.as_bytes(), &salt)?;
-        self.save(&key, &salt)?;
-        Ok((key, salt))
     }
 
     pub fn add_all(&mut self, mut elements: Vec<OTPElement>) {

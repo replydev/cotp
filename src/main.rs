@@ -6,12 +6,12 @@ use interface::event::{Event, EventHandler};
 use interface::handlers::handle_key_events;
 use interface::ui::Tui;
 use otp::otp_element::OTPDatabase;
-use path::init_path;
+use path::{DATABASE_PATH, init_path};
 use ratatui::Terminal;
 use ratatui::prelude::CrosstermBackend;
-use reading::{ReadResult, get_elements_from_input, get_elements_from_stdin};
 use std::io;
 use std::process::ExitCode;
+use storage::{ReadResult, get_elements_from_input, get_elements_from_stdin};
 use zeroize::Zeroize;
 
 mod arguments;
@@ -22,7 +22,7 @@ mod importers;
 mod interface;
 mod otp;
 mod path;
-mod reading;
+mod storage;
 mod utils;
 
 fn init(args: &CotpArgs) -> eyre::Result<ReadResult> {
@@ -33,7 +33,7 @@ fn init(args: &CotpArgs) -> eyre::Result<ReadResult> {
         // Let's initialize the database file
         let mut pw = utils::try_verified_password("Choose a password: ", 8)?;
         let mut database = OTPDatabase::default();
-        let save_result = database.save_with_pw(&pw);
+        let save_result = storage::save_with_pw(&mut database, &pw, DATABASE_PATH.get().unwrap());
         pw.zeroize();
         save_result.map(|(key, salt)| (database, key, salt.to_vec()))
     } else if args.password_from_stdin {
@@ -65,7 +65,12 @@ fn main() -> ExitCode {
     };
 
     let exit_code = if reowned_database.is_modified() {
-        match reowned_database.save(&key, &salt) {
+        match storage::save(
+            &mut reowned_database,
+            &key,
+            &salt,
+            DATABASE_PATH.get().unwrap(),
+        ) {
             Ok(()) => {
                 println!("Modifications have been persisted");
                 ExitCode::SUCCESS
