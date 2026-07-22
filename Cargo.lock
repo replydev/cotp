@@ -519,7 +519,7 @@ dependencies = [
 
 [[package]]
 name = "cotp"
-version = "1.9.10"
+version = "1.10.0"
 dependencies = [
  "aes-gcm",
  "assert_cmd",
