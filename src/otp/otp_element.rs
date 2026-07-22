@@ -1,5 +1,5 @@
-use color_eyre::eyre::{ErrReport, eyre};
 use derive_builder::Builder;
+use eyre::{ErrReport, eyre};
 use std::{fs::File, io::Write, vec};
 
 use crate::crypto::cryptography::{argon_derive_key, encrypt_string_with_key, gen_salt};
@@ -78,7 +78,7 @@ impl OTPDatabase {
         self.needs_modification
     }
 
-    pub fn save(&mut self, key: &Vec<u8>, salt: &[u8]) -> color_eyre::Result<()> {
+    pub fn save(&mut self, key: &Vec<u8>, salt: &[u8]) -> eyre::Result<()> {
         self.needs_modification = false;
         migrate(self)?;
         match self.overwrite_database_key(key, salt) {
@@ -105,7 +105,7 @@ impl OTPDatabase {
         }
     }
 
-    pub fn save_with_pw(&mut self, password: &str) -> color_eyre::Result<(Vec<u8>, [u8; 16])> {
+    pub fn save_with_pw(&mut self, password: &str) -> eyre::Result<(Vec<u8>, [u8; 16])> {
         let salt = gen_salt()?;
         let key = argon_derive_key(password.as_bytes(), &salt)?;
         self.save(&key, &salt)?;

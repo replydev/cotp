@@ -1,7 +1,7 @@
 use std::io::{self, BufRead};
 
 use clap::{Args, value_parser};
-use color_eyre::eyre::{self, ErrReport, Result};
+use eyre::{self, ErrReport, Result};
 
 use zeroize::Zeroize;
 
@@ -69,7 +69,7 @@ pub struct AddArgs {
 }
 
 impl SubcommandExecutor for AddArgs {
-    fn run_command(self, mut database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
+    fn run_command(self, mut database: OTPDatabase) -> eyre::Result<OTPDatabase> {
         let otp_element = if self.otp_uri {
             let mut otp_uri = rpassword::prompt_password("Insert the otp uri: ")?;
             let result = OTPElement::from_otp_uri(otp_uri.as_str());
@@ -87,7 +87,7 @@ impl SubcommandExecutor for AddArgs {
 /// Backstop for the conditional clap rules above: enforce the per-type
 /// invariants even if the declarative rules stop firing (e.g. because of an
 /// arg id or value-case mismatch, which silently disables them).
-fn validate_type_invariants(matches: &AddArgs) -> color_eyre::Result<()> {
+fn validate_type_invariants(matches: &AddArgs) -> eyre::Result<()> {
     match matches.otp_type {
         OTPType::Hotp if matches.counter.is_none() => {
             Err(eyre::eyre!("--counter is required for HOTP codes"))
@@ -100,7 +100,7 @@ fn validate_type_invariants(matches: &AddArgs) -> color_eyre::Result<()> {
     }
 }
 
-fn get_from_args(matches: AddArgs) -> color_eyre::Result<OTPElement> {
+fn get_from_args(matches: AddArgs) -> eyre::Result<OTPElement> {
     validate_type_invariants(&matches)?;
     let secret = if matches.take_secret_from_stdin {
         if let Some(password) = io::stdin().lock().lines().next() {

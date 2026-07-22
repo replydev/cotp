@@ -15,8 +15,8 @@
 use std::{fs::read_to_string, path::PathBuf};
 
 use base64::{Engine as _, engine::general_purpose};
-use color_eyre::eyre::{Result, eyre};
 use data_encoding::BASE32_NOPAD;
+use eyre::{Result, eyre};
 use prost::Message;
 use url::Url;
 

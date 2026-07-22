@@ -1,5 +1,5 @@
 use clap::Args;
-use color_eyre::eyre::eyre;
+use eyre::eyre;
 use serde::Serialize;
 
 use crate::otp::otp_element::{OTPDatabase, OTPElement};
@@ -61,7 +61,7 @@ impl<'a> From<&'a OTPElement> for JsonOtpList<'a> {
 const NO_ISSUER_TEXT: &str = "<No issuer>";
 
 impl SubcommandExecutor for ListArgs {
-    fn run_command(self, otp_database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
+    fn run_command(self, otp_database: OTPDatabase) -> eyre::Result<OTPDatabase> {
         if self.format.unwrap_or_default().json {
             let json_elements = otp_database
                 .elements

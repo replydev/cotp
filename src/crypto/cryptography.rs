@@ -1,8 +1,8 @@
 use argon2::{Config, ThreadMode, Variant, Version};
 use chacha20poly1305::aead::Aead;
 use chacha20poly1305::{KeyInit, XChaCha20Poly1305, XNonce};
-use color_eyre::eyre::{ErrReport, eyre};
 use data_encoding::BASE64;
+use eyre::{ErrReport, eyre};
 
 use super::encrypted_database::EncryptedDatabase;
 
@@ -25,11 +25,11 @@ const KEY_DERIVATION_CONFIG: Config = Config {
     thread_mode: ThreadMode::Parallel,
 };
 
-pub fn argon_derive_key(password_bytes: &[u8], salt: &[u8]) -> color_eyre::Result<Vec<u8>> {
+pub fn argon_derive_key(password_bytes: &[u8], salt: &[u8]) -> eyre::Result<Vec<u8>> {
     argon2::hash_raw(password_bytes, salt, &KEY_DERIVATION_CONFIG).map_err(ErrReport::from)
 }
 
-pub fn gen_salt() -> color_eyre::Result<[u8; ARGON2ID_SALT_LENGTH]> {
+pub fn gen_salt() -> eyre::Result<[u8; ARGON2ID_SALT_LENGTH]> {
     let mut salt: [u8; ARGON2ID_SALT_LENGTH] = [0; ARGON2ID_SALT_LENGTH];
     getrandom::fill(&mut salt).map_err(|e| eyre!(e))?;
     Ok(salt)
@@ -39,7 +39,7 @@ pub fn encrypt_string_with_key(
     plain_text: &str,
     key: &Vec<u8>,
     salt: &[u8],
-) -> color_eyre::Result<EncryptedDatabase> {
+) -> eyre::Result<EncryptedDatabase> {
     let aead = XChaCha20Poly1305::new_from_slice(key.as_slice())
         .map_err(|e| eyre!("Invalid encryption key length: {e}"))?;
     let mut nonce_bytes: [u8; XCHACHA20_POLY1305_NONCE_LENGTH] =
@@ -62,7 +62,7 @@ pub fn encrypt_string_with_key(
 pub fn decrypt_string(
     encrypted_text: &str,
     password: &str,
-) -> color_eyre::Result<(String, Vec<u8>, Vec<u8>)> {
+) -> eyre::Result<(String, Vec<u8>, Vec<u8>)> {
     //encrypted text is an encrypted database json serialized object
     let encrypted_database: EncryptedDatabase = serde_json::from_str(encrypted_text)
         .map_err(|e| eyre!("Error during encrypted database deserialization: {e}"))?;

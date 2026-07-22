@@ -1,5 +1,5 @@
-use color_eyre::eyre::{ErrReport, Result};
 use data_encoding::BASE32_NOPAD;
+use eyre::{ErrReport, Result};
 
 use crate::{
     importers::freeotp_plus::{FreeOTPElement, FreeOTPPlusJson},

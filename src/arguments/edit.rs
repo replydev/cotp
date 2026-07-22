@@ -1,5 +1,5 @@
 use clap::{Args, value_parser};
-use color_eyre::eyre::eyre;
+use eyre::eyre;
 
 use crate::otp::{
     otp_algorithm::OTPAlgorithm,
@@ -48,7 +48,7 @@ pub struct EditArgs {
 }
 
 impl SubcommandExecutor for EditArgs {
-    fn run_command(self, mut database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
+    fn run_command(self, mut database: OTPDatabase) -> eyre::Result<OTPDatabase> {
         let secret = self
             .change_secret
             .then(|| rpassword::prompt_password("Insert the secret: "))
@@ -108,7 +108,7 @@ impl SubcommandExecutor for EditArgs {
 /// `add` gets via OTPElementBuilder (base32/hex checks depending on the OTP
 /// type), instead of persisting the raw string and only failing later at code
 /// generation time.
-fn validate_secret(element: &OTPElement, secret: String) -> color_eyre::Result<String> {
+fn validate_secret(element: &OTPElement, secret: String) -> eyre::Result<String> {
     let validated = OTPElementBuilder::default()
         .secret(secret)
         .issuer(element.issuer.as_str())

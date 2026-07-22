@@ -2,7 +2,7 @@ use std::fs::read_to_string;
 use std::path::PathBuf;
 
 use clap::Args;
-use color_eyre::eyre::eyre;
+use eyre::eyre;
 use zeroize::Zeroize;
 
 use crate::{
@@ -79,7 +79,7 @@ pub struct BackupType {
 }
 
 impl SubcommandExecutor for ImportArgs {
-    fn run_command(self, mut database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
+    fn run_command(self, mut database: OTPDatabase) -> eyre::Result<OTPDatabase> {
         let path = self.path;
 
         let backup_type = self.backup_type;
@@ -115,7 +115,7 @@ impl SubcommandExecutor for ImportArgs {
 
 /// Imports an encrypted Aegis backup, prompting the user for the backup
 /// password before decrypting it.
-fn import_aegis_encrypted(path: PathBuf) -> color_eyre::Result<Vec<OTPElement>> {
+fn import_aegis_encrypted(path: PathBuf) -> eyre::Result<Vec<OTPElement>> {
     let json = read_to_string(path)?;
     let encrypted: AegisEncryptedDatabase = serde_json::from_str(json.as_str()).map_err(|e| {
         eyre!(

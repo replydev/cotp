@@ -1,4 +1,4 @@
-use color_eyre::eyre::ErrReport;
+use eyre::ErrReport;
 use url::Url;
 
 use super::{
@@ -8,11 +8,11 @@ use super::{
 };
 
 pub trait FromOtpUri: Sized {
-    fn from_otp_uri(otp_uri: &str) -> color_eyre::Result<Self>;
+    fn from_otp_uri(otp_uri: &str) -> eyre::Result<Self>;
 }
 
 impl FromOtpUri for OTPElement {
-    fn from_otp_uri(otp_uri: &str) -> color_eyre::Result<Self> {
+    fn from_otp_uri(otp_uri: &str) -> eyre::Result<Self> {
         // Parse the raw URI: percent-decoding must only ever happen on the
         // individual components. Decoding the whole URI up front turns encoded
         // structural characters into real ones (e.g. "%23" -> "#" makes the
@@ -85,7 +85,7 @@ impl FromOtpUri for OTPElement {
 /// The raw segment is percent-decoded first, then split on ':'. Decoding
 /// before splitting keeps the historical behavior of treating an encoded
 /// colon ("%3A") as the issuer/label separator (see GH issue 548).
-fn issuer_label_segments(parsed_uri: &Url) -> color_eyre::Result<Vec<String>> {
+fn issuer_label_segments(parsed_uri: &Url) -> eyre::Result<Vec<String>> {
     let raw_segment = parsed_uri
         .path_segments()
         .ok_or(ErrReport::msg("Failed to collect path segments"))?
@@ -102,7 +102,7 @@ fn issuer_label_segments(parsed_uri: &Url) -> color_eyre::Result<Vec<String>> {
         .collect())
 }
 
-fn get_issuer_and_label(parsed_uri: &Url) -> color_eyre::Result<(String, String)> {
+fn get_issuer_and_label(parsed_uri: &Url) -> eyre::Result<(String, String)> {
     // Find the first path segments, OTP Uris should not have others
     let first_segment = issuer_label_segments(parsed_uri)?;
 

@@ -94,7 +94,7 @@ mod tests {
     use std::fs;
 
     use crate::otp::otp_element::OTPDatabase;
-    use color_eyre::Result;
+    use eyre::Result;
 
     use super::{FreeOTPPlusJson, encode_secret};
 

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::Args;
-use color_eyre::eyre::eyre;
+use eyre::eyre;
 
 use crate::{
     exporters::{do_export, otp_uri::OtpUriList},
@@ -54,7 +54,7 @@ impl Default for ExportFormat {
 }
 
 impl SubcommandExecutor for ExportArgs {
-    fn run_command(self, database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
+    fn run_command(self, database: OTPDatabase) -> eyre::Result<OTPDatabase> {
         let export_format = self.format.unwrap_or_default();
         let exported_path = if self.path.is_dir() {
             self.path.join("exported.cotp")

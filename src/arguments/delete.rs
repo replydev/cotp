@@ -6,7 +6,7 @@ use std::fs::File;
 use std::fs::OpenOptions;
 
 use clap::Args;
-use color_eyre::eyre::eyre;
+use eyre::eyre;
 
 use crate::otp::otp_element::OTPDatabase;
 
@@ -28,7 +28,7 @@ pub struct DeleteArgs {
 }
 
 impl SubcommandExecutor for DeleteArgs {
-    fn run_command(self, mut otp_database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
+    fn run_command(self, mut otp_database: OTPDatabase) -> eyre::Result<OTPDatabase> {
         if otp_database.elements_ref().is_empty() {
             return Err(eyre!("There are no elements to delete"));
         }
@@ -82,7 +82,7 @@ impl SubcommandExecutor for DeleteArgs {
     }
 }
 
-fn read_confirmation_line() -> color_eyre::Result<String> {
+fn read_confirmation_line() -> eyre::Result<String> {
     let mut output = String::with_capacity(1);
 
     if io::stdin().read_line(&mut output)? > 0 {

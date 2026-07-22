@@ -1,9 +1,9 @@
 use crate::otp::otp_element::OTPDatabase;
 use crate::{arguments::extract::ExtractArgs, dashboard};
 use clap::{Parser, Subcommand};
-use color_eyre::eyre::eyre;
 use delete::DeleteArgs;
 use enum_dispatch::enum_dispatch;
+use eyre::eyre;
 
 use self::{
     add::AddArgs, edit::EditArgs, export::ExportArgs, import::ImportArgs, list::ListArgs,
@@ -22,7 +22,7 @@ mod passwd;
 /// Common trait the all the Subcommands must implement to define the command logic
 #[enum_dispatch]
 pub trait SubcommandExecutor {
-    fn run_command(self, otp_database: OTPDatabase) -> color_eyre::Result<OTPDatabase>;
+    fn run_command(self, otp_database: OTPDatabase) -> eyre::Result<OTPDatabase>;
 }
 
 /// Main structure defining the Clap argument for the cotp commandline utility
@@ -61,7 +61,7 @@ pub enum CotpSubcommands {
     Passwd(PasswdArgs),
 }
 
-pub fn args_parser(matches: CotpArgs, read_result: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
+pub fn args_parser(matches: CotpArgs, read_result: OTPDatabase) -> eyre::Result<OTPDatabase> {
     if let Some(command) = matches.command {
         command.run_command(read_result)
     } else {

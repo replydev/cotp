@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 use arguments::{CotpArgs, args_parser};
 use clap::Parser;
-use color_eyre::eyre::eyre;
+use eyre::eyre;
 use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
 use interface::handlers::handle_key_events;
@@ -25,7 +25,7 @@ mod path;
 mod reading;
 mod utils;
 
-fn init(args: &CotpArgs) -> color_eyre::Result<ReadResult> {
+fn init(args: &CotpArgs) -> eyre::Result<ReadResult> {
     init_path(args);
 
     match utils::init_app() {
@@ -52,8 +52,6 @@ fn init(args: &CotpArgs) -> color_eyre::Result<ReadResult> {
 }
 
 fn main() -> AppResult<()> {
-    color_eyre::install()?;
-
     let cotp_args: CotpArgs = CotpArgs::parse();
     let (database, mut key, salt) = match init(&cotp_args) {
         Ok(v) => v,

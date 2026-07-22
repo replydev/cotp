@@ -1,7 +1,7 @@
 use crate::otp::otp_element::OTPDatabase;
 use crate::{clipboard, otp::otp_element::OTPElement};
 use clap::Args;
-use color_eyre::eyre::eyre;
+use eyre::eyre;
 
 use super::SubcommandExecutor;
 
@@ -32,7 +32,7 @@ struct ExtractFilter {
 }
 
 impl TryFrom<ExtractArgs> for ExtractFilter {
-    type Error = color_eyre::eyre::ErrReport;
+    type Error = eyre::ErrReport;
 
     fn try_from(value: ExtractArgs) -> Result<Self, Self::Error> {
         if value.index == Some(0) {
@@ -88,7 +88,7 @@ fn wildcard_match(pattern: &str, text: &str) -> bool {
 }
 
 impl SubcommandExecutor for ExtractArgs {
-    fn run_command(self, otp_database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
+    fn run_command(self, otp_database: OTPDatabase) -> eyre::Result<OTPDatabase> {
         let copy_to_clipboard = self.copy_to_clipboard;
         let filter: ExtractFilter = self.try_into()?;
 

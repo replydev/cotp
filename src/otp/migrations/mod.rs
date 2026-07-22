@@ -1,7 +1,7 @@
 use super::otp_element::OTPDatabase;
 struct Migration<'a> {
     to_version: u16, // Database version which we are migrating on
-    migration_function: &'a dyn Fn(&mut OTPDatabase) -> color_eyre::Result<()>, // Function to execute the migration
+    migration_function: &'a dyn Fn(&mut OTPDatabase) -> eyre::Result<()>, // Function to execute the migration
 }
 /// Migrations must be kept sorted by ascending `to_version`; `migrate` relies
 /// on this ordering and asserts it in debug builds.
@@ -10,12 +10,12 @@ const MIGRATIONS_LIST: [Migration; 1] = [Migration {
     migration_function: &migrate_to_2,
 }];
 
-fn migrate_to_2(database: &mut OTPDatabase) -> color_eyre::Result<()> {
+fn migrate_to_2(database: &mut OTPDatabase) -> eyre::Result<()> {
     database.version = 2;
     Ok(())
 }
 
-pub fn migrate(database: &mut OTPDatabase) -> color_eyre::Result<()> {
+pub fn migrate(database: &mut OTPDatabase) -> eyre::Result<()> {
     debug_assert!(
         MIGRATIONS_LIST.is_sorted_by_key(|m| m.to_version),
         "MIGRATIONS_LIST must be sorted by to_version"

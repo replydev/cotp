@@ -1,11 +1,11 @@
 use base64::{Engine as _, engine::general_purpose};
-use color_eyre::eyre::eyre;
 use copypasta_ext::prelude::*;
 #[cfg(target_os = "linux")]
 use copypasta_ext::wayland_bin::WaylandBinClipboardContext;
 use copypasta_ext::x11_bin::ClipboardContext as BinClipboardContext;
 use copypasta_ext::x11_fork::ClipboardContext as ForkClipboardContext;
 use crossterm::style::Print;
+use eyre::eyre;
 use std::{env, io};
 
 pub enum CopyType {
@@ -13,7 +13,7 @@ pub enum CopyType {
     OSC52,
 }
 
-pub fn copy_string_to_clipboard(content: &str) -> color_eyre::Result<CopyType> {
+pub fn copy_string_to_clipboard(content: &str) -> eyre::Result<CopyType> {
     if ssh_clipboard(content) {
         Ok(CopyType::OSC52)
     } else if wayland_clipboard(content) || other_platform_clipboard(content) {
