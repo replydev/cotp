@@ -154,9 +154,9 @@ impl<'a> App<'a> {
             .direction(Direction::Vertical)
             .constraints(
                 [
-                    Constraint::Length(3),          // Search bar
-                    Constraint::Length(height - 8), // Table + Info Box
-                    Constraint::Length(1),          // Progress bar
+                    Constraint::Length(3),                        // Search bar
+                    Constraint::Length(height.saturating_sub(8)), // Table + Info Box
+                    Constraint::Length(1),                        // Progress bar
                 ]
                 .as_ref(),
             )
