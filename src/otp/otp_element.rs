@@ -23,6 +23,27 @@ use super::{
 
 pub const CURRENT_DATABASE_VERSION: u16 = 2;
 
+/// Creates (or truncates) the database file.
+///
+/// On unix the file is created with mode 0600 so other users cannot read it.
+/// The database is encrypted, so this is defense in depth rather than a
+/// confidentiality requirement.
+#[cfg(unix)]
+fn create_database_file() -> std::io::Result<File> {
+    use std::os::unix::fs::OpenOptionsExt;
+    std::fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .mode(0o600)
+        .open(DATABASE_PATH.get().unwrap())
+}
+
+#[cfg(not(unix))]
+fn create_database_file() -> std::io::Result<File> {
+    File::create(DATABASE_PATH.get().unwrap())
+}
+
 #[derive(Serialize, Deserialize, PartialEq, Hash)]
 pub struct OTPDatabase {
     pub(crate) version: u16,
@@ -73,7 +94,7 @@ impl OTPDatabase {
         let encrypted = encrypt_string_with_key(&json, key, salt);
         json.zeroize();
         let encrypted = encrypted.unwrap();
-        let mut file = File::create(DATABASE_PATH.get().unwrap())?;
+        let mut file = create_database_file()?;
         match serde_json::to_string(&encrypted) {
             Ok(content) => {
                 file.write_all(content.as_bytes())?;
