@@ -67,8 +67,12 @@ impl OTPDatabase {
     }
 
     fn overwrite_database_key(&self, key: &Vec<u8>, salt: &[u8]) -> Result<(), std::io::Error> {
-        let json: &str = &serde_json::to_string(&self)?;
-        let encrypted = encrypt_string_with_key(json, key, salt).unwrap();
+        // The plaintext JSON contains every secret in the database: wipe it
+        // from memory as soon as it has been encrypted
+        let mut json = serde_json::to_string(&self)?;
+        let encrypted = encrypt_string_with_key(&json, key, salt);
+        json.zeroize();
+        let encrypted = encrypted.unwrap();
         let mut file = File::create(DATABASE_PATH.get().unwrap())?;
         match serde_json::to_string(&encrypted) {
             Ok(content) => {
