@@ -34,6 +34,10 @@ fn calculate_yandex_code(
     digits: usize,
     seconds: u64,
 ) -> Result<String, OtpError> {
+    if period == 0 {
+        return Err(OtpError::InvalidPeriod);
+    }
+
     let decoded_secret = match BASE32_NOPAD.decode(secret.as_bytes()) {
         Ok(r) => r,
         Err(e) => return Err(OtpError::SecretEncoding(e.kind, e.position)),

@@ -10,6 +10,7 @@ pub enum OtpError {
     InvalidOffset,                     // Invalid offset
     InvalidDigest,                     // Invalid digest
     InvalidDigits,                     // Invalid Digits value (too high or low)
+    InvalidPeriod,                     // Invalid period value (zero)
 }
 
 impl Display for OtpError {
@@ -24,6 +25,7 @@ impl Display for OtpError {
             OtpError::InvalidOffset => f.write_str("Invalid offset"),
             OtpError::ShortSecret => f.write_str("Secret length less than 16 bytes"),
             OtpError::InvalidDigits => f.write_str("Digits value too high or low"),
+            OtpError::InvalidPeriod => f.write_str("Period value must be greater than zero"),
         }
     }
 }

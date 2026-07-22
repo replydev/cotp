@@ -214,12 +214,12 @@ impl OTPElement {
                 None => Err(OtpError::MissingPin),
             },
             OTPType::Motp => match &self.pin {
-                Some(pin) => Ok(motp(
+                Some(pin) => motp(
                     &self.secret,
                     pin.as_str(),
                     self.period,
                     self.digits as usize,
-                )),
+                ),
                 None => Err(OtpError::MissingPin),
             },
         }
@@ -269,6 +269,14 @@ impl OTPElementBuilder {
 
         if self.secret.as_ref().unwrap().is_empty() {
             return Err(eyre!("Secret must not be empty",));
+        }
+
+        if self.period == Some(0) {
+            return Err(eyre!("Period must be greater than zero",));
+        }
+
+        if self.digits == Some(0) {
+            return Err(eyre!("Digits must be greater than zero",));
         }
 
         // Validate secret encoding
@@ -447,6 +455,53 @@ mod test {
             .build();
 
         assert_eq!("aaaf", result.unwrap().secret);
+    }
+
+    #[test]
+    fn test_zero_period_is_rejected_by_builder() {
+        let result = OTPElementBuilder::default()
+            .secret("AA")
+            .label("label")
+            .issuer("")
+            .period(0u64)
+            .build();
+
+        assert_eq!(
+            "Period must be greater than zero",
+            result.unwrap_err().to_string()
+        );
+    }
+
+    #[test]
+    fn test_zero_digits_is_rejected_by_builder() {
+        let result = OTPElementBuilder::default()
+            .secret("AA")
+            .label("label")
+            .issuer("")
+            .digits(0u64)
+            .build();
+
+        assert_eq!(
+            "Digits must be greater than zero",
+            result.unwrap_err().to_string()
+        );
+    }
+
+    #[test]
+    fn test_zero_period_returns_error_instead_of_panicking() {
+        let element = OTPElement {
+            secret: "xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g".to_uppercase(),
+            issuer: String::from("IssuerText"),
+            label: String::from("LabelText"),
+            digits: 6,
+            type_: Totp,
+            algorithm: Sha1,
+            period: 0,
+            counter: None,
+            pin: None,
+        };
+
+        assert_eq!(Err(OtpError::InvalidPeriod), element.get_otp_code());
     }
 
     #[test]
