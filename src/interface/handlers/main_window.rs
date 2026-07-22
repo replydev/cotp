@@ -129,8 +129,9 @@ fn handle_counter_switch(app: &mut App, increment: bool) {
         && let Some(element) = app.database.mut_element(selected)
         && element.type_ == OTPType::Hotp
     {
-        // safe to unwrap because the element type is HOTP
-        let counter = element.counter.unwrap();
+        // HOTP elements may lack a counter (e.g. imported from an otpauth URI
+        // without one), so fall back to 0 instead of panicking
+        let counter = element.counter.unwrap_or(0);
         element.counter = if increment {
             Some(counter.saturating_add(1))
         } else {
