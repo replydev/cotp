@@ -68,11 +68,11 @@ impl FromOtpUri for OTPElement {
         // after the secret, so the builder can normalize the secret case.
         OTPElementBuilder::default()
             .secret(secret)
-            .type_(OTPType::from(otp_type.as_str()))
+            .type_(OTPType::try_from(otp_type.as_str())?)
             .issuer(issuer)
             .label(label)
             .digits(digits)
-            .algorithm(OTPAlgorithm::from(algorithm.as_str()))
+            .algorithm(OTPAlgorithm::try_from(algorithm.as_str())?)
             .period(period)
             .counter(counter)
             .pin(pin)

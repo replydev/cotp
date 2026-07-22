@@ -38,14 +38,22 @@ impl fmt::Display for OTPType {
     }
 }
 
-impl From<&str> for OTPType {
-    fn from(s: &str) -> Self {
+impl TryFrom<&str> for OTPType {
+    type Error = eyre::Report;
+
+    /// Parses an OTP type name case-insensitively, rejecting unknown values
+    /// instead of silently defaulting to TOTP (which would generate wrong
+    /// codes for entries of a different, unsupported type).
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
         match s.to_uppercase().as_str() {
-            "HOTP" => Self::Hotp,
-            "STEAM" => Self::Steam,
-            "YANDEX" => Self::Yandex,
-            "MOTP" => Self::Motp,
-            _ => Self::Totp,
+            "TOTP" => Ok(Self::Totp),
+            "HOTP" => Ok(Self::Hotp),
+            "STEAM" => Ok(Self::Steam),
+            "YANDEX" => Ok(Self::Yandex),
+            "MOTP" => Ok(Self::Motp),
+            _ => Err(eyre::eyre!(
+                "Unknown OTP type: {s:?} (expected one of TOTP, HOTP, STEAM, YANDEX, MOTP)"
+            )),
         }
     }
 }
@@ -53,5 +61,27 @@ impl From<&str> for OTPType {
 impl Zeroize for OTPType {
     fn zeroize(&mut self) {
         *self = OTPType::Totp;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::OTPType;
+
+    #[test]
+    fn known_types_parse_case_insensitively() {
+        assert_eq!(OTPType::Totp, OTPType::try_from("totp").unwrap());
+        assert_eq!(OTPType::Totp, OTPType::try_from("TOTP").unwrap());
+        assert_eq!(OTPType::Hotp, OTPType::try_from("HoTp").unwrap());
+        assert_eq!(OTPType::Steam, OTPType::try_from("steam").unwrap());
+        assert_eq!(OTPType::Yandex, OTPType::try_from("YANDEX").unwrap());
+        assert_eq!(OTPType::Motp, OTPType::try_from("Motp").unwrap());
+    }
+
+    #[test]
+    fn unknown_type_is_an_error_instead_of_defaulting_to_totp() {
+        let error = OTPType::try_from("otp-2000").unwrap_err();
+        assert!(error.to_string().contains("Unknown OTP type"));
+        assert!(error.to_string().contains("otp-2000"));
     }
 }

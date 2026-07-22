@@ -25,19 +25,24 @@ struct AegisElement {
     info: AegisInfo,
 }
 
-impl From<AegisElement> for OTPElement {
-    fn from(value: AegisElement) -> Self {
-        OTPElement {
+impl TryFrom<AegisElement> for OTPElement {
+    type Error = String;
+
+    fn try_from(value: AegisElement) -> Result<Self, Self::Error> {
+        let type_ = OTPType::try_from(value.r#type.as_str()).map_err(|e| e.to_string())?;
+        let algorithm =
+            OTPAlgorithm::try_from(value.info.algo.as_str()).map_err(|e| e.to_string())?;
+        Ok(OTPElement {
             secret: value.info.secret,
             issuer: value.issuer,
             label: value.name,
             digits: value.info.digits,
-            type_: OTPType::from(value.r#type.as_str()),
-            algorithm: OTPAlgorithm::from(value.info.algo.as_str()),
+            type_,
+            algorithm,
             period: value.info.period.unwrap_or(30),
             counter: value.info.counter,
             pin: value.info.pin,
-        }
+        })
     }
 }
 
@@ -45,7 +50,11 @@ impl TryFrom<AegisDb> for Vec<OTPElement> {
     type Error = String;
 
     fn try_from(aegis_db: AegisDb) -> Result<Self, Self::Error> {
-        Ok(aegis_db.entries.into_iter().map(Into::into).collect())
+        aegis_db
+            .entries
+            .into_iter()
+            .map(TryInto::try_into)
+            .collect()
     }
 }
 

@@ -44,31 +44,31 @@ pub struct FreeOTPElement {
     pub r#type: String,
 }
 
-impl From<FreeOTPElement> for OTPElement {
-    fn from(token: FreeOTPElement) -> Self {
-        let counter: Option<u64> = if token.r#type.to_uppercase().as_str() == "HOTP" {
-            Some(token.counter)
-        } else {
-            None
-        };
-        OTPElement {
+impl TryFrom<FreeOTPElement> for OTPElement {
+    type Error = String;
+
+    fn try_from(token: FreeOTPElement) -> Result<Self, Self::Error> {
+        let type_ = OTPType::try_from(token.r#type.as_str()).map_err(|e| e.to_string())?;
+        let algorithm = OTPAlgorithm::try_from(token.algo.as_str()).map_err(|e| e.to_string())?;
+        let counter: Option<u64> = (type_ == OTPType::Hotp).then_some(token.counter);
+        Ok(OTPElement {
             counter,
             secret: encode_secret(&token.secret),
             issuer: token.issuer_ext,
             label: token.label,
             digits: token.digits,
-            type_: OTPType::from(token.r#type.as_str()),
-            algorithm: OTPAlgorithm::from(token.algo.as_str()),
+            type_,
+            algorithm,
             period: token.period,
             pin: None,
-        }
+        })
     }
 }
 
 impl TryFrom<FreeOTPPlusJson> for Vec<OTPElement> {
     type Error = String;
     fn try_from(freeotp: FreeOTPPlusJson) -> Result<Self, Self::Error> {
-        Ok(freeotp.tokens.into_iter().map(Into::into).collect())
+        freeotp.tokens.into_iter().map(TryInto::try_into).collect()
     }
 }
 
