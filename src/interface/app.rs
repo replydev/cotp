@@ -3,21 +3,12 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::interface::enums::Focus;
 use crate::interface::enums::Page;
-use crate::interface::enums::Page::{Main, Qrcode};
 use crate::otp::otp_element::{OTPDatabase, OTPElement};
-use ratatui::Frame;
-use ratatui::layout::Rect;
-use ratatui::layout::{Alignment, Constraint, Direction, Layout};
-use ratatui::style::{Color, Modifier, Style};
-use ratatui::widgets::{Block, Borders, Cell, Clear, Gauge, Paragraph, Row, Table, Wrap};
 
 use crate::interface::stateful_table::{StatefulTable, fill_table};
 use crate::utils::percentage;
 
 use super::enums::PopupAction;
-use super::popup::centered_rect;
-
-const LARGE_APPLICATION_WIDTH: u16 = 75;
 
 /// Application result type.
 pub type AppResult<T> = Result<T, Box<dyn error::Error>>;
@@ -28,7 +19,7 @@ const DEFAULT_QRCODE_LABEL: &str = "Press enter to copy the OTP URI code";
 pub struct App<'a> {
     /// Is the application running?
     pub running: bool,
-    title: String,
+    pub(crate) title: String,
     pub(crate) table: StatefulTable,
     pub(crate) database: &'a mut OTPDatabase,
     /// Time step of each element at the last tick, used to detect when an
@@ -47,7 +38,7 @@ pub struct App<'a> {
 
     /// Cached rendered QR code for the `QRCode` page, keyed by the index of
     /// the element it was generated from
-    qrcode_cache: Option<(usize, String)>,
+    pub(crate) qrcode_cache: Option<(usize, String)>,
 }
 
 pub struct Popup {
@@ -113,240 +104,12 @@ impl<'a> App<'a> {
     /// Percentage of the current period cycle elapsed for the selected
     /// element, falling back to the global 30 seconds cycle if no element is
     /// selected
-    fn progress(&self) -> u16 {
+    pub(crate) fn progress(&self) -> u16 {
         self.table
             .state
             .selected()
             .and_then(|index| self.database.elements_ref().get(index))
             .map_or_else(percentage, |element| period_percentage(element.period))
-    }
-
-    /// Renders the user interface widgets.
-    pub fn render(&mut self, frame: &mut Frame<'_>) {
-        match &self.current_page {
-            Main => self.render_main_page(frame),
-            Qrcode => self.render_qrcode_page(frame),
-        }
-    }
-
-    fn render_qrcode_page(&mut self, frame: &mut Frame<'_>) {
-        let selected_index = self
-            .table
-            .state
-            .selected()
-            .filter(|index| *index < self.database.elements_ref().len());
-
-        let paragraph = if let Some(index) = selected_index {
-            // Building the QR code (URI + matrix + unicode rendering) is
-            // expensive, so cache the rendered string and rebuild it only
-            // when the selection changes
-            let cache_is_valid =
-                matches!(&self.qrcode_cache, Some((cached, _)) if *cached == index);
-            if !cache_is_valid {
-                let qrcode = self.database.elements_ref()[index].get_qrcode();
-                self.qrcode_cache = Some((index, qrcode));
-            }
-            let element = &self.database.elements_ref()[index];
-            let qrcode = self
-                .qrcode_cache
-                .as_ref()
-                .map(|(_, qrcode)| qrcode.as_str())
-                .unwrap_or_default();
-            let title = if element.label.is_empty() {
-                element.issuer.clone()
-            } else {
-                format!("{} - {}", element.issuer, element.label)
-            };
-            Paragraph::new(format!("{}\n{}", qrcode, self.qr_code_page_label))
-                .block(Block::default().title(title).borders(Borders::ALL))
-                .style(Style::default().fg(Color::White).bg(Color::Reset))
-                .alignment(Alignment::Center)
-                .wrap(Wrap { trim: true })
-        } else {
-            Paragraph::new("No element is selected")
-                .block(Block::default().title("Nope").borders(Borders::ALL))
-                .style(Style::default().fg(Color::White).bg(Color::Reset))
-                .alignment(Alignment::Center)
-                .wrap(Wrap { trim: true })
-        };
-        Self::render_paragraph(frame, paragraph);
-    }
-
-    fn render_paragraph(frame: &mut Frame<'_>, paragraph: Paragraph) {
-        let rects = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([Constraint::Percentage(100)].as_ref())
-            .split(frame.area());
-
-        frame.render_widget(paragraph, rects[0]);
-    }
-
-    fn render_main_page(&mut self, frame: &mut Frame<'_>) {
-        let height = frame.area().height;
-        let rects = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(
-                [
-                    Constraint::Length(3),                        // Search bar
-                    Constraint::Length(height.saturating_sub(8)), // Table + Info Box
-                    Constraint::Length(1),                        // Progress bar
-                ]
-                .as_ref(),
-            )
-            .margin(2)
-            .split(frame.area());
-
-        let search_bar_title = "Press CTRL + F to search a code...";
-        let search_bar = Paragraph::new(&*self.search_query)
-            .block(
-                Block::default()
-                    .title(search_bar_title)
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(if self.focus == Focus::SearchBar {
-                        Color::LightRed
-                    } else {
-                        Color::White
-                    })),
-            )
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
-            .alignment(Alignment::Center)
-            .wrap(Wrap { trim: true });
-
-        // The gauge tracks the period of the selected element, so a 60s TOTP
-        // or a 10s MOTP shows its actual remaining time
-        let progress = self.progress();
-        let progress_label = if self.print_percentage {
-            format!("{progress}%")
-        } else {
-            self.label_text.clone()
-        };
-        let progress_bar = Gauge::default()
-            .block(Block::default())
-            .gauge_style(
-                Style::default()
-                    .bg(Color::White)
-                    .fg(Color::DarkGray)
-                    .add_modifier(Modifier::BOLD),
-            )
-            .percent(progress)
-            .label(progress_label);
-
-        frame.render_widget(search_bar, rects[0]);
-        self.render_table_box(frame, rects[1]);
-        frame.render_widget(progress_bar, rects[2]);
-        if self.focus == Focus::Popup {
-            self.render_alert(frame);
-        }
-    }
-
-    fn render_alert(&mut self, frame: &mut Frame<'_>) {
-        let block = Block::default().title("Alert").borders(Borders::ALL);
-        let paragraph = Paragraph::new(&*self.popup.text)
-            .block(block)
-            .alignment(Alignment::Center)
-            .wrap(Wrap { trim: true });
-        let area = centered_rect(self.popup.percent_x, self.popup.percent_y, frame.area());
-        frame.render_widget(Clear, area);
-        //this clears out the background
-        frame.render_widget(paragraph, area);
-    }
-
-    fn render_table_box(&mut self, frame: &mut Frame<'_>, area: Rect) {
-        let constraints = if Self::is_large_application(frame) {
-            vec![Constraint::Percentage(80), Constraint::Percentage(20)]
-        } else {
-            vec![Constraint::Percentage(100)]
-        };
-        let chunks = Layout::default()
-            .constraints(constraints)
-            .direction(Direction::Horizontal)
-            .split(area);
-
-        let header_cells = ["Id", "Issuer", "Label", "OTP"]
-            .iter()
-            .map(|h| Cell::from(*h).style(Style::default().fg(Color::Black)));
-        let header = Row::new(header_cells)
-            .style(
-                Style::default()
-                    .bg(Color::White)
-                    .add_modifier(Modifier::BOLD),
-            )
-            .height(1)
-            .bottom_margin(1);
-        let rows = self.table.items.iter().map(|item| {
-            Row::new(item.cells())
-                .height(item.height())
-                .bottom_margin(1)
-        });
-
-        const TABLE_WIDTHS: &[Constraint] = &[
-            Constraint::Percentage(5),
-            Constraint::Percentage(35),
-            Constraint::Percentage(35),
-            Constraint::Percentage(25),
-        ];
-
-        let t = Table::new(rows, TABLE_WIDTHS)
-            .header(header)
-            .block(
-                Block::default()
-                    .borders(Borders::TOP | Borders::BOTTOM)
-                    .title(self.title.as_str()),
-            )
-            .row_highlight_style(
-                Style::default()
-                    .bg(Color::White)
-                    .fg(Color::Black)
-                    .add_modifier(Modifier::BOLD),
-            )
-            .highlight_symbol("-> ");
-
-        let selected_element = self
-            .table
-            .state
-            .selected()
-            .and_then(|i| self.database.get_element(i));
-
-        let mut text = if let Some(element) = selected_element {
-            format!(
-                "
-            Type: {}
-            Algorithm: {}
-            Period: {} {}
-            Counter: {}
-            Pin: {}
-            ",
-                element.type_,
-                element.algorithm,
-                element.period,
-                if element.period == 1u64 {
-                    "second"
-                } else {
-                    "seconds"
-                },
-                element
-                    .counter
-                    .map_or_else(|| String::from("N/A"), |e| e.to_string()),
-                element.pin.clone().unwrap_or_else(|| String::from("N/A"))
-            )
-        } else {
-            String::new()
-        };
-
-        text.push_str("\n\n         Press '?' to get help\n");
-        let paragraph = Paragraph::new(text)
-            .block(Block::default().title("Code info").borders(Borders::ALL))
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
-            .alignment(Alignment::Left)
-            .wrap(Wrap { trim: true });
-        frame.render_stateful_widget(t, chunks[0], &mut self.table.state);
-        if Self::is_large_application(frame) {
-            frame.render_widget(paragraph, chunks[1]);
-        }
-    }
-
-    fn is_large_application(frame: &mut Frame<'_>) -> bool {
-        frame.area().width >= LARGE_APPLICATION_WIDTH
     }
 }
 
