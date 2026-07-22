@@ -6,7 +6,6 @@ use serde::Deserialize;
 use zeroize::Zeroize;
 
 use crate::otp::otp_element::OTPElement;
-use crate::utils;
 use scrypt::{Params, scrypt};
 
 use super::aegis::AegisDb;
@@ -43,32 +42,30 @@ struct AegisEncryptedSlot {
     //repaired: Option<bool>,
 }
 
-impl TryFrom<AegisEncryptedDatabase> for Vec<OTPElement> {
-    type Error = String;
-
-    fn try_from(aegis_encrypted: AegisEncryptedDatabase) -> Result<Self, Self::Error> {
-        let mut password = utils::password("Insert your Aegis password: ", 0);
-        let master_key: Option<Vec<u8>> = get_master_key(&aegis_encrypted, &password);
-        password.zeroize();
+impl AegisEncryptedDatabase {
+    /// Decrypts the backup contents using the given password and maps the
+    /// entries into `OTPElement` values.
+    pub fn decrypt(self, password: &str) -> Result<Vec<OTPElement>, String> {
+        let master_key: Option<Vec<u8>> = get_master_key(&self, password);
 
         match master_key {
             Some(mut master_key) => {
                 let content = BASE64
-                    .decode(aegis_encrypted.db.as_bytes())
+                    .decode(self.db.as_bytes())
                     .map_err(|e| format!("Error during base64 decoding: {e:?}"))?;
 
                 let cipher = Aes256Gcm::new_from_slice(master_key.as_slice())
                     .map_err(|e| format!("Invalid master key length: {e:?}"))?;
                 master_key.zeroize();
 
-                let nonce_bytes = Vec::from_hex(&aegis_encrypted.header.params.nonce)
+                let nonce_bytes = Vec::from_hex(&self.header.params.nonce)
                     .map_err(|e| format!("Failed to parse hex nonce: {e:?}"))?;
                 let nonce = Nonce::<Aes256Gcm>::try_from(nonce_bytes.as_slice())
                     .map_err(|e| format!("Invalid nonce length: {e:?}"))?;
 
                 let payload = [
                     content,
-                    Vec::from_hex(&aegis_encrypted.header.params.tag)
+                    Vec::from_hex(&self.header.params.tag)
                         .map_err(|e| format!("Failed to parse hex tag: {e:?}"))?,
                 ]
                 .concat();
@@ -164,10 +161,37 @@ fn calc_master_key(slot: &AegisEncryptedSlot, password: &str) -> Result<Vec<u8>,
 
 #[cfg(test)]
 mod tests {
-    use super::{AegisEncryptedSlot, calc_master_key, get_params};
+    use super::{AegisEncryptedDatabase, AegisEncryptedSlot, calc_master_key, get_params};
 
     fn slot_from_json(json: &str) -> AegisEncryptedSlot {
         serde_json::from_str(json).expect("Invalid test slot JSON")
+    }
+
+    #[test]
+    fn decrypt_with_no_usable_slot_returns_error() {
+        // The only type-1 slot is malformed (missing scrypt parameters), so no
+        // master key can be derived and decrypt must fail gracefully.
+        let database: AegisEncryptedDatabase = serde_json::from_str(
+            r#"{
+                "version": 1,
+                "header": {
+                    "slots": [
+                        {
+                            "type": 1,
+                            "key": "00",
+                            "key_params": {"nonce": "00", "tag": "00"},
+                            "salt": "00"
+                        }
+                    ],
+                    "params": {"nonce": "00", "tag": "00"}
+                },
+                "db": "AAAA"
+            }"#,
+        )
+        .expect("Invalid test database JSON");
+
+        let result = database.decrypt("password");
+        assert_eq!(Err("Failed to derive master key".to_string()), result);
     }
 
     #[test]
