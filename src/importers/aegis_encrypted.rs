@@ -101,12 +101,20 @@ fn get_master_key(aegis_encrypted: &AegisEncryptedDatabase, password: &str) -> O
 }
 
 fn map_results(decrypted_db: Vec<u8>) -> Result<Vec<OTPElement>, String> {
-    let json = String::from_utf8(decrypted_db)
-        .map_err(|e| format!("Failed to decode from utf-8 bytes: {e:?}"))?;
+    let mut json = match String::from_utf8(decrypted_db) {
+        Ok(json) => json,
+        Err(e) => {
+            let error = format!("Failed to decode from utf-8 bytes: {:?}", e.utf8_error());
+            e.into_bytes().zeroize();
+            return Err(error);
+        }
+    };
 
-    serde_json::from_str::<AegisDb>(json.as_str())
+    let result = serde_json::from_str::<AegisDb>(json.as_str())
         .map_err(|e| e.to_string())
-        .and_then(TryInto::try_into)
+        .and_then(TryInto::try_into);
+    json.zeroize();
+    result
 }
 
 fn get_params(slot: &AegisEncryptedSlot) -> Result<Params, String> {
