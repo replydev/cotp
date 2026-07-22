@@ -18,6 +18,20 @@ mod cli_integration_test {
     }
 
     #[test]
+    fn test_delete_without_selector_is_rejected() {
+        // Arrange / Act: no --index, --issuer or --label is provided, so clap
+        // must reject the invocation instead of letting the matcher fall
+        // through to an empty-string match deleting the first element.
+        let mut command = cargo_bin_cmd!("cotp");
+        let assertion = command.arg("delete").assert();
+
+        // Assert
+        assertion
+            .failure()
+            .stderr(is_match("required arguments were not provided").unwrap());
+    }
+
+    #[test]
     fn test_help_subcommand() {
         // Arrange / Act
         let mut command = cargo_bin_cmd!("cotp");
