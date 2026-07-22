@@ -27,8 +27,9 @@ fn ssh_clipboard(content: &str) -> bool {
     env_var_set("SSH_CONNECTION")
         // We do not use copypasta_ext::osc52 module because we have enabled terminal raw mode, so we print with crossterm utilities
         // Check https://github.com/timvisee/rust-clipboard-ext/blob/371df19d2f961882a21c957f396d1e24548d1f28/src/osc52.rs#L92
+        // Write to stderr: the TUI owns stderr, while stdout must stay clean for piping
         && crossterm::execute!(
-            io::stdout(),
+            io::stderr(),
             Print(format!(
                 "\x1B]52;c;{}\x07",
                 general_purpose::STANDARD.encode(content)
