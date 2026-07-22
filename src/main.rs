@@ -1,7 +1,6 @@
 #![forbid(unsafe_code)]
 use arguments::{CotpArgs, args_parser};
 use clap::Parser;
-use eyre::eyre;
 use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
 use interface::handlers::handle_key_events;
@@ -11,6 +10,7 @@ use path::init_path;
 use ratatui::Terminal;
 use ratatui::prelude::CrosstermBackend;
 use reading::{ReadResult, get_elements_from_input, get_elements_from_stdin};
+use std::process::ExitCode;
 use std::{io, vec};
 use zeroize::Zeroize;
 
@@ -28,36 +28,32 @@ mod utils;
 fn init(args: &CotpArgs) -> eyre::Result<ReadResult> {
     init_path(args);
 
-    match utils::init_app() {
-        Ok(first_run) => {
-            if first_run {
-                // Let's initialize the database file
-                let mut pw = utils::verified_password("Choose a password: ", 8);
-                let mut database = OTPDatabase {
-                    version: CURRENT_DATABASE_VERSION,
-                    elements: vec![],
-                    ..Default::default()
-                };
-                let save_result = database.save_with_pw(&pw);
-                pw.zeroize();
-                save_result.map(|(key, salt)| (database, key, salt.to_vec()))
-            } else if args.password_from_stdin {
-                get_elements_from_stdin()
-            } else {
-                get_elements_from_input()
-            }
-        }
-        Err(()) => Err(eyre!("An error occurred during database creation")),
+    let first_run = utils::init_app()?;
+    if first_run {
+        // Let's initialize the database file
+        let mut pw = utils::try_verified_password("Choose a password: ", 8)?;
+        let mut database = OTPDatabase {
+            version: CURRENT_DATABASE_VERSION,
+            elements: vec![],
+            ..Default::default()
+        };
+        let save_result = database.save_with_pw(&pw);
+        pw.zeroize();
+        save_result.map(|(key, salt)| (database, key, salt.to_vec()))
+    } else if args.password_from_stdin {
+        get_elements_from_stdin()
+    } else {
+        get_elements_from_input()
     }
 }
 
-fn main() -> AppResult<()> {
+fn main() -> ExitCode {
     let cotp_args: CotpArgs = CotpArgs::parse();
     let (database, mut key, salt) = match init(&cotp_args) {
         Ok(v) => v,
         Err(e) => {
-            println!("{e}");
-            std::process::exit(-1);
+            eprintln!("An error occurred: {e}");
+            return ExitCode::from(1);
         }
     };
 
@@ -66,26 +62,26 @@ fn main() -> AppResult<()> {
         Err(e) => {
             eprintln!("An error occurred: {e}");
             key.zeroize();
-            std::process::exit(-2)
+            return ExitCode::from(2);
         }
     };
 
-    let error_code = if reowned_database.is_modified() {
+    let exit_code = if reowned_database.is_modified() {
         match reowned_database.save(&key, &salt) {
             Ok(()) => {
                 println!("Modifications have been persisted");
-                0
+                ExitCode::SUCCESS
             }
             _ => {
                 eprintln!("An error occurred during database overwriting");
-                -1
+                ExitCode::from(1)
             }
         }
     } else {
-        0
+        ExitCode::SUCCESS
     };
     key.zeroize();
-    std::process::exit(error_code)
+    exit_code
 }
 
 fn dashboard(mut database: OTPDatabase) -> AppResult<OTPDatabase> {
@@ -110,11 +106,6 @@ fn dashboard(mut database: OTPDatabase) -> AppResult<OTPDatabase> {
             match tui.events.next()? {
                 Event::Tick => app.tick(false),
                 Event::Key(key_event) => handle_key_events(key_event, &mut app),
-                Event::Mouse(())
-                | Event::Resize((), ())
-                | Event::FocusGained()
-                | Event::FocusLost()
-                | Event::Paste(()) => {}
             }
         }
 

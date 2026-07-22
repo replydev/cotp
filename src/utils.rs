@@ -1,11 +1,12 @@
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use eyre::eyre;
 use zeroize::Zeroize;
 
 use crate::path::DATABASE_PATH;
 
-pub fn init_app() -> Result<bool, ()> {
+pub fn init_app() -> eyre::Result<bool> {
     let db_path = DATABASE_PATH.get().unwrap(); // Safe to unwrap because we initialize
 
     // Decide whether this is a first run from the database file itself: relying on
@@ -25,11 +26,10 @@ pub fn init_app() -> Result<bool, ()> {
     if !db_dir.exists()
         && let Err(e) = std::fs::create_dir_all(db_dir)
     {
-        eprintln!(
+        return Err(eyre!(
             "Cannot create the database directory {}: {e}",
             db_dir.display()
-        );
-        return Err(());
+        ));
     }
     Ok(true)
 }
@@ -45,27 +45,11 @@ pub fn percentage() -> u16 {
     (millis_before_next_step() * 100 / 30000) as u16
 }
 
-pub fn password(message: &str, minimum_length: usize) -> String {
-    try_password(message, minimum_length).unwrap_or_else(exit_on_prompt_error)
-}
-
-pub fn verified_password(message: &str, minimum_length: usize) -> String {
-    try_verified_password(message, minimum_length).unwrap_or_else(exit_on_prompt_error)
-}
-
-/// Reading the password can fail (e.g. stdin is not a TTY): print a clear
-/// message and exit instead of panicking with a backtrace.
+/// Prompts for a password of at least `minimum_length` characters.
 ///
-/// The String-returning wrappers above are kept because their callers
-/// (main.rs, passwd.rs, reading.rs, aegis_encrypted.rs) expect an infallible
-/// signature; they should eventually be migrated to the Result-returning
-/// variants.
-fn exit_on_prompt_error(error: std::io::Error) -> String {
-    eprintln!("Cannot read the password: {error}");
-    std::process::exit(-1);
-}
-
-fn try_password(message: &str, minimum_length: usize) -> std::io::Result<String> {
+/// Reading the password can fail (e.g. stdin is not a TTY): the error is
+/// propagated to the caller instead of exiting the process.
+pub fn try_password(message: &str, minimum_length: usize) -> std::io::Result<String> {
     loop {
         let mut password = rpassword::prompt_password(message)?;
         if password.chars().count() < minimum_length {
@@ -77,7 +61,9 @@ fn try_password(message: &str, minimum_length: usize) -> std::io::Result<String>
     }
 }
 
-fn try_verified_password(message: &str, minimum_length: usize) -> std::io::Result<String> {
+/// Like [`try_password`], but asks the user to retype the password until both
+/// entries match.
+pub fn try_verified_password(message: &str, minimum_length: usize) -> std::io::Result<String> {
     loop {
         let mut password = try_password(message, minimum_length)?;
         let mut verify_password = match rpassword::prompt_password("Retype the same password: ") {

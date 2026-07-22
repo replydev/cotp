@@ -128,7 +128,7 @@ fn import_aegis_encrypted(path: PathBuf) -> eyre::Result<Vec<OTPElement>> {
         )
     })?;
 
-    let mut password = utils::password("Insert your Aegis password: ", 0);
+    let mut password = utils::try_password("Insert your Aegis password: ", 0)?;
     let result = encrypted.decrypt(password.as_str());
     password.zeroize();
 

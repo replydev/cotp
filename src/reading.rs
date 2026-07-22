@@ -10,7 +10,7 @@ use zeroize::Zeroize;
 pub type ReadResult = (OTPDatabase, Vec<u8>, Vec<u8>);
 
 pub fn get_elements_from_input() -> eyre::Result<ReadResult> {
-    let pw = utils::password("Password: ", 8);
+    let pw = utils::try_password("Password: ", 8)?;
     get_elements_with_password(pw)
 }
 
