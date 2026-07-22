@@ -52,7 +52,9 @@ fn main() -> ExitCode {
     let (database, mut key, salt) = match init(&cotp_args) {
         Ok(v) => v,
         Err(e) => {
-            eprintln!("An error occurred: {e}");
+            // "{e:#}" prints the whole eyre error chain, e.g.
+            // "outer context: root cause", keeping the root cause visible.
+            eprintln!("An error occurred: {e:#}");
             return ExitCode::from(1);
         }
     };
@@ -60,7 +62,7 @@ fn main() -> ExitCode {
     let mut reowned_database = match args_parser(cotp_args, database) {
         Ok(d) => d,
         Err(e) => {
-            eprintln!("An error occurred: {e}");
+            eprintln!("An error occurred: {e:#}");
             key.zeroize();
             return ExitCode::from(2);
         }

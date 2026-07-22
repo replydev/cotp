@@ -71,10 +71,10 @@ impl AuthyExportedJsonElement {
 }
 
 impl TryFrom<AuthyExportedJsonElement> for OTPElement {
-    type Error = String;
+    type Error = eyre::Report;
 
     fn try_from(input: AuthyExportedJsonElement) -> Result<Self, Self::Error> {
-        let type_ = OTPType::try_from(input.get_type().as_str()).map_err(|e| e.to_string())?;
+        let type_ = OTPType::try_from(input.get_type().as_str())?;
         let counter: Option<u64> = (type_ == OTPType::Hotp).then_some(0);
         let digits = input.get_digits();
         Ok(OTPElement {
@@ -92,7 +92,7 @@ impl TryFrom<AuthyExportedJsonElement> for OTPElement {
 }
 
 impl TryFrom<AuthyExportedList> for Vec<OTPElement> {
-    type Error = String;
+    type Error = eyre::Report;
 
     fn try_from(exported_list: AuthyExportedList) -> Result<Self, Self::Error> {
         exported_list.0.into_iter().map(TryInto::try_into).collect()

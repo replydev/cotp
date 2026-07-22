@@ -4,6 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use eyre::eyre;
 use serde::Serialize;
 use zeroize::Zeroize;
 
@@ -11,17 +12,17 @@ pub mod andotp;
 pub mod freeotp_plus;
 pub mod otp_uri;
 
-pub fn do_export<T>(to_be_saved: &T, exported_path: PathBuf) -> Result<PathBuf, String>
+pub fn do_export<T>(to_be_saved: &T, exported_path: PathBuf) -> eyre::Result<PathBuf>
 where
     T: ?Sized + Serialize,
 {
     let mut contents = match serde_json::to_string(to_be_saved) {
         Ok(contents) => contents,
-        Err(e) => return Err(format!("{e:?}")),
+        Err(e) => return Err(eyre!("Failed to serialize the export: {e}")),
     };
     if contents == "[]" {
         contents.zeroize();
-        return Err("No contents to export, skipping...".to_owned());
+        return Err(eyre!("No contents to export, skipping..."));
     }
     let write_result = write_secret_file(&exported_path, contents.as_bytes());
     contents.zeroize();
@@ -32,7 +33,7 @@ where
             );
             Ok(exported_path)
         }
-        Err(e) => Err(format!(
+        Err(e) => Err(eyre!(
             "Cannot export to file {}: {e}",
             exported_path.display()
         )),
@@ -64,7 +65,12 @@ mod tests {
             std::path::PathBuf::from("/nonexistent-dir/never/created/export.json"),
         );
         assert!(result.is_err());
-        assert!(result.unwrap_err().starts_with("Cannot export to file"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .starts_with("Cannot export to file")
+        );
     }
 
     #[test]
@@ -72,8 +78,8 @@ mod tests {
         let empty: Vec<String> = vec![];
         let result = do_export(&empty, std::path::PathBuf::from("unused.json"));
         assert_eq!(
-            result.unwrap_err(),
-            "No contents to export, skipping...".to_owned()
+            result.unwrap_err().to_string(),
+            "No contents to export, skipping..."
         );
     }
 

@@ -15,12 +15,11 @@ struct ConvertedJson {
 }
 
 impl TryFrom<ConvertedJson> for OTPElement {
-    type Error = String;
+    type Error = eyre::Report;
 
     fn try_from(converted_json: ConvertedJson) -> Result<Self, Self::Error> {
-        let type_ = OTPType::try_from(converted_json.type_.as_str()).map_err(|e| e.to_string())?;
-        let algorithm =
-            OTPAlgorithm::try_from(converted_json.algorithm.as_str()).map_err(|e| e.to_string())?;
+        let type_ = OTPType::try_from(converted_json.type_.as_str())?;
+        let algorithm = OTPAlgorithm::try_from(converted_json.algorithm.as_str())?;
         let counter: Option<u64> = (type_ == OTPType::Hotp).then_some(converted_json.counter);
         Ok(OTPElement {
             secret: converted_json.secret,
@@ -41,7 +40,7 @@ impl TryFrom<ConvertedJson> for OTPElement {
 pub struct ConvertedJsonList(Vec<ConvertedJson>);
 
 impl TryFrom<ConvertedJsonList> for Vec<OTPElement> {
-    type Error = String;
+    type Error = eyre::Report;
     fn try_from(value: ConvertedJsonList) -> Result<Self, Self::Error> {
         value.0.into_iter().map(TryInto::try_into).collect()
     }
@@ -67,9 +66,9 @@ mod tests {
         ]"#;
 
         let deserialized: ConvertedJsonList = serde_json::from_str(json).unwrap();
-        let result: Result<Vec<OTPElement>, String> = deserialized.try_into();
+        let result: eyre::Result<Vec<OTPElement>> = deserialized.try_into();
 
-        let error = result.unwrap_err();
+        let error = result.unwrap_err().to_string();
         assert!(error.contains("Unknown OTP type"));
         assert!(error.contains("OCRA"));
     }

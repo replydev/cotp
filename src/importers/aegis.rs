@@ -26,12 +26,11 @@ struct AegisElement {
 }
 
 impl TryFrom<AegisElement> for OTPElement {
-    type Error = String;
+    type Error = eyre::Report;
 
     fn try_from(value: AegisElement) -> Result<Self, Self::Error> {
-        let type_ = OTPType::try_from(value.r#type.as_str()).map_err(|e| e.to_string())?;
-        let algorithm =
-            OTPAlgorithm::try_from(value.info.algo.as_str()).map_err(|e| e.to_string())?;
+        let type_ = OTPType::try_from(value.r#type.as_str())?;
+        let algorithm = OTPAlgorithm::try_from(value.info.algo.as_str())?;
         Ok(OTPElement {
             secret: value.info.secret,
             issuer: value.issuer,
@@ -47,7 +46,7 @@ impl TryFrom<AegisElement> for OTPElement {
 }
 
 impl TryFrom<AegisDb> for Vec<OTPElement> {
-    type Error = String;
+    type Error = eyre::Report;
 
     fn try_from(aegis_db: AegisDb) -> Result<Self, Self::Error> {
         aegis_db
@@ -59,7 +58,7 @@ impl TryFrom<AegisDb> for Vec<OTPElement> {
 }
 
 impl TryFrom<AegisJson> for Vec<OTPElement> {
-    type Error = String;
+    type Error = eyre::Report;
 
     fn try_from(aegis_json: AegisJson) -> Result<Self, Self::Error> {
         aegis_json.db.try_into()

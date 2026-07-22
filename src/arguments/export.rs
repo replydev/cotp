@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::Args;
-use eyre::eyre;
+use eyre::WrapErr;
 
 use crate::{
     exporters::{do_export, otp_uri::OtpUriList},
@@ -109,6 +109,6 @@ impl SubcommandExecutor for ExportArgs {
             );
             database
         })
-        .map_err(|e| eyre!("An error occurred while exporting database: {e}"))
+        .wrap_err("An error occurred while exporting database")
     }
 }

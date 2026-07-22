@@ -1,6 +1,7 @@
 use aes_gcm::aead::{Aead, Nonce};
 use aes_gcm::{Aes256Gcm, KeyInit}; // Or `Aes128Gcm`
 use data_encoding::{BASE64, DecodeError, HEXLOWER_PERMISSIVE};
+use eyre::eyre;
 use serde::Deserialize;
 use zeroize::Zeroize;
 
@@ -44,38 +45,38 @@ struct AegisEncryptedSlot {
 impl AegisEncryptedDatabase {
     /// Decrypts the backup contents using the given password and maps the
     /// entries into `OTPElement` values.
-    pub fn decrypt(self, password: &str) -> Result<Vec<OTPElement>, String> {
+    pub fn decrypt(self, password: &str) -> eyre::Result<Vec<OTPElement>> {
         let master_key: Option<Vec<u8>> = get_master_key(&self, password);
 
         match master_key {
             Some(mut master_key) => {
                 let content = BASE64
                     .decode(self.db.as_bytes())
-                    .map_err(|e| format!("Error during base64 decoding: {e:?}"))?;
+                    .map_err(|e| eyre!("Error during base64 decoding: {e}"))?;
 
                 let cipher = Aes256Gcm::new_from_slice(master_key.as_slice())
-                    .map_err(|e| format!("Invalid master key length: {e:?}"))?;
+                    .map_err(|e| eyre!("Invalid master key length: {e}"))?;
                 master_key.zeroize();
 
                 let nonce_bytes = decode_hex(&self.header.params.nonce)
-                    .map_err(|e| format!("Failed to parse hex nonce: {e:?}"))?;
+                    .map_err(|e| eyre!("Failed to parse hex nonce: {e}"))?;
                 let nonce = Nonce::<Aes256Gcm>::try_from(nonce_bytes.as_slice())
-                    .map_err(|e| format!("Invalid nonce length: {e:?}"))?;
+                    .map_err(|e| eyre!("Invalid nonce length: {e}"))?;
 
                 let payload = [
                     content,
                     decode_hex(&self.header.params.tag)
-                        .map_err(|e| format!("Failed to parse hex tag: {e:?}"))?,
+                        .map_err(|e| eyre!("Failed to parse hex tag: {e}"))?,
                 ]
                 .concat();
 
                 let decrypted_db = cipher
                     .decrypt(&nonce, payload.as_slice())
-                    .map_err(|e| format!("Failed to derive master key: {e:?}"))?;
+                    .map_err(|e| eyre!("Failed to derive master key: {e}"))?;
 
                 map_results(decrypted_db)
             }
-            None => Err("Failed to derive master key".to_string()),
+            None => Err(eyre!("Failed to derive master key")),
         }
     }
 }
@@ -105,41 +106,50 @@ fn get_master_key(aegis_encrypted: &AegisEncryptedDatabase, password: &str) -> O
     master_key
 }
 
-fn map_results(decrypted_db: Vec<u8>) -> Result<Vec<OTPElement>, String> {
+fn map_results(decrypted_db: Vec<u8>) -> eyre::Result<Vec<OTPElement>> {
     let mut json = match String::from_utf8(decrypted_db) {
         Ok(json) => json,
         Err(e) => {
-            let error = format!("Failed to decode from utf-8 bytes: {:?}", e.utf8_error());
+            let error = eyre!("Failed to decode from utf-8 bytes: {}", e.utf8_error());
             e.into_bytes().zeroize();
             return Err(error);
         }
     };
 
     let result = serde_json::from_str::<AegisDb>(json.as_str())
-        .map_err(|e| e.to_string())
+        .map_err(eyre::Report::from)
         .and_then(TryInto::try_into);
     json.zeroize();
     result
 }
 
-fn get_params(slot: &AegisEncryptedSlot) -> Result<Params, String> {
-    let n = slot.n.ok_or("Missing scrypt parameter n in backup slot")?;
-    let p = slot.p.ok_or("Missing scrypt parameter p in backup slot")?;
-    let r = slot.r.ok_or("Missing scrypt parameter r in backup slot")?;
+fn get_params(slot: &AegisEncryptedSlot) -> eyre::Result<Params> {
+    let n = slot
+        .n
+        .ok_or(eyre!("Missing scrypt parameter n in backup slot"))?;
+    let p = slot
+        .p
+        .ok_or(eyre!("Missing scrypt parameter p in backup slot"))?;
+    let r = slot
+        .r
+        .ok_or(eyre!("Missing scrypt parameter r in backup slot"))?;
 
     if !n.is_power_of_two() {
-        return Err(format!(
+        return Err(eyre!(
             "Invalid scrypt parameter n: {n} is not a power of two"
         ));
     }
 
     Params::new(n.trailing_zeros() as u8, r, p)
-        .map_err(|e| format!("Error during scrypt params creation: {e:?}"))
+        .map_err(|e| eyre!("Error during scrypt params creation: {e}"))
 }
 
-fn calc_master_key(slot: &AegisEncryptedSlot, password: &str) -> Result<Vec<u8>, String> {
-    let salt_hex = slot.salt.as_ref().ok_or("Missing salt in backup slot")?;
-    let salt = decode_hex(salt_hex).map_err(|e| format!("Failed to parse hex salt: {e:?}"))?;
+fn calc_master_key(slot: &AegisEncryptedSlot, password: &str) -> eyre::Result<Vec<u8>> {
+    let salt_hex = slot
+        .salt
+        .as_ref()
+        .ok_or(eyre!("Missing salt in backup slot"))?;
+    let salt = decode_hex(salt_hex).map_err(|e| eyre!("Failed to parse hex salt: {e}"))?;
     let mut output: [u8; 32] = [0; 32];
     let params = get_params(slot)?;
 
@@ -149,26 +159,26 @@ fn calc_master_key(slot: &AegisEncryptedSlot, password: &str) -> Result<Vec<u8>,
         &params,
         output.as_mut_slice(),
     ) {
-        return Err(format!("Error during scrypt key derivation: {e:?}"));
+        return Err(eyre!("Error during scrypt key derivation: {e}"));
     }
     let cipher = Aes256Gcm::new_from_slice(output.as_slice())
-        .map_err(|e| format!("Invalid derived key length: {e:?}"))?;
+        .map_err(|e| eyre!("Invalid derived key length: {e}"))?;
     output.zeroize();
 
     let cipher_text = [
-        decode_hex(&slot.key).map_err(|e| format!("Failed to parse hex key: {e:?}"))?,
-        decode_hex(&slot.key_params.tag).map_err(|e| format!("Failed to parse hex tag: {e:?}"))?,
+        decode_hex(&slot.key).map_err(|e| eyre!("Failed to parse hex key: {e}"))?,
+        decode_hex(&slot.key_params.tag).map_err(|e| eyre!("Failed to parse hex tag: {e}"))?,
     ]
     .concat();
 
-    let nonce_bytes = decode_hex(&slot.key_params.nonce)
-        .map_err(|e| format!("Failed to parse hex nonce: {e:?}"))?;
+    let nonce_bytes =
+        decode_hex(&slot.key_params.nonce).map_err(|e| eyre!("Failed to parse hex nonce: {e}"))?;
     let nonce = Nonce::<Aes256Gcm>::try_from(nonce_bytes.as_slice())
-        .map_err(|e| format!("Invalid nonce length: {e:?}"))?;
+        .map_err(|e| eyre!("Invalid nonce length: {e}"))?;
 
     cipher
         .decrypt(&nonce, cipher_text.as_slice())
-        .map_err(|e| format!("Failed to derive master key: {e:?}"))
+        .map_err(|e| eyre!("Failed to derive master key: {e}"))
 }
 
 #[cfg(test)]
@@ -203,7 +213,10 @@ mod tests {
         .expect("Invalid test database JSON");
 
         let result = database.decrypt("password");
-        assert_eq!(Err("Failed to derive master key".to_string()), result);
+        assert_eq!(
+            "Failed to derive master key",
+            result.unwrap_err().to_string()
+        );
     }
 
     #[test]
@@ -219,7 +232,12 @@ mod tests {
 
         let result = calc_master_key(&slot, "password");
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Missing scrypt parameter"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Missing scrypt parameter")
+        );
     }
 
     #[test]
@@ -237,7 +255,7 @@ mod tests {
 
         let result = calc_master_key(&slot, "password");
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Missing salt"));
+        assert!(result.unwrap_err().to_string().contains("Missing salt"));
     }
 
     #[test]
@@ -256,7 +274,12 @@ mod tests {
 
         let result = get_params(&slot);
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("not a power of two"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("not a power of two")
+        );
     }
 
     #[test]
@@ -275,7 +298,12 @@ mod tests {
 
         let result = calc_master_key(&slot, "password");
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Failed to parse hex salt"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Failed to parse hex salt")
+        );
     }
 
     #[test]
@@ -294,6 +322,11 @@ mod tests {
 
         let result = calc_master_key(&slot, "password");
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Failed to parse hex key"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Failed to parse hex key")
+        );
     }
 }

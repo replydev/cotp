@@ -45,11 +45,11 @@ pub struct FreeOTPElement {
 }
 
 impl TryFrom<FreeOTPElement> for OTPElement {
-    type Error = String;
+    type Error = eyre::Report;
 
     fn try_from(token: FreeOTPElement) -> Result<Self, Self::Error> {
-        let type_ = OTPType::try_from(token.r#type.as_str()).map_err(|e| e.to_string())?;
-        let algorithm = OTPAlgorithm::try_from(token.algo.as_str()).map_err(|e| e.to_string())?;
+        let type_ = OTPType::try_from(token.r#type.as_str())?;
+        let algorithm = OTPAlgorithm::try_from(token.algo.as_str())?;
         let counter: Option<u64> = (type_ == OTPType::Hotp).then_some(token.counter);
         Ok(OTPElement {
             counter,
@@ -66,7 +66,7 @@ impl TryFrom<FreeOTPElement> for OTPElement {
 }
 
 impl TryFrom<FreeOTPPlusJson> for Vec<OTPElement> {
-    type Error = String;
+    type Error = eyre::Report;
     fn try_from(freeotp: FreeOTPPlusJson) -> Result<Self, Self::Error> {
         freeotp.tokens.into_iter().map(TryInto::try_into).collect()
     }

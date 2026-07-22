@@ -146,7 +146,7 @@ impl SubcommandExecutor for ImportArgs {
             ImportFormat::OtpUri => import_from_path::<OtpUriList>(path),
         };
 
-        let elements = result.map_err(|e| eyre!("{e}"))?;
+        let elements = result?;
 
         database.add_all(elements);
         Ok(database)
@@ -163,8 +163,7 @@ fn import_aegis_encrypted(path: PathBuf) -> eyre::Result<Vec<OTPElement>> {
             Please check the file you are trying to import. For further information please check these guidelines:
             https://github.com/replydev/cotp?tab=readme-ov-file#migration-from-other-apps
 
-            Specific error: {:?}",
-            e
+            Specific error: {e}"
         )
     })?;
 
@@ -172,5 +171,5 @@ fn import_aegis_encrypted(path: PathBuf) -> eyre::Result<Vec<OTPElement>> {
     let result = encrypted.decrypt(password.as_str());
     password.zeroize();
 
-    result.map_err(|e| eyre!("{e}"))
+    result
 }
