@@ -8,7 +8,8 @@ use crate::{
     importers::{
         aegis::AegisJson, aegis_encrypted::AegisEncryptedDatabase,
         authy_remote_debug::AuthyExportedList, converted::ConvertedJsonList,
-        freeotp_plus::FreeOTPPlusJson, importer::import_from_path,
+        freeotp_plus::FreeOTPPlusJson, google_authenticator::import_from_google_authenticator,
+        importer::import_from_path,
     },
     otp::otp_element::{OTPDatabase, OTPElement},
 };
@@ -52,7 +53,8 @@ pub struct BackupType {
     #[arg(short = 'r', long)]
     pub freeotp: bool,
 
-    /// Import from Google Authenticator backup
+    /// Import from Google Authenticator: a file containing one or more
+    /// `otpauth-migration://` URIs obtained from the "Export accounts" QR codes
     #[arg(short, long = "google-authenticator")]
     pub google_authenticator: bool,
 
@@ -91,11 +93,9 @@ impl SubcommandExecutor for ImportArgs {
             import_from_path::<FreeOTPPlusJson>(path)
         } else if backup_type.authy_exported {
             import_from_path::<AuthyExportedList>(path)
-        } else if backup_type.google_authenticator
-            || backup_type.authy
-            || backup_type.microsoft_authenticator
-            || backup_type.freeotp
-        {
+        } else if backup_type.google_authenticator {
+            import_from_google_authenticator(path)
+        } else if backup_type.authy || backup_type.microsoft_authenticator || backup_type.freeotp {
             import_from_path::<ConvertedJsonList>(path)
         } else if backup_type.otp_uri {
             import_from_path::<OtpUriList>(path)
