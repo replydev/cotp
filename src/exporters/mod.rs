@@ -1,4 +1,8 @@
-use std::{fs::File, io::Write, path::PathBuf};
+use std::{
+    fs::OpenOptions,
+    io::{self, Write},
+    path::{Path, PathBuf},
+};
 
 use serde::Serialize;
 use zeroize::Zeroize;
@@ -11,18 +15,79 @@ pub fn do_export<T>(to_be_saved: &T, exported_path: PathBuf) -> Result<PathBuf, 
 where
     T: ?Sized + Serialize,
 {
-    match serde_json::to_string(to_be_saved) {
-        Ok(mut contents) => {
-            if contents == "[]" {
-                return Err("No contents to export, skipping...".to_owned());
-            }
-            let mut file = File::create(&exported_path).expect("Cannot create file");
-            let contents_bytes = contents.as_bytes();
-            file.write_all(contents_bytes)
-                .expect("Failed to write contents");
-            contents.zeroize();
+    let mut contents = match serde_json::to_string(to_be_saved) {
+        Ok(contents) => contents,
+        Err(e) => return Err(format!("{e:?}")),
+    };
+    if contents == "[]" {
+        contents.zeroize();
+        return Err("No contents to export, skipping...".to_owned());
+    }
+    let write_result = write_secret_file(&exported_path, contents.as_bytes());
+    contents.zeroize();
+    match write_result {
+        Ok(()) => {
+            eprintln!(
+                "Warning: the exported file contains your OTP secrets in PLAIN TEXT. Keep it safe and delete it as soon as it is no longer needed."
+            );
             Ok(exported_path)
         }
-        Err(e) => Err(format!("{e:?}")),
+        Err(e) => Err(format!(
+            "Cannot export to file {}: {e}",
+            exported_path.display()
+        )),
+    }
+}
+
+/// Writes the plain text export, creating the file with owner-only permissions
+/// (0600) on Unix so other local users cannot read the exported secrets.
+fn write_secret_file(path: &Path, contents: &[u8]) -> io::Result<()> {
+    let mut options = OpenOptions::new();
+    options.write(true).create(true).truncate(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    let mut file = options.open(path)?;
+    file.write_all(contents)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::do_export;
+
+    #[test]
+    fn export_error_is_propagated_instead_of_panicking() {
+        let result = do_export(
+            &vec!["some content"],
+            std::path::PathBuf::from("/nonexistent-dir/never/created/export.json"),
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().starts_with("Cannot export to file"));
+    }
+
+    #[test]
+    fn empty_export_is_skipped() {
+        let empty: Vec<String> = vec![];
+        let result = do_export(&empty, std::path::PathBuf::from("unused.json"));
+        assert_eq!(
+            result.unwrap_err(),
+            "No contents to export, skipping...".to_owned()
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn exported_file_is_created_with_owner_only_permissions() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let dir = std::env::temp_dir().join(format!("cotp-export-test-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("export.json");
+        let exported = do_export(&vec!["secret"], path.clone()).unwrap();
+        let mode = std::fs::metadata(&exported).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode, 0o600);
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 }
