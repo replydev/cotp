@@ -210,7 +210,6 @@ impl OTPElement {
                     pin.as_str(),
                     self.period,
                     self.digits as usize,
-                    self.algorithm,
                 ),
                 None => Err(OtpError::MissingPin),
             },
