@@ -51,7 +51,8 @@ impl SubcommandExecutor for EditArgs {
     fn run_command(self, mut database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
         let secret = self
             .change_secret
-            .then(|| rpassword::prompt_password("Insert the secret: ").unwrap());
+            .then(|| rpassword::prompt_password("Insert the secret: "))
+            .transpose()?;
 
         // User provides row number from dashboard which is equal to the array index plus one
         let index = self.index;

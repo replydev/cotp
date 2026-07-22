@@ -71,7 +71,7 @@ pub struct AddArgs {
 impl SubcommandExecutor for AddArgs {
     fn run_command(self, mut database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
         let otp_element = if self.otp_uri {
-            let mut otp_uri = rpassword::prompt_password("Insert the otp uri: ").unwrap();
+            let mut otp_uri = rpassword::prompt_password("Insert the otp uri: ")?;
             let result = OTPElement::from_otp_uri(otp_uri.as_str());
             otp_uri.zeroize();
             result?

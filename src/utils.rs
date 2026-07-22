@@ -1,6 +1,8 @@
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use zeroize::Zeroize;
+
 use crate::path::DATABASE_PATH;
 
 pub fn init_app() -> Result<bool, ()> {
@@ -44,24 +46,54 @@ pub fn percentage() -> u16 {
 }
 
 pub fn password(message: &str, minimum_length: usize) -> String {
-    loop {
-        let password = rpassword::prompt_password(message).unwrap();
-        if password.chars().count() < minimum_length {
-            println!("Please insert a password with at least {minimum_length} digits.");
-            continue;
-        }
-        return password;
-    }
+    try_password(message, minimum_length).unwrap_or_else(exit_on_prompt_error)
 }
 
 pub fn verified_password(message: &str, minimum_length: usize) -> String {
+    try_verified_password(message, minimum_length).unwrap_or_else(exit_on_prompt_error)
+}
+
+/// Reading the password can fail (e.g. stdin is not a TTY): print a clear
+/// message and exit instead of panicking with a backtrace.
+///
+/// The String-returning wrappers above are kept because their callers
+/// (main.rs, passwd.rs, reading.rs, aegis_encrypted.rs) expect an infallible
+/// signature; they should eventually be migrated to the Result-returning
+/// variants.
+fn exit_on_prompt_error(error: std::io::Error) -> String {
+    eprintln!("Cannot read the password: {error}");
+    std::process::exit(-1);
+}
+
+fn try_password(message: &str, minimum_length: usize) -> std::io::Result<String> {
     loop {
-        let password = password(message, minimum_length);
-        let verify_password = rpassword::prompt_password("Retype the same password: ").unwrap();
-        if password != verify_password {
+        let mut password = rpassword::prompt_password(message)?;
+        if password.chars().count() < minimum_length {
+            password.zeroize();
+            println!("Please insert a password with at least {minimum_length} digits.");
+            continue;
+        }
+        return Ok(password);
+    }
+}
+
+fn try_verified_password(message: &str, minimum_length: usize) -> std::io::Result<String> {
+    loop {
+        let mut password = try_password(message, minimum_length)?;
+        let mut verify_password = match rpassword::prompt_password("Retype the same password: ") {
+            Ok(verify_password) => verify_password,
+            Err(e) => {
+                password.zeroize();
+                return Err(e);
+            }
+        };
+        let matching = password == verify_password;
+        verify_password.zeroize();
+        if !matching {
+            password.zeroize();
             println!("Passwords do not match");
             continue;
         }
-        return password;
+        return Ok(password);
     }
 }
