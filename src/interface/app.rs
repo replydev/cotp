@@ -70,7 +70,7 @@ impl<'a> App<'a> {
             focus: Focus::MainPage,
             popup: Popup {
                 text: String::new(),
-                action: PopupAction::EditOtp,
+                action: PopupAction::default(),
                 percent_x: 60,
                 percent_y: 20,
             },
