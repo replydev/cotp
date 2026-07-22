@@ -16,6 +16,7 @@ cargo test --locked --release        # tests in release mode (CI runs both)
 cargo test <name>                    # run a single test by substring match
 cargo fmt --all -- --check           # formatting check (CI gate)
 cargo clippy -- -D warnings          # lint; warnings are errors (CI gate)
+cargo clippy --all-targets -- -D warnings  # also lints tests; kept clean too
 ```
 
 CI (`.github/workflows/build.yml`) requires `cargo fmt`, `cargo clippy -D warnings`, and `cargo test` (debug + release) to pass across Linux/macOS/Windows. On Linux, building requires xcb dev libraries for clipboard support (see README "Other linux distributions").
@@ -41,25 +42,30 @@ commit-analyzer computes the next version, `ci/write_cargo_version.sh` writes it
 
 `main.rs` drives a fixed lifecycle for every invocation:
 
-1. `init()` — resolves the DB path, and either initializes a new encrypted database on first run (prompting for a password) or loads the existing one. Returns `ReadResult = (OTPDatabase, key, salt)`.
-2. `args_parser()` (`arguments/mod.rs`) — if a subcommand was given, dispatches to it; otherwise launches the interactive `dashboard()` (TUI). Each subcommand consumes the `OTPDatabase` and returns a (possibly modified) one.
-3. Back in `main()`, if `database.is_modified()` the database is re-encrypted and written to disk. The derived `key` is zeroized before exit.
+1. `init()` — resolves the DB path, and either initializes a new encrypted database on first run (prompting for a password) or loads the existing one via `storage::`. Returns `ReadResult = (OTPDatabase, key, salt)` (defined in `storage/mod.rs`).
+2. `args_parser()` (`arguments/mod.rs`) — if a subcommand was given, dispatches to it; otherwise launches the interactive `dashboard()` (TUI). Each subcommand consumes the `OTPDatabase` and returns a (possibly modified) one. Exit codes: 1 for init/save errors, 2 for subcommand errors.
+3. Back in `main()`, if `database.is_modified()` the database is re-encrypted and written to disk via `storage::save()`. The derived `key` is zeroized before exit.
 
-The `OTPDatabase` is passed by value through the command layer; mutations set a `needs_modification` flag (via `mark_modified()`) that gates the final save. Secrets and keys use `zeroize` throughout — preserve zeroization when touching password/key handling.
+The `OTPDatabase` is passed by value through the command layer; mutations set a private dirty flag (via `mark_modified()`/`clear_modified()`) that gates the final save — `mut_element()` deliberately does NOT mark, so callers mark only on real changes (no-op edits skip the rewrite). `storage::save()` clears the flag only after a successful write; this is also what makes `passwd` safe (it saves itself with a key from the new password, and the cleared flag stops `main()` from saving again with the old key). Secrets and keys use `zeroize` throughout — preserve zeroization when touching password/key handling.
 
 ## Key modules (`src/`)
 
-- **`arguments/`** — Clap subcommands (`add`, `edit`, `list`, `delete`, `import`, `export`, `extract`, `passwd`). Each implements the `SubcommandExecutor` trait (`fn run_command(self, db: OTPDatabase) -> Result<OTPDatabase>`), wired together with `enum_dispatch` on the `CotpSubcommands` enum. To add a subcommand: create the module, define an `Args` struct, implement `SubcommandExecutor`, and add a variant to `CotpSubcommands`.
-- **`otp/`** — core domain. `otp_element.rs` holds `OTPElement` and `OTPDatabase` (serialization, save/encrypt, migrations). `algorithms/` has one generator per scheme (`totp`, `hotp`, `motp`, `steam`, `yandex`). `otp_type.rs` / `otp_algorithm.rs` are the enums; `from_otp_uri.rs` parses `otpauth://` URIs.
+- **`arguments/`** — Clap subcommands (`add`, `edit`, `list`, `delete`, `import`, `export`, `extract`, `passwd`). Each implements the `SubcommandExecutor` trait (`fn run_command(self, db: OTPDatabase) -> Result<OTPDatabase>`), wired together with `enum_dispatch` on the `CotpSubcommands` enum. To add a subcommand: create the module, define an `Args` struct, implement `SubcommandExecutor`, and add a variant to `CotpSubcommands`. The mutually exclusive import/export format flags map to exhaustive internal enums (`ImportFormat` in `import.rs`, `ExportKind` in `export.rs`) — add new formats there. `extract` matches issuer/label with a hand-rolled `*`/`?` wildcard matcher (no regex/glob crate).
+- **`otp/`** — core domain. `otp_element.rs` holds `OTPElement` and `OTPDatabase`; the database is pure domain data (element accessors, dirty flag, sort) — persistence lives in `storage/`. `algorithms/` has one generator per scheme (`totp`, `hotp`, `motp`, `steam`, `yandex`); Yandex always uses HMAC-SHA256 regardless of the element's stored algorithm. `otp_type.rs` / `otp_algorithm.rs` are the enums, with `TryFrom<&str>` impls that reject unknown strings instead of defaulting; `from_otp_uri.rs` parses `otpauth://` URIs.
+- **`storage/`** — persistence layer. Load: `get_elements_from_input`/`get_elements_from_stdin` → `read_from_file` (password prompt, decrypt, legacy-v1 fallback). Save: `save(db, key, salt, path)` / `save_with_pw(db, password, path)` — runs `migrate()` on every save, encrypts, writes with 0600 permissions on unix, zeroizes the plaintext JSON, and clears the dirty flag only after a successful write.
 - **`crypto/`** — `cryptography.rs` does Argon2id key derivation (config constants at top of file) + XChaCha20Poly1305 authenticated encryption; also AES-GCM for decrypting Aegis encrypted backups. `encrypted_database.rs` is the on-disk envelope.
 - **`importers/`** — one module per source app. `importer.rs::import_from_path::<T>()` is the generic entry point: `T` must be `Deserialize + TryInto<Vec<OTPElement>>`. Import selection happens in `arguments/import.rs`. Some sources (Authy, Microsoft Authenticator, FreeOTP) are pre-converted by Python scripts to `ConvertedJsonList` first (see below); others deserialize natively. Google Authenticator is handled natively by `google_authenticator.rs`, which parses `otpauth-migration://` export URIs (base64 protobuf `MigrationPayload`, decoded with `prost` using hand-declared message structs — no `.proto`/`protoc` build step).
-- **`exporters/`** — `andotp`, `freeotp_plus`, `otp_uri`. `do_export::<T: Serialize>()` is the shared writer.
-- **`interface/`** — the ratatui/crossterm TUI. `app.rs` holds mutable `App` state; `ui.rs` renders; `event.rs` is the input event loop (250ms tick); `handlers/` route key events by focus (`main_window`, `popup`, `search_bar`). The dashboard runs on `io::stderr()` so stdout stays clean for piping.
+- **`exporters/`** — `andotp`, `freeotp_plus`, `otp_uri`. `do_export::<T: Serialize>()` is the shared writer (0600 permissions on unix).
+- **`interface/`** — the ratatui/crossterm TUI. `app.rs` holds mutable `App` state (including the cached rendered QR code); `ui.rs` owns the terminal lifecycle (`Tui`) and all rendering, as free functions taking `&mut App`; `event.rs` is the input event loop (250ms tick); `handlers/` route key events by focus (`main_window`, `popup`, `search_bar`). The dashboard runs on `io::stderr()` so stdout stays clean for piping.
+
+## Dependency notes
+
+Errors use plain `eyre` (not color-eyre). All base32/hex/base64 codecs go through `data-encoding` (no `hex`/`base64` crates). `ratatui` and `qrcode` are built with trimmed feature sets, and `url`'s IDNA backend is pinned to the small unicode-rs `idna_adapter` — keep this binary-size budget in mind when adding dependencies.
 
 ## Database format & migrations
 
 - Default path resolution (`path.rs`): `--database-path` arg > `COTP_DB_PATH` env > `./db.cotp` (portable / debug builds always) > `$XDG_DATA_HOME/cotp/db.cotp` (auto-migrated from legacy `$HOME/.cotp/db.cotp` if present). The path is a `OnceLock` set once at startup.
-- `CURRENT_DATABASE_VERSION` (in `otp_element.rs`) is the schema version. Legacy v1 was a bare `Vec<OTPElement>`; `read_from_file` falls back to parsing that and converts via `From<Vec<OTPElement>>`. Schema upgrades go in `otp/migrations/mod.rs` — add a `Migration { to_version, migration_function }` entry to `MIGRATIONS_LIST`; `migrate()` runs on every save.
+- `CURRENT_DATABASE_VERSION` (in `otp_element.rs`) is the schema version. Legacy v1 was a bare `Vec<OTPElement>`; `storage::read_from_file` falls back to parsing that and converts via `From<Vec<OTPElement>>`. Schema upgrades go in `otp/migrations/mod.rs` — add a `Migration { to_version, migration_function }` entry to `MIGRATIONS_LIST`; `migrate()` runs on every save (from `storage::save`).
 
 ## Python converters (`converters/`)
 
