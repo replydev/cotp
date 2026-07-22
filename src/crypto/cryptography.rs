@@ -18,7 +18,11 @@ const KEY_DERIVATION_CONFIG: Config = Config {
     secret: &[],
     ad: &[],
     hash_length: XCHACHA20_POLY1305_KEY_LENGTH as u32,
-    thread_mode: ThreadMode::Sequential,
+    // Parallel only changes the execution strategy: the derived key depends on
+    // the lane count (4), not on how many threads compute the lanes, so
+    // existing databases decrypt identically (see
+    // test_derived_key_unchanged_by_thread_mode).
+    thread_mode: ThreadMode::Parallel,
 };
 
 pub fn argon_derive_key(password_bytes: &[u8], salt: &[u8]) -> color_eyre::Result<Vec<u8>> {
@@ -99,6 +103,21 @@ mod tests {
         let (decrypted, _key, _salt) =
             decrypt_string(&serde_json::to_string(&encrypted).unwrap(), "pa$$w0rd").unwrap();
         assert_eq!(String::from("Secret data@#[]ò"), decrypted);
+    }
+
+    /// The expected value below was captured from the previous
+    /// `ThreadMode::Sequential` configuration. It must never change: the lane
+    /// count (4) is the Argon2 hash parameter, while the thread mode is only
+    /// the execution strategy, so switching to `ThreadMode::Parallel` must
+    /// derive the exact same key and keep existing databases decryptable.
+    #[test]
+    fn test_derived_key_unchanged_by_thread_mode() {
+        let key = argon_derive_key(b"pa$$w0rd", b"0123456789abcdef").unwrap();
+        let hex: String = key.iter().map(|b| format!("{b:02x}")).collect();
+        assert_eq!(
+            hex,
+            "1bae31857cc03a6fbb54f463a991e09e3294bdf3b8c44e4ddcec4ec1d7d6a4a7"
+        );
     }
 
     #[test]
