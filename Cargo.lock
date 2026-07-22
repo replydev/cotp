@@ -535,7 +535,6 @@ dependencies = [
  "dirs",
  "enum_dispatch",
  "getrandom 0.4.3",
- "globset",
  "hex",
  "hmac",
  "md-5",

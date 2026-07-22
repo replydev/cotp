@@ -54,7 +54,6 @@ url = "2.5.8"
 color-eyre = "0.6.5"
 enum_dispatch = "0.3.13"
 derive_builder = "0.20.2"
-globset = "0.4.19"
 prost = "0.14.4"
 
 [dev-dependencies]
