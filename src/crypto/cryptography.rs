@@ -125,7 +125,7 @@ mod tests {
         let corrupted =
             r#"{"version":1,"nonce":"!!!not-base64!!!","salt":"c2FsdA==","cipher":"Y2lwaGVy"}"#;
         let result = decrypt_string(corrupted, "pa$$w0rd");
-        let error = result.err().expect("corrupted nonce must not panic");
+        let error = result.expect_err("corrupted nonce must not panic");
         assert!(error.to_string().contains("database file is corrupted"));
         assert!(error.to_string().contains("nonce"));
     }
@@ -135,7 +135,7 @@ mod tests {
         let corrupted =
             r#"{"version":1,"nonce":"bm9uY2U=","salt":"c2FsdA==","cipher":"!!!not-base64!!!"}"#;
         let result = decrypt_string(corrupted, "pa$$w0rd");
-        let error = result.err().expect("corrupted cipher must not panic");
+        let error = result.expect_err("corrupted cipher must not panic");
         assert!(error.to_string().contains("database file is corrupted"));
         assert!(error.to_string().contains("cipher"));
     }
@@ -145,7 +145,7 @@ mod tests {
         let corrupted =
             r#"{"version":1,"nonce":"bm9uY2U=","salt":"!!!not-base64!!!","cipher":"Y2lwaGVy"}"#;
         let result = decrypt_string(corrupted, "pa$$w0rd");
-        let error = result.err().expect("corrupted salt must not panic");
+        let error = result.expect_err("corrupted salt must not panic");
         assert!(error.to_string().contains("database file is corrupted"));
         assert!(error.to_string().contains("salt"));
     }
