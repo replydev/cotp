@@ -1,5 +1,5 @@
-use color_eyre::eyre::{ErrReport, Result};
 use data_encoding::BASE32_NOPAD;
+use eyre::{ErrReport, Result};
 
 use crate::{
     importers::freeotp_plus::{FreeOTPElement, FreeOTPPlusJson},
@@ -10,7 +10,7 @@ impl TryFrom<&OTPDatabase> for FreeOTPPlusJson {
     type Error = ErrReport;
     fn try_from(otp_database: &OTPDatabase) -> Result<Self, Self::Error> {
         otp_database
-            .elements
+            .elements_ref()
             .iter()
             .map(TryInto::try_into)
             .collect::<Result<Vec<FreeOTPElement>, ErrReport>>()

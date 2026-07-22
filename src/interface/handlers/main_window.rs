@@ -22,8 +22,13 @@ pub(super) fn main_handler(key_event: KeyEvent, app: &mut App) {
             handle_exit(app);
         }
 
-        // exit application on Ctrl-D
-        KeyCode::Char('d' | 'D' | 'c') => {
+        // exit application on Ctrl-C
+        KeyCode::Char('c' | 'C') if key_event.modifiers == KeyModifiers::CONTROL => {
+            handle_exit(app);
+        }
+
+        // exit application on Ctrl-D, delete the selected code on plain D
+        KeyCode::Char('d' | 'D') => {
             if key_event.modifiers == KeyModifiers::CONTROL {
                 handle_exit(app);
             } else if app.table.state.selected().is_some() {
@@ -124,8 +129,9 @@ fn handle_counter_switch(app: &mut App, increment: bool) {
         && let Some(element) = app.database.mut_element(selected)
         && element.type_ == OTPType::Hotp
     {
-        // safe to unwrap because the element type is HOTP
-        let counter = element.counter.unwrap();
+        // HOTP elements may lack a counter (e.g. imported from an otpauth URI
+        // without one), so fall back to 0 instead of panicking
+        let counter = element.counter.unwrap_or(0);
         element.counter = if increment {
             Some(counter.saturating_add(1))
         } else {

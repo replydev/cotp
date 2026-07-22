@@ -5,10 +5,10 @@ pub enum Focus {
     Popup,
 }
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Default)]
 pub enum PopupAction {
-    EditOtp,
     DeleteOtp,
+    #[default]
     GeneralInfo,
     SaveBeforeQuit,
 }

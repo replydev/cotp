@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::Args;
-use color_eyre::eyre::eyre;
+use eyre::WrapErr;
 
 use crate::{
     exporters::{do_export, otp_uri::OtpUriList},
@@ -42,39 +42,65 @@ pub struct ExportFormat {
     pub freeotp_plus: bool,
 }
 
-impl Default for ExportFormat {
-    fn default() -> Self {
-        Self {
-            cotp: true,
-            andotp: false,
-            otp_uri: false,
-            freeotp_plus: false,
-        }
+/// The export format selected on the command line, derived from the mutually
+/// exclusive [`ExportFormat`] flags.
+#[derive(Clone, Copy)]
+enum ExportKind {
+    Cotp,
+    Andotp,
+    OtpUri,
+    FreeOtpPlus,
+}
+
+impl ExportFormat {
+    /// Maps the mutually exclusive clap flags to the selected export format.
+    ///
+    /// The clap `ArgGroup` on [`ExportFormat`] (`multiple = false`) combined
+    /// with the `Option` flattening in [`ExportArgs`] guarantees exactly one
+    /// flag is set whenever this struct is present, so exactly one entry of
+    /// the table below is enabled.
+    fn kind(&self) -> ExportKind {
+        let flag_table = [
+            (self.cotp, ExportKind::Cotp),
+            (self.andotp, ExportKind::Andotp),
+            (self.otp_uri, ExportKind::OtpUri),
+            (self.freeotp_plus, ExportKind::FreeOtpPlus),
+        ];
+        flag_table
+            .into_iter()
+            .find_map(|(enabled, kind)| enabled.then_some(kind))
+            .expect("clap ArgGroup guarantees exactly one export format flag")
     }
 }
 
 impl SubcommandExecutor for ExportArgs {
-    fn run_command(self, database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
-        let export_format = self.format.unwrap_or_default();
+    fn run_command(self, database: OTPDatabase) -> eyre::Result<OTPDatabase> {
+        // Exporting to the cotp format when no flag is given keeps the
+        // historical default behavior.
+        let export_kind = self
+            .format
+            .as_ref()
+            .map_or(ExportKind::Cotp, ExportFormat::kind);
         let exported_path = if self.path.is_dir() {
             self.path.join("exported.cotp")
         } else {
             self.path
         };
 
-        if export_format.cotp {
-            do_export(&database, exported_path)
-        } else if export_format.andotp {
-            let andotp: &Vec<OTPElement> = (&database).into();
-            do_export(&andotp, exported_path)
-        } else if export_format.otp_uri {
-            let otp_uri_list: OtpUriList = (&database).into();
-            do_export(&otp_uri_list, exported_path)
-        } else if export_format.freeotp_plus {
-            let freeotp_plus: FreeOTPPlusJson = (&database).try_into()?;
-            do_export(&freeotp_plus, exported_path)
-        } else {
-            unreachable!("Unreachable code");
+        match export_kind {
+            ExportKind::Cotp => do_export(&database, exported_path),
+            ExportKind::Andotp => {
+                let andotp: &[OTPElement] = (&database).into();
+                do_export(&andotp, exported_path)
+            }
+            ExportKind::OtpUri => {
+                let otp_uri_list: OtpUriList = (&database).into();
+                do_export(&otp_uri_list, exported_path)
+            }
+            ExportKind::FreeOtpPlus => {
+                let freeotp_plus: FreeOTPPlusJson = (&database).try_into()?;
+                do_export(&freeotp_plus, exported_path)
+            }
         }
         .map(|path| {
             println!(
@@ -83,6 +109,6 @@ impl SubcommandExecutor for ExportArgs {
             );
             database
         })
-        .map_err(|e| eyre!("An error occurred while exporting database: {e}"))
+        .wrap_err("An error occurred while exporting database")
     }
 }

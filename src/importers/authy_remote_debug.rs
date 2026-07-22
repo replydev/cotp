@@ -70,12 +70,14 @@ impl AuthyExportedJsonElement {
     }
 }
 
-impl From<AuthyExportedJsonElement> for OTPElement {
-    fn from(input: AuthyExportedJsonElement) -> Self {
-        let type_ = OTPType::from(input.get_type().as_str());
+impl TryFrom<AuthyExportedJsonElement> for OTPElement {
+    type Error = eyre::Report;
+
+    fn try_from(input: AuthyExportedJsonElement) -> Result<Self, Self::Error> {
+        let type_ = OTPType::try_from(input.get_type().as_str())?;
         let counter: Option<u64> = (type_ == OTPType::Hotp).then_some(0);
         let digits = input.get_digits();
-        OTPElement {
+        Ok(OTPElement {
             secret: input.secret.to_uppercase().replace('=', ""),
             issuer: input.get_issuer(),
             label: input.name,
@@ -85,12 +87,14 @@ impl From<AuthyExportedJsonElement> for OTPElement {
             period: 30,
             counter,
             pin: None,
-        }
+        })
     }
 }
 
-impl From<AuthyExportedList> for Vec<OTPElement> {
-    fn from(exported_list: AuthyExportedList) -> Self {
-        exported_list.0.into_iter().map(Into::into).collect()
+impl TryFrom<AuthyExportedList> for Vec<OTPElement> {
+    type Error = eyre::Report;
+
+    fn try_from(exported_list: AuthyExportedList) -> Result<Self, Self::Error> {
+        exported_list.0.into_iter().map(TryInto::try_into).collect()
     }
 }

@@ -20,6 +20,9 @@ fn generate_totp(
     time_step: u64,
     skew: i64,
 ) -> Result<u32, OtpError> {
+    if time_step == 0 {
+        return Err(OtpError::InvalidPeriod);
+    }
     hotp(secret, algorithm, ((time as i64 + skew) as u64) / time_step)
 }
 

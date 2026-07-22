@@ -6,23 +6,14 @@ use crossterm::event::{self, Event as CrosstermEvent, KeyEvent, KeyEventKind};
 
 use crate::interface::app::AppResult;
 
-/// Terminal events.
+/// Terminal events the dashboard reacts to. Everything else read from the
+/// terminal (mouse, resize, focus, paste) is ignored at the source.
 #[derive(Clone, Debug)]
 pub enum Event {
     /// Terminal tick.
     Tick,
     /// Key press.
     Key(KeyEvent),
-    /// Mouse click/scroll.
-    Mouse(()),
-    /// Terminal resize.
-    Resize((), ()),
-    /// Focus gained
-    FocusGained(),
-    /// Focus lost
-    FocusLost(),
-    /// Paste text
-    Paste(()),
 }
 
 /// Terminal event handler.
@@ -49,27 +40,29 @@ impl EventHandler {
                     .unwrap_or(tick_rate);
 
                 if event::poll(timeout).expect("no events available") {
-                    match event::read().expect("unable to read event") {
-                        CrosstermEvent::Key(e) => {
-                            // Workaround to fix double input on Windows
-                            // Please check https://github.com/crossterm-rs/crossterm/issues/752
-                            if e.kind == KeyEventKind::Press {
-                                sender.send(Event::Key(e))
-                            } else {
-                                Ok(())
-                            }
+                    let send_result = match event::read().expect("unable to read event") {
+                        // Workaround to fix double input on Windows
+                        // Please check https://github.com/crossterm-rs/crossterm/issues/752
+                        CrosstermEvent::Key(e) if e.kind == KeyEventKind::Press => {
+                            sender.send(Event::Key(e))
                         }
-                        CrosstermEvent::Mouse(_e) => sender.send(Event::Mouse(())),
-                        CrosstermEvent::Resize(_w, _h) => sender.send(Event::Resize((), ())),
-                        CrosstermEvent::FocusGained => sender.send(Event::FocusGained()),
-                        CrosstermEvent::FocusLost => sender.send(Event::FocusLost()),
-                        CrosstermEvent::Paste(_e) => sender.send(Event::Paste(())),
+                        // Mouse, resize, focus and paste events are irrelevant
+                        // to the dashboard: drop them here instead of routing
+                        // dead variants through the channel.
+                        _ => Ok(()),
+                    };
+                    if send_result.is_err() {
+                        // The receiver has been dropped: the dashboard has
+                        // exited, so stop the event thread gracefully.
+                        break;
                     }
-                    .expect("failed to send terminal event");
                 }
 
                 if last_tick.elapsed() >= tick_rate {
-                    sender.send(Event::Tick).expect("failed to send tick event");
+                    if sender.send(Event::Tick).is_err() {
+                        // Receiver dropped, see above.
+                        break;
+                    }
                     last_tick = Instant::now();
                 }
             }

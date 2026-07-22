@@ -1,7 +1,9 @@
+use std::fs::read_to_string;
 use std::path::PathBuf;
 
 use clap::Args;
-use color_eyre::eyre::eyre;
+use eyre::eyre;
+use zeroize::Zeroize;
 
 use crate::{
     exporters::otp_uri::OtpUriList,
@@ -12,6 +14,7 @@ use crate::{
         importer::import_from_path,
     },
     otp::otp_element::{OTPDatabase, OTPElement},
+    utils,
 };
 
 use super::SubcommandExecutor;
@@ -75,37 +78,98 @@ pub struct BackupType {
     pub otp_uri: bool,
 }
 
+/// The backup format selected on the command line, derived from the mutually
+/// exclusive [`BackupType`] flags.
+#[derive(Clone, Copy)]
+enum ImportFormat {
+    Cotp,
+    Andotp,
+    Aegis,
+    AegisEncrypted,
+    FreeOtpPlus,
+    FreeOtp,
+    GoogleAuthenticator,
+    Authy,
+    AuthyExported,
+    MicrosoftAuthenticator,
+    OtpUri,
+}
+
+impl BackupType {
+    /// Maps the mutually exclusive clap flags to the selected import format.
+    ///
+    /// The clap `ArgGroup` on [`BackupType`] (`required = true, multiple =
+    /// false`) guarantees exactly one flag is set, so exactly one entry of
+    /// the table below is enabled.
+    fn format(&self) -> ImportFormat {
+        let flag_table = [
+            (self.cotp, ImportFormat::Cotp),
+            (self.andotp, ImportFormat::Andotp),
+            (self.aegis, ImportFormat::Aegis),
+            (self.aegis_encrypted, ImportFormat::AegisEncrypted),
+            (self.freeotp_plus, ImportFormat::FreeOtpPlus),
+            (self.freeotp, ImportFormat::FreeOtp),
+            (self.google_authenticator, ImportFormat::GoogleAuthenticator),
+            (self.authy, ImportFormat::Authy),
+            (self.authy_exported, ImportFormat::AuthyExported),
+            (
+                self.microsoft_authenticator,
+                ImportFormat::MicrosoftAuthenticator,
+            ),
+            (self.otp_uri, ImportFormat::OtpUri),
+        ];
+        flag_table
+            .into_iter()
+            .find_map(|(enabled, format)| enabled.then_some(format))
+            .expect("clap ArgGroup guarantees exactly one import format flag")
+    }
+}
+
 impl SubcommandExecutor for ImportArgs {
-    fn run_command(self, mut database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
+    fn run_command(self, mut database: OTPDatabase) -> eyre::Result<OTPDatabase> {
         let path = self.path;
 
-        let backup_type = self.backup_type;
-
-        let result = if backup_type.cotp {
-            import_from_path::<OTPDatabase>(path)
-        } else if backup_type.andotp {
-            import_from_path::<Vec<OTPElement>>(path)
-        } else if backup_type.aegis {
-            import_from_path::<AegisJson>(path)
-        } else if backup_type.aegis_encrypted {
-            import_from_path::<AegisEncryptedDatabase>(path)
-        } else if backup_type.freeotp_plus {
-            import_from_path::<FreeOTPPlusJson>(path)
-        } else if backup_type.authy_exported {
-            import_from_path::<AuthyExportedList>(path)
-        } else if backup_type.google_authenticator {
-            import_from_google_authenticator(path)
-        } else if backup_type.authy || backup_type.microsoft_authenticator || backup_type.freeotp {
-            import_from_path::<ConvertedJsonList>(path)
-        } else if backup_type.otp_uri {
-            import_from_path::<OtpUriList>(path)
-        } else {
-            return Err(eyre!("Invalid arguments provided"));
+        let result = match self.backup_type.format() {
+            ImportFormat::Cotp => import_from_path::<OTPDatabase>(path),
+            ImportFormat::Andotp => import_from_path::<Vec<OTPElement>>(path),
+            ImportFormat::Aegis => import_from_path::<AegisJson>(path),
+            ImportFormat::AegisEncrypted => import_aegis_encrypted(path),
+            ImportFormat::FreeOtpPlus => import_from_path::<FreeOTPPlusJson>(path),
+            ImportFormat::AuthyExported => import_from_path::<AuthyExportedList>(path),
+            ImportFormat::GoogleAuthenticator => import_from_google_authenticator(path),
+            // Authy, Microsoft Authenticator and FreeOTP backups are
+            // pre-converted by the Python scripts in converters/ into the
+            // same intermediate JSON shape.
+            ImportFormat::Authy | ImportFormat::MicrosoftAuthenticator | ImportFormat::FreeOtp => {
+                import_from_path::<ConvertedJsonList>(path)
+            }
+            ImportFormat::OtpUri => import_from_path::<OtpUriList>(path),
         };
 
-        let elements = result.map_err(|e| eyre!("{e}"))?;
+        let elements = result?;
 
         database.add_all(elements);
         Ok(database)
     }
+}
+
+/// Imports an encrypted Aegis backup, prompting the user for the backup
+/// password before decrypting it.
+fn import_aegis_encrypted(path: PathBuf) -> eyre::Result<Vec<OTPElement>> {
+    let json = read_to_string(path)?;
+    let encrypted: AegisEncryptedDatabase = serde_json::from_str(json.as_str()).map_err(|e| {
+        eyre!(
+            "Invalid JSON import format.
+            Please check the file you are trying to import. For further information please check these guidelines:
+            https://github.com/replydev/cotp?tab=readme-ov-file#migration-from-other-apps
+
+            Specific error: {e}"
+        )
+    })?;
+
+    let mut password = utils::try_password("Insert your Aegis password: ", 0)?;
+    let result = encrypted.decrypt(password.as_str());
+    password.zeroize();
+
+    result
 }

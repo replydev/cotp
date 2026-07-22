@@ -1,0 +1,28 @@
+{
+    "tokenOrder": [
+      "Example3:Label3"
+    ],
+    "tokens": [
+      {
+        "algo": "SHA1",
+        "counter": 4,
+        "digits": 6,
+        "issuerExt": "Example3",
+        "label": "Label3",
+        "period": 30,
+        "secret": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "type": "HOTP"
+      }
+    ]
+  }

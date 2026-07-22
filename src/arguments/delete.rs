@@ -6,7 +6,7 @@ use std::fs::File;
 use std::fs::OpenOptions;
 
 use clap::Args;
-use color_eyre::eyre::eyre;
+use eyre::eyre;
 
 use crate::otp::otp_element::OTPDatabase;
 
@@ -28,17 +28,34 @@ pub struct DeleteArgs {
 }
 
 impl SubcommandExecutor for DeleteArgs {
-    fn run_command(self, mut otp_database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
+    fn run_command(self, mut otp_database: OTPDatabase) -> eyre::Result<OTPDatabase> {
         if otp_database.elements_ref().is_empty() {
             return Err(eyre!("There are no elements to delete"));
         }
 
-        let index_to_delete = self
-            .index
-            .and_then(|i| i.checked_sub(1))
-            // Match by issues or label if index filter is missing
-            .or_else(|| get_first_matching_element(&otp_database, &self))
-            .ok_or(eyre!("No code has been found using the given arguments"))?;
+        let index_to_delete = match self.index {
+            // Indexes are 1-based, as shown by the list subcommand and the TUI.
+            // Reject 0 explicitly instead of silently falling through to the
+            // issuer/label matcher (which would target the first element).
+            Some(0) => {
+                return Err(eyre!(
+                    "Invalid index 0: indexes are 1-based, use --index 1 for the first code"
+                ));
+            }
+            Some(index) => {
+                let real_index = index - 1;
+                if real_index >= otp_database.elements_ref().len() {
+                    return Err(eyre!(
+                        "{index} is an invalid index: the database contains {} codes",
+                        otp_database.elements_ref().len()
+                    ));
+                }
+                real_index
+            }
+            // Match by issuer or label if the index filter is missing
+            None => get_first_matching_element(&otp_database, &self)
+                .ok_or(eyre!("No code has been found using the given arguments"))?,
+        };
 
         if let Some(element) = otp_database.elements_ref().get(index_to_delete) {
             print!(
@@ -53,17 +70,19 @@ impl SubcommandExecutor for DeleteArgs {
 
             if output.trim().eq_ignore_ascii_case("y") {
                 otp_database.delete_element(index_to_delete);
-                Ok(otp_database)
             } else {
-                Err(eyre!("Operation interrupt by the user"))
+                // Declining the confirmation is not an error: leave the
+                // database untouched and exit successfully
+                println!("Deletion aborted, no code has been removed");
             }
+            Ok(otp_database)
         } else {
             Err(eyre!("Missing {}th code to delete", index_to_delete + 1))
         }
     }
 }
 
-fn read_confirmation_line() -> color_eyre::Result<String> {
+fn read_confirmation_line() -> eyre::Result<String> {
     let mut output = String::with_capacity(1);
 
     if io::stdin().read_line(&mut output)? > 0 {

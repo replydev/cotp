@@ -1,11 +1,8 @@
-use color_eyre::eyre::{ErrReport, eyre};
 use derive_builder::Builder;
-use std::{fs::File, io::Write, vec};
+use eyre::{ErrReport, eyre};
 
-use crate::crypto::cryptography::{argon_derive_key, encrypt_string_with_key, gen_salt};
 use crate::otp::otp_error::OtpError;
-use crate::path::DATABASE_PATH;
-use data_encoding::BASE32_NOPAD;
+use data_encoding::{BASE32_NOPAD, HEXLOWER_PERMISSIVE};
 use qrcode::QrCode;
 use qrcode::render::unicode;
 use serde::{Deserialize, Serialize};
@@ -16,7 +13,6 @@ use super::{
         hotp_maker::hotp, motp_maker::motp, steam_otp_maker::steam, totp_maker::totp,
         yandex_otp_maker::yandex,
     },
-    migrations::migrate,
     otp_algorithm::OTPAlgorithm,
     otp_type::OTPType,
 };
@@ -26,9 +22,12 @@ pub const CURRENT_DATABASE_VERSION: u16 = 2;
 #[derive(Serialize, Deserialize, PartialEq, Hash)]
 pub struct OTPDatabase {
     pub(crate) version: u16,
-    pub(crate) elements: Vec<OTPElement>,
+    elements: Vec<OTPElement>,
+    /// Dirty flag gating the final save in `main()`. Private on purpose: it is
+    /// only toggled through [`OTPDatabase::mark_modified`] and
+    /// [`OTPDatabase::clear_modified`].
     #[serde(skip)]
-    pub(crate) needs_modification: bool,
+    needs_modification: bool,
 }
 
 impl From<Vec<OTPElement>> for OTPDatabase {
@@ -57,36 +56,6 @@ impl OTPDatabase {
         self.needs_modification
     }
 
-    pub fn save(&mut self, key: &Vec<u8>, salt: &[u8]) -> color_eyre::Result<()> {
-        self.needs_modification = false;
-        migrate(self)?;
-        match self.overwrite_database_key(key, salt) {
-            Ok(()) => Ok(()),
-            Err(e) => Err(ErrReport::from(e)),
-        }
-    }
-
-    fn overwrite_database_key(&self, key: &Vec<u8>, salt: &[u8]) -> Result<(), std::io::Error> {
-        let json: &str = &serde_json::to_string(&self)?;
-        let encrypted = encrypt_string_with_key(json, key, salt).unwrap();
-        let mut file = File::create(DATABASE_PATH.get().unwrap())?;
-        match serde_json::to_string(&encrypted) {
-            Ok(content) => {
-                file.write_all(content.as_bytes())?;
-                file.sync_all()?;
-                Ok(())
-            }
-            Err(e) => Err(std::io::Error::from(e)),
-        }
-    }
-
-    pub fn save_with_pw(&mut self, password: &str) -> color_eyre::Result<(Vec<u8>, [u8; 16])> {
-        let salt = gen_salt()?;
-        let key = argon_derive_key(password.as_bytes(), &salt)?;
-        self.save(&key, &salt)?;
-        Ok((key, salt))
-    }
-
     pub fn add_all(&mut self, mut elements: Vec<OTPElement>) {
         self.mark_modified();
         self.elements.append(&mut elements);
@@ -97,8 +66,15 @@ impl OTPDatabase {
         self.elements.push(element);
     }
 
+    /// Marks the database as dirty so `main()` persists it on exit.
     pub fn mark_modified(&mut self) {
         self.needs_modification = true;
+    }
+
+    /// Discards the dirty flag so the database will NOT be persisted on exit
+    /// (e.g. the user answered "don't save" when quitting the dashboard).
+    pub fn clear_modified(&mut self) {
+        self.needs_modification = false;
     }
 
     pub fn delete_element(&mut self, index: usize) {
@@ -110,10 +86,21 @@ impl OTPDatabase {
         &self.elements
     }
 
+    /// Consumes the database and returns its elements, for exporters that
+    /// need owned values.
+    pub fn into_elements(self) -> Vec<OTPElement> {
+        self.elements
+    }
+
     pub fn get_element(&self, i: usize) -> Option<&OTPElement> {
         self.elements.get(i)
     }
 
+    /// Mutable access to an element. Deliberately does NOT mark the database
+    /// as modified: callers must call [`Self::mark_modified`] themselves once
+    /// they know an actual change happened, which lets no-op edits (e.g.
+    /// `cotp edit` with values identical to the current ones) skip the
+    /// re-encryption and rewrite of the database file.
     pub fn mut_element(&mut self, i: usize) -> Option<&mut OTPElement> {
         self.elements.get_mut(i)
     }
@@ -127,9 +114,7 @@ impl OTPDatabase {
     }
 }
 
-#[derive(
-    Serialize, Deserialize, Builder, Clone, PartialEq, Eq, Debug, Hash, Zeroize, ZeroizeOnDrop,
-)]
+#[derive(Serialize, Deserialize, Builder, Clone, PartialEq, Eq, Hash, Zeroize, ZeroizeOnDrop)]
 #[builder(
     setter(into),
     build_fn(validate = "Self::validate", error = "ErrReport")
@@ -154,6 +139,24 @@ pub struct OTPElement {
     pub pin: Option<String>,
 }
 
+/// Hand-written Debug implementation which redacts the secret and the pin, so
+/// they cannot leak into logs, error reports or test output.
+impl std::fmt::Debug for OTPElement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OTPElement")
+            .field("secret", &"***")
+            .field("issuer", &self.issuer)
+            .field("label", &self.label)
+            .field("digits", &self.digits)
+            .field("type_", &self.type_)
+            .field("algorithm", &self.algorithm)
+            .field("period", &self.period)
+            .field("counter", &self.counter)
+            .field("pin", &self.pin.as_ref().map(|_| "***"))
+            .finish()
+    }
+}
+
 static ALLOWED_DIGITS_RANGE: std::ops::RangeInclusive<u64> = 1..=10;
 
 impl OTPElement {
@@ -172,16 +175,28 @@ impl OTPElement {
             uri.push_str("&counter=");
             uri.push_str(self.counter.unwrap_or(0).to_string().as_str());
         }
+
+        // Yandex / MOTP codes cannot be generated without their pin, so it
+        // must survive an export / import round-trip
+        if let Some(pin) = &self.pin {
+            uri.push_str("&pin=");
+            uri.push_str(&urlencoding::encode(pin));
+        }
         uri
     }
 
     pub fn get_qrcode(&self) -> String {
-        QrCode::new(self.get_otpauth_uri())
-            .unwrap()
-            .render::<unicode::Dense1x2>()
-            .dark_color(unicode::Dense1x2::Light)
-            .light_color(unicode::Dense1x2::Dark)
-            .build()
+        // The otpauth URI can exceed the maximum QR code capacity (e.g. very
+        // long labels or secrets). Return a printable message instead of
+        // panicking, since this is rendered inside the TUI.
+        match QrCode::new(self.get_otpauth_uri()) {
+            Ok(qrcode) => qrcode
+                .render::<unicode::Dense1x2>()
+                .dark_color(unicode::Dense1x2::Light)
+                .light_color(unicode::Dense1x2::Dark)
+                .build(),
+            Err(_) => String::from("Cannot render QR code: data too long"),
+        }
     }
 
     pub fn get_otp_code(&self) -> Result<String, OtpError> {
@@ -210,17 +225,16 @@ impl OTPElement {
                     pin.as_str(),
                     self.period,
                     self.digits as usize,
-                    self.algorithm,
                 ),
                 None => Err(OtpError::MissingPin),
             },
             OTPType::Motp => match &self.pin {
-                Some(pin) => Ok(motp(
+                Some(pin) => motp(
                     &self.secret,
                     pin.as_str(),
                     self.period,
                     self.digits as usize,
-                )),
+                ),
                 None => Err(OtpError::MissingPin),
             },
         }
@@ -272,9 +286,18 @@ impl OTPElementBuilder {
             return Err(eyre!("Secret must not be empty",));
         }
 
+        if self.period == Some(0) {
+            return Err(eyre!("Period must be greater than zero",));
+        }
+
+        if self.digits == Some(0) {
+            return Err(eyre!("Digits must be greater than zero",));
+        }
+
         // Validate secret encoding
         match self.type_.unwrap_or_default() {
-            OTPType::Motp => hex::decode(self.secret.as_ref().unwrap())
+            OTPType::Motp => HEXLOWER_PERMISSIVE
+                .decode(self.secret.as_ref().unwrap().as_bytes())
                 .map(|_| {})
                 .map_err(|e| eyre!("Invalid hex secret: {e}")),
             _ => BASE32_NOPAD
@@ -451,6 +474,53 @@ mod test {
     }
 
     #[test]
+    fn test_zero_period_is_rejected_by_builder() {
+        let result = OTPElementBuilder::default()
+            .secret("AA")
+            .label("label")
+            .issuer("")
+            .period(0u64)
+            .build();
+
+        assert_eq!(
+            "Period must be greater than zero",
+            result.unwrap_err().to_string()
+        );
+    }
+
+    #[test]
+    fn test_zero_digits_is_rejected_by_builder() {
+        let result = OTPElementBuilder::default()
+            .secret("AA")
+            .label("label")
+            .issuer("")
+            .digits(0u64)
+            .build();
+
+        assert_eq!(
+            "Digits must be greater than zero",
+            result.unwrap_err().to_string()
+        );
+    }
+
+    #[test]
+    fn test_zero_period_returns_error_instead_of_panicking() {
+        let element = OTPElement {
+            secret: "xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g".to_uppercase(),
+            issuer: String::from("IssuerText"),
+            label: String::from("LabelText"),
+            digits: 6,
+            type_: Totp,
+            algorithm: Sha1,
+            period: 0,
+            counter: None,
+            pin: None,
+        };
+
+        assert_eq!(Err(OtpError::InvalidPeriod), element.get_otp_code());
+    }
+
+    #[test]
     fn invalid_secret_hex() {
         let result = OTPElementBuilder::default()
             .secret("aaa")
@@ -460,9 +530,84 @@ mod test {
             .build();
 
         assert_eq!(
-            "Invalid hex secret: Odd number of digits",
+            "Invalid hex secret: invalid length at 2",
             result.unwrap_err().to_string()
         );
+    }
+
+    fn assert_generation_relevant_fields_eq(expected: &OTPElement, actual: &OTPElement) {
+        assert_eq!(expected.secret, actual.secret);
+        assert_eq!(expected.type_, actual.type_);
+        assert_eq!(expected.algorithm, actual.algorithm);
+        assert_eq!(expected.digits, actual.digits);
+        assert_eq!(expected.period, actual.period);
+        assert_eq!(expected.counter, actual.counter);
+        assert_eq!(expected.pin, actual.pin);
+    }
+
+    #[test]
+    fn test_otp_uri_round_trip_totp() {
+        let element = OTPElementBuilder::default()
+            .secret("xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g")
+            .issuer("IssuerText")
+            .label("LabelText")
+            .build()
+            .unwrap();
+
+        let round_tripped = OTPElement::from_otp_uri(&element.get_otpauth_uri()).unwrap();
+
+        assert_generation_relevant_fields_eq(&element, &round_tripped);
+    }
+
+    #[test]
+    fn test_otp_uri_round_trip_motp_preserves_lowercase_secret_and_pin() {
+        let element = OTPElementBuilder::default()
+            .secret("e3152afee62599c8")
+            .type_(OTPType::Motp)
+            .issuer("IssuerText")
+            .label("LabelText")
+            .period(10u64)
+            .pin("1234".to_string())
+            .build()
+            .unwrap();
+
+        let round_tripped = OTPElement::from_otp_uri(&element.get_otpauth_uri()).unwrap();
+
+        assert_generation_relevant_fields_eq(&element, &round_tripped);
+        // MOTP secrets are hex text hashed with MD5: uppercasing them changes
+        // the generated codes
+        assert_eq!("e3152afee62599c8", round_tripped.secret);
+        assert_eq!(Some("1234".to_string()), round_tripped.pin);
+    }
+
+    #[test]
+    fn test_otp_uri_round_trip_yandex_preserves_pin() {
+        let element = OTPElementBuilder::default()
+            .secret("6SB2IKNM6OBZPAVBVTOHDKS4FAAAAAAADFUTQMBTRY")
+            .type_(OTPType::Yandex)
+            .issuer("Yandex")
+            .label("LabelText")
+            .digits(8u64)
+            .pin("5239".to_string())
+            .build()
+            .unwrap();
+
+        let round_tripped = OTPElement::from_otp_uri(&element.get_otpauth_uri()).unwrap();
+
+        assert_generation_relevant_fields_eq(&element, &round_tripped);
+        assert_eq!(Some("5239".to_string()), round_tripped.pin);
+        // Both must generate a code, not fail with a missing pin
+        assert_eq!(element.get_otp_code(), round_tripped.get_otp_code());
+    }
+
+    #[test]
+    fn test_from_otp_uri_rejects_invalid_base32_secret() {
+        // Construction goes through OTPElementBuilder, so its validation
+        // applies to URI imports too
+        // "aaa" has an invalid BASE32 length and "1" is not in the alphabet
+        let otp_uri = "otpauth://totp/Label?secret=aa1";
+
+        assert!(OTPElement::from_otp_uri(otp_uri).is_err());
     }
 
     #[test]

@@ -1,7 +1,7 @@
 use crate::exporters::otp_uri::OtpUriList;
 use crate::otp::from_otp_uri::FromOtpUri;
 use crate::otp::otp_element::OTPElement;
-use color_eyre::eyre::ErrReport;
+use eyre::ErrReport;
 
 impl TryFrom<OtpUriList> for Vec<OTPElement> {
     type Error = ErrReport;

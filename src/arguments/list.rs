@@ -1,5 +1,5 @@
 use clap::Args;
-use color_eyre::eyre::{Result, eyre};
+use eyre::eyre;
 use serde::Serialize;
 
 use crate::otp::otp_element::{OTPDatabase, OTPElement};
@@ -43,38 +43,46 @@ struct JsonOtpList<'a> {
     otp_code: String,
 }
 
-impl<'a> TryFrom<&'a OTPElement> for JsonOtpList<'a> {
-    type Error = color_eyre::eyre::Error;
-
-    fn try_from(value: &'a OTPElement) -> Result<Self, Self::Error> {
-        let otp_code = value.get_otp_code()?;
-        Ok(JsonOtpList {
+impl<'a> From<&'a OTPElement> for JsonOtpList<'a> {
+    fn from(value: &'a OTPElement) -> Self {
+        // Degrade per-element like the table view does: an uncomputable code
+        // (e.g. HOTP missing its counter) must not make the whole listing fail
+        let otp_code = value
+            .get_otp_code()
+            .unwrap_or_else(|error| error.to_string());
+        JsonOtpList {
             issuer: &value.issuer,
             label: &value.label,
             otp_code,
-        })
+        }
     }
 }
 
 const NO_ISSUER_TEXT: &str = "<No issuer>";
 
 impl SubcommandExecutor for ListArgs {
-    fn run_command(self, otp_database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
+    fn run_command(self, otp_database: OTPDatabase) -> eyre::Result<OTPDatabase> {
         if self.format.unwrap_or_default().json {
             let json_elements = otp_database
-                .elements
+                .elements_ref()
                 .iter()
-                .map(TryInto::try_into)
-                .collect::<Result<Vec<JsonOtpList>>>()?;
+                .map(Into::into)
+                .collect::<Vec<JsonOtpList>>();
 
             let stringified = serde_json::to_string_pretty(&json_elements)
                 .map_err(|e| eyre!("Error during JSON serialization: {:?}", e))?;
-            print!("{stringified}");
+            println!("{stringified}");
         } else {
-            if otp_database.elements.is_empty() {
+            if otp_database.elements_ref().is_empty() {
                 println!("No elements to list");
                 return Ok(otp_database);
             }
+
+            const ISSUER_HEADER: &str = "Issuer";
+            const LABEL_HEADER: &str = "Label";
+
+            // Clamp column widths to at least the header lengths so short
+            // issuers/labels can never underflow the padding computation
             let issuer_width = calculate_width(&otp_database, |element| {
                 let issuer_length = element.issuer.chars().count();
                 if issuer_length > 0 {
@@ -82,37 +90,32 @@ impl SubcommandExecutor for ListArgs {
                 } else {
                     NO_ISSUER_TEXT.chars().count()
                 }
-            });
+            })
+            .max(ISSUER_HEADER.chars().count());
 
             let label_width =
-                calculate_width(&otp_database, |element| element.label.chars().count());
+                calculate_width(&otp_database, |element| element.label.chars().count())
+                    .max(LABEL_HEADER.chars().count());
 
             println!(
-                "{0: <6} {1} {2} {3: <10}",
-                "Index",
-                "Issuer".to_owned() + " ".repeat(issuer_width - 6).as_ref(),
-                "Label".to_owned() + " ".repeat(label_width - 5).as_ref(),
-                "OTP",
+                "{0: <6} {1: <issuer_width$} {2: <label_width$} {3: <10}",
+                "Index", ISSUER_HEADER, LABEL_HEADER, "OTP",
             );
             otp_database
-                .elements
+                .elements_ref()
                 .iter()
                 .enumerate()
                 .for_each(|(index, e)| {
+                    let issuer = if e.issuer.is_empty() {
+                        NO_ISSUER_TEXT
+                    } else {
+                        e.issuer.as_str()
+                    };
                     println!(
-                        "{0: <6} {1} {2} {3: <10}",
+                        "{0: <6} {1: <issuer_width$} {2: <label_width$} {3: <10}",
                         index + 1,
-                        if e.issuer.is_empty() {
-                            NO_ISSUER_TEXT.to_owned()
-                                + " "
-                                    .repeat(issuer_width - NO_ISSUER_TEXT.chars().count())
-                                    .as_str()
-                        } else {
-                            e.issuer.clone()
-                                + " ".repeat(issuer_width - e.issuer.chars().count()).as_str()
-                        },
-                        e.label.clone()
-                            + " ".repeat(label_width - e.label.chars().count()).as_str(),
+                        issuer,
+                        e.label,
                         e.get_otp_code().unwrap_or("ERROR".to_string())
                     );
                 });
@@ -127,7 +130,7 @@ where
     F: Fn(&OTPElement) -> usize,
 {
     otp_database
-        .elements
+        .elements_ref()
         .iter()
         .map(get_number_of_chars)
         .max()

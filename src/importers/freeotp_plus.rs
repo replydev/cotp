@@ -44,31 +44,31 @@ pub struct FreeOTPElement {
     pub r#type: String,
 }
 
-impl From<FreeOTPElement> for OTPElement {
-    fn from(token: FreeOTPElement) -> Self {
-        let counter: Option<u64> = if token.algo.to_uppercase().as_str() == "HOTP" {
-            Some(token.counter)
-        } else {
-            None
-        };
-        OTPElement {
+impl TryFrom<FreeOTPElement> for OTPElement {
+    type Error = eyre::Report;
+
+    fn try_from(token: FreeOTPElement) -> Result<Self, Self::Error> {
+        let type_ = OTPType::try_from(token.r#type.as_str())?;
+        let algorithm = OTPAlgorithm::try_from(token.algo.as_str())?;
+        let counter: Option<u64> = (type_ == OTPType::Hotp).then_some(token.counter);
+        Ok(OTPElement {
             counter,
             secret: encode_secret(&token.secret),
             issuer: token.issuer_ext,
             label: token.label,
             digits: token.digits,
-            type_: OTPType::from(token.r#type.as_str()),
-            algorithm: OTPAlgorithm::from(token.algo.as_str()),
+            type_,
+            algorithm,
             period: token.period,
             pin: None,
-        }
+        })
     }
 }
 
 impl TryFrom<FreeOTPPlusJson> for Vec<OTPElement> {
-    type Error = String;
+    type Error = eyre::Report;
     fn try_from(freeotp: FreeOTPPlusJson) -> Result<Self, Self::Error> {
-        Ok(freeotp.tokens.into_iter().map(Into::into).collect())
+        freeotp.tokens.into_iter().map(TryInto::try_into).collect()
     }
 }
 
@@ -94,7 +94,7 @@ mod tests {
     use std::fs;
 
     use crate::otp::otp_element::OTPDatabase;
-    use color_eyre::Result;
+    use eyre::Result;
 
     use super::{FreeOTPPlusJson, encode_secret};
 
@@ -142,6 +142,28 @@ mod tests {
                     pin: None
                 }
             ],
+            imported.unwrap()
+        );
+    }
+
+    #[test]
+    fn test_hotp_conversion_keeps_counter() {
+        let imported = import_from_path::<FreeOTPPlusJson>(PathBuf::from(
+            "test_samples/freeotp_plus_hotp.json",
+        ));
+
+        assert_eq!(
+            vec![OTPElement {
+                secret: "AAAAAAAAAAAAAAAA".to_string(),
+                issuer: "Example3".to_string(),
+                label: "Label3".to_string(),
+                digits: 6,
+                type_: OTPType::Hotp,
+                algorithm: OTPAlgorithm::Sha1,
+                period: 30,
+                counter: Some(4),
+                pin: None
+            }],
             imported.unwrap()
         );
     }

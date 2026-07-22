@@ -7,7 +7,6 @@ use crate::interface::{
 
 pub(super) fn popup_handler(key_event: KeyEvent, app: &mut App) {
     match app.popup.action {
-        PopupAction::EditOtp => todo!(),
         PopupAction::DeleteOtp => match key_event.code {
             KeyCode::Char('y' | 'Y') => {
                 if let Err(e) = delete_selected_code(app) {
@@ -34,7 +33,7 @@ pub(super) fn popup_handler(key_event: KeyEvent, app: &mut App) {
                 app.running = false;
             }
             KeyCode::Char('n' | 'N') => {
-                app.database.needs_modification = false;
+                app.database.clear_modified();
                 app.running = false;
             }
             KeyCode::Esc => {
