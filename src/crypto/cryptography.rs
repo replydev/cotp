@@ -64,11 +64,13 @@ pub fn decrypt_string(
         .map_err(|e| eyre!("Error during encrypted database deserialization: {e}"))?;
     let nonce = BASE64
         .decode(encrypted_database.nonce().as_bytes())
-        .expect("Cannot decode Base64 nonce");
+        .map_err(|e| eyre!("database file is corrupted: cannot decode Base64 nonce: {e}"))?;
     let cipher_text = BASE64
         .decode(encrypted_database.cipher().as_bytes())
-        .expect("Cannot decode Base64 cipher");
-    let salt = BASE64.decode(encrypted_database.salt().as_bytes()).unwrap();
+        .map_err(|e| eyre!("database file is corrupted: cannot decode Base64 cipher: {e}"))?;
+    let salt = BASE64
+        .decode(encrypted_database.salt().as_bytes())
+        .map_err(|e| eyre!("database file is corrupted: cannot decode Base64 salt: {e}"))?;
 
     let key: Vec<u8> = argon_derive_key(password.as_bytes(), salt.as_slice())?;
 
@@ -97,5 +99,35 @@ mod tests {
         let (decrypted, _key, _salt) =
             decrypt_string(&serde_json::to_string(&encrypted).unwrap(), "pa$$w0rd").unwrap();
         assert_eq!(String::from("Secret data@#[]ò"), decrypted);
+    }
+
+    #[test]
+    fn test_decrypt_invalid_base64_nonce_returns_error() {
+        let corrupted =
+            r#"{"version":1,"nonce":"!!!not-base64!!!","salt":"c2FsdA==","cipher":"Y2lwaGVy"}"#;
+        let result = decrypt_string(corrupted, "pa$$w0rd");
+        let error = result.err().expect("corrupted nonce must not panic");
+        assert!(error.to_string().contains("database file is corrupted"));
+        assert!(error.to_string().contains("nonce"));
+    }
+
+    #[test]
+    fn test_decrypt_invalid_base64_cipher_returns_error() {
+        let corrupted =
+            r#"{"version":1,"nonce":"bm9uY2U=","salt":"c2FsdA==","cipher":"!!!not-base64!!!"}"#;
+        let result = decrypt_string(corrupted, "pa$$w0rd");
+        let error = result.err().expect("corrupted cipher must not panic");
+        assert!(error.to_string().contains("database file is corrupted"));
+        assert!(error.to_string().contains("cipher"));
+    }
+
+    #[test]
+    fn test_decrypt_invalid_base64_salt_returns_error() {
+        let corrupted =
+            r#"{"version":1,"nonce":"bm9uY2U=","salt":"!!!not-base64!!!","cipher":"Y2lwaGVy"}"#;
+        let result = decrypt_string(corrupted, "pa$$w0rd");
+        let error = result.err().expect("corrupted salt must not panic");
+        assert!(error.to_string().contains("database file is corrupted"));
+        assert!(error.to_string().contains("salt"));
     }
 }
