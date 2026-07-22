@@ -224,12 +224,17 @@ impl OTPElement {
     }
 
     pub fn get_qrcode(&self) -> String {
-        QrCode::new(self.get_otpauth_uri())
-            .unwrap()
-            .render::<unicode::Dense1x2>()
-            .dark_color(unicode::Dense1x2::Light)
-            .light_color(unicode::Dense1x2::Dark)
-            .build()
+        // The otpauth URI can exceed the maximum QR code capacity (e.g. very
+        // long labels or secrets). Return a printable message instead of
+        // panicking, since this is rendered inside the TUI.
+        match QrCode::new(self.get_otpauth_uri()) {
+            Ok(qrcode) => qrcode
+                .render::<unicode::Dense1x2>()
+                .dark_color(unicode::Dense1x2::Light)
+                .light_color(unicode::Dense1x2::Dark)
+                .build(),
+            Err(_) => String::from("Cannot render QR code: data too long"),
+        }
     }
 
     pub fn get_otp_code(&self) -> Result<String, OtpError> {
