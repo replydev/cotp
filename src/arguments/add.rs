@@ -1,7 +1,5 @@
-use std::io::{self, BufRead};
-
 use clap::{Args, value_parser};
-use color_eyre::eyre::{self, ErrReport, Result};
+use color_eyre::eyre::Result;
 
 use zeroize::Zeroize;
 
@@ -23,6 +21,20 @@ pub struct AddArgs {
     /// Specify the OTP code type
     #[arg(short = 't', long = "type", default_value = "totp")]
     pub otp_type: OTPType,
+
+    /// Unique account alias
+    #[arg(long)]
+    pub alias: Option<String>,
+
+    /// Account tag (repeat for multiple tags)
+    #[arg(long = "tag", value_parser = crate::otp::organization::parse_tag)]
+    pub tags: Vec<String>,
+    /// Mark this account as a favorite
+    #[arg(long)]
+    pub favorite: bool,
+    /// Position before accounts without an explicit order (lowest first)
+    #[arg(long, allow_hyphen_values = true)]
+    pub order: Option<i64>,
 
     /// Code issuer
     #[arg(short, long, default_value = "")]
@@ -70,8 +82,19 @@ pub struct AddArgs {
 
 impl SubcommandExecutor for AddArgs {
     fn run_command(self, mut database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
-        let otp_element = if self.otp_uri {
-            let mut otp_uri = rpassword::prompt_password("Insert the otp uri: ").unwrap();
+        if let Some(alias) = &self.alias {
+            super::selector::validate_alias(&database, alias, None)?;
+        }
+        let alias = self.alias.clone();
+        let tags = self.tags.clone();
+        let favorite = self.favorite;
+        let order = self.order;
+        let mut otp_element = if self.otp_uri {
+            let mut otp_uri = if self.take_secret_from_stdin {
+                crate::utils::stdin_line()?
+            } else {
+                crate::utils::prompt_password("Insert the otp uri: ")?
+            };
             let result = OTPElement::from_otp_uri(otp_uri.as_str());
             otp_uri.zeroize();
             result?
@@ -79,20 +102,20 @@ impl SubcommandExecutor for AddArgs {
             get_from_args(self)?
         };
 
-        database.add_element(otp_element);
+        otp_element.alias = alias;
+        crate::otp::organization::add_tags(&mut otp_element.tags, tags);
+        otp_element.favorite = favorite;
+        otp_element.order = order;
+        database.add_element(otp_element)?;
         Ok(database)
     }
 }
 
 fn get_from_args(matches: AddArgs) -> color_eyre::Result<OTPElement> {
     let secret = if matches.take_secret_from_stdin {
-        if let Some(password) = io::stdin().lock().lines().next() {
-            password.map_err(ErrReport::from)
-        } else {
-            Err(eyre::eyre!("Error during reading from stdin"))
-        }
+        crate::utils::stdin_line()
     } else {
-        rpassword::prompt_password("Insert the secret: ").map_err(ErrReport::from)
+        crate::utils::prompt_password("Insert the secret: ")
     }?;
     map_args_to_code(secret, matches)
 }

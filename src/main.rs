@@ -6,95 +6,170 @@ use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
 use interface::handlers::{handle_key_events, handle_mouse_events, handle_paste};
 use interface::ui::Tui;
-use otp::otp_element::{CURRENT_DATABASE_VERSION, OTPDatabase};
+use otp::otp_element::OTPDatabase;
 use path::init_path;
 use ratatui::Terminal;
 use ratatui::prelude::CrosstermBackend;
-use reading::{ReadResult, get_elements_from_input, get_elements_from_stdin};
-use std::{
-    io::{self, IsTerminal},
-    vec,
-};
+use reading::ReadResult;
+use std::io::{self, IsTerminal};
 use zeroize::Zeroize;
 
 mod arguments;
+mod backup;
 mod clipboard;
+mod config;
 mod crypto;
 mod database_file;
+mod exchange;
 mod exporters;
+mod hardware;
 mod importers;
 mod interface;
+mod keychain;
 mod otp;
 mod path;
+mod persistence;
 mod reading;
+mod session_lock;
 mod utils;
 
 fn init(args: &CotpArgs) -> color_eyre::Result<ReadResult> {
-    init_path(args);
-
-    match utils::init_app() {
-        Ok(first_run) => {
-            if first_run {
-                // Let's initialize the database file
-                let mut pw = utils::verified_password("Choose a password: ", 8);
-                let mut database = OTPDatabase {
-                    version: CURRENT_DATABASE_VERSION,
-                    elements: vec![],
-                    ..Default::default()
-                };
-                let save_result = database.save_with_pw(&pw);
-                pw.zeroize();
-                save_result.map(|(key, salt)| (database, key, salt.to_vec()))
-            } else if args.password_from_stdin {
-                get_elements_from_stdin()
-            } else {
-                get_elements_from_input()
-            }
+    let path = init_path(args);
+    let explicit_init = matches!(args.command, Some(arguments::CotpSubcommands::Init(_)));
+    if explicit_init && path.exists() {
+        return Err(eyre!("Vault already exists; init never overwrites a vault"));
+    }
+    if !path.exists()
+        && !matches!(
+            args.command,
+            None | Some(
+                arguments::CotpSubcommands::Init(_)
+                    | arguments::CotpSubcommands::Add(_)
+                    | arguments::CotpSubcommands::Import(_)
+            )
+        )
+    {
+        return Err(eyre!(
+            "Vault does not exist. Create it with cotp init, add, or import."
+        ));
+    }
+    if !path.exists()
+        && matches!(&args.command, Some(arguments::CotpSubcommands::Import(import)) if import.dry_run)
+    {
+        return Err(eyre!(
+            "Dry-run requires an existing vault; create it with cotp init first"
+        ));
+    }
+    let first_run = utils::init_app().map_err(|()| eyre!("Could not create vault directory"))?;
+    persistence::initialize(&path)?;
+    let explicit_password = if args.password_from_stdin {
+        Some(utils::stdin_line()?)
+    } else {
+        args.password_fd.map(utils::password_from_fd).transpose()?
+    };
+    let password = keychain::unlock_password(&path, explicit_password, first_run)?;
+    if first_run {
+        if password.chars().count() < 8 {
+            return Err(eyre!(
+                "New vault password must contain at least 8 characters"
+            ));
         }
-        Err(()) => Err(eyre!("An error occurred during database creation")),
+        let mut database = OTPDatabase::default();
+        let (key, salt) = database.save_with_pw(&password)?;
+        Ok((database, key, salt.to_vec()))
+    } else {
+        reading::read_from_file(&password)
     }
 }
 
-fn main() -> AppResult<()> {
-    color_eyre::install()?;
+fn run(mut cotp_args: CotpArgs) -> Result<(), (u8, color_eyre::eyre::Report)> {
+    if arguments::shell::handle(&cotp_args).map_err(|error| (1, error))? {
+        return Ok(());
+    }
+    config::load(&mut cotp_args).map_err(|error| (1, error))?;
+    utils::set_no_input(cotp_args.no_input);
+    if keychain::handle(&cotp_args).map_err(|error| (1, error))? {
+        return Ok(());
+    }
+    if hardware::handle(&cotp_args).map_err(|error| (3, error))? {
+        return Ok(());
+    }
+    if matches!(cotp_args.command, Some(arguments::CotpSubcommands::Lock(_))) {
+        session_lock::request(&init_path(&cotp_args)).map_err(|error| (1, error))?;
+        eprintln!("Lock requested for running dashboards");
+        return Ok(());
+    }
 
-    let cotp_args: CotpArgs = CotpArgs::parse();
-    let (database, mut key, salt) = match init(&cotp_args) {
-        Ok(v) => v,
-        Err(e) => {
-            println!("{e}");
-            std::process::exit(-1);
-        }
+    if let Some(arguments::CotpSubcommands::Backup(args)) = &cotp_args.command {
+        let path = init_path(&cotp_args);
+        return backup::run(
+            args,
+            &path,
+            cotp_args.password_from_stdin,
+            cotp_args.password_fd,
+        )
+        .map_err(|error| (1, error));
+    }
+    let dry_run = match &cotp_args.command {
+        Some(arguments::CotpSubcommands::Import(args)) => args.dry_run,
+        Some(arguments::CotpSubcommands::Merge(args)) => args.dry_run,
+        _ => false,
     };
-
-    let mut reowned_database = match args_parser(cotp_args, database) {
-        Ok(d) => d,
-        Err(e) => {
-            eprintln!("An error occurred: {e}");
-            key.zeroize();
-            std::process::exit(-2)
-        }
-    };
-
-    let error_code = if reowned_database.is_modified() {
-        match reowned_database.save(&key, &salt) {
-            Ok(()) => {
-                println!("Modifications have been persisted");
-                0
-            }
-            Err(e) => {
-                eprintln!("An error occurred during database overwriting: {e}");
-                -1
-            }
-        }
-    } else {
-        0
-    };
+    let save_upgrade_before_command = matches!(
+        &cotp_args.command,
+        None | Some(
+            arguments::CotpSubcommands::Code(_)
+                | arguments::CotpSubcommands::Extract(_)
+                | arguments::CotpSubcommands::List(_)
+        )
+    );
+    let (mut database, key, salt) = init(&cotp_args).map_err(|error| (1, error))?;
+    let mut key = zeroize::Zeroizing::new(key);
+    persistence::unlock(&key, &salt).map_err(|error| (1, error))?;
+    otp::migrations::migrate(&mut database).map_err(|error| (1, error))?;
+    if database.is_modified() && save_upgrade_before_command {
+        database.save(&key, &salt).map_err(|error| (1, error))?;
+    }
     key.zeroize();
-    std::process::exit(error_code)
+    let mut database = args_parser(cotp_args, database).map_err(|error| (3, error))?;
+    if database.is_modified() && !dry_run {
+        persistence::persist(&mut database).map_err(|error| {
+            (
+                1,
+                eyre!("An error occurred during database overwriting: {error}"),
+            )
+        })?;
+        eprintln!("Modifications have been persisted");
+    }
+    Ok(())
+}
+
+fn main() -> std::process::ExitCode {
+    if let Err(error) = color_eyre::install() {
+        eprintln!("{error}");
+        return std::process::ExitCode::FAILURE;
+    }
+    match clipboard::run_expiry_helper() {
+        Ok(true) => return std::process::ExitCode::SUCCESS,
+        Ok(false) => {}
+        Err(error) => {
+            eprintln!("{error}");
+            return std::process::ExitCode::FAILURE;
+        }
+    }
+    let result = run(CotpArgs::parse());
+    persistence::lock();
+    match result {
+        Ok(()) => std::process::ExitCode::SUCCESS,
+        Err((code, error)) => {
+            eprintln!("{error}");
+            std::process::ExitCode::from(code)
+        }
+    }
 }
 
 fn dashboard(mut database: OTPDatabase) -> AppResult<OTPDatabase> {
+    utils::ensure_interactive()?;
     if !io::stderr().is_terminal() || !io::stdin().is_terminal() {
         if database.elements_ref().is_empty() {
             println!("No codes, type \"cotp -h\" to get help");
@@ -110,7 +185,11 @@ fn dashboard(mut database: OTPDatabase) -> AppResult<OTPDatabase> {
     let terminal = Terminal::new(backend)?;
     let mut tui = Tui::new(terminal, EventHandler::new(250));
     tui.init()?;
+    let mut lock_requests = session_lock::Watcher::new(path::DATABASE_PATH.get().unwrap())?;
     while app.running {
+        if lock_requests.requested() {
+            app.lock_session();
+        }
         tui.draw(&mut app)?;
         match tui.events.next()? {
             Event::Tick => app.tick(false),

@@ -19,6 +19,11 @@ impl From<ConvertedJson> for OTPElement {
         let counter: Option<u64> = (OTPType::from(converted_json.type_.as_str()) == OTPType::Hotp)
             .then_some(converted_json.counter);
         OTPElement {
+            id: String::new(),
+            alias: None,
+            tags: Vec::new(),
+            favorite: false,
+            order: None,
             secret: converted_json.secret,
             issuer: converted_json.issuer.unwrap_or_default(),
             label: converted_json.label.unwrap_or_default(),

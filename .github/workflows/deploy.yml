@@ -88,6 +88,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     steps:
       - name: Checkout sources
         uses: actions/checkout@v7
@@ -127,6 +129,15 @@ jobs:
                   (cd tmp && 7z a -r ../dist/$pkgname.zip $pkgname)
               fi
           done
+
+      - name: Create release checksums
+        working-directory: dist
+        run: sha256sum *.tar.xz *.zip > SHA256SUMS
+
+      - name: Attest release artifacts
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: dist/*
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2

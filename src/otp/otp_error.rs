@@ -9,7 +9,9 @@ pub enum OtpError {
     MissingCounter,                    // Missing counter for HOTP codes
     InvalidOffset,                     // Invalid offset
     InvalidDigest,                     // Invalid digest
-    InvalidDigits,                     // Invalid Digits value (too high or low)
+    InvalidPeriod,
+    InvalidTime,
+    InvalidDigits, // Invalid Digits value (too high or low)
 }
 
 impl Display for OtpError {
@@ -23,6 +25,8 @@ impl Display for OtpError {
             OtpError::InvalidDigest => f.write_str("Invalid digest"),
             OtpError::InvalidOffset => f.write_str("Invalid offset"),
             OtpError::ShortSecret => f.write_str("Secret length less than 16 bytes"),
+            OtpError::InvalidPeriod => f.write_str("Period must be greater than zero"),
+            OtpError::InvalidTime => f.write_str("Time is outside the supported range"),
             OtpError::InvalidDigits => f.write_str("Digits value too high or low"),
         }
     }

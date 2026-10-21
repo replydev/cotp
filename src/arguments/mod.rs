@@ -11,13 +11,16 @@ use self::{
 };
 
 mod add;
+pub(crate) mod code;
 mod delete;
 mod edit;
 mod export;
 mod extract;
 mod import;
-mod list;
+pub(crate) mod list;
 mod passwd;
+pub(crate) mod selector;
+pub mod shell;
 
 /// Common trait the all the Subcommands must implement to define the command logic
 #[enum_dispatch]
@@ -33,16 +36,34 @@ pub trait SubcommandExecutor {
   cotp                                      Open the interactive vault
   cotp add --issuer GitHub --label you       Add an account
   cotp import --help                        Migrate from another authenticator
-  cotp list --json                          Output codes for scripts
+  cotp code work --json                     Output one code for scripts
 
 DASHBOARD
   a add · e edit · / search · Enter copy · Space QR code · ? help"
 )]
 pub struct CotpArgs {
+    /// Use the local encrypted vault or a connected YubiKey
+    #[arg(long, global = true, value_enum, default_value = "vault")]
+    pub backend: crate::hardware::Backend,
+    /// Select a YubiKey by its serial number
+    #[arg(long, global = true)]
+    pub device: Option<String>,
     #[command(subcommand)]
-    command: Option<CotpSubcommands>,
+    pub(crate) command: Option<CotpSubcommands>,
+    /// Disable all interactive prompts
+    #[arg(long, global = true)]
+    pub no_input: bool,
+    /// Read the vault password from this descriptor, leaving stdin for account data
+    #[arg(long, global = true, conflicts_with = "password_from_stdin")]
+    pub password_fd: Option<u32>,
+    /// Read settings from this JSON file
+    #[arg(long, global = true)]
+    pub config: Option<std::path::PathBuf>,
+    /// Choose a named vault profile
+    #[arg(long, global = true)]
+    pub profile: Option<String>,
     /// Fetch the password from standard input
-    #[arg(long = "password-stdin", default_value_t = false)]
+    #[arg(long = "password-stdin", default_value_t = false, global = true)]
     pub password_from_stdin: bool,
     /// Set the database path
     #[arg(short = 'd', long = "database-path")]
@@ -53,6 +74,22 @@ pub struct CotpArgs {
 #[derive(Subcommand)]
 #[enum_dispatch(SubcommandExecutor)]
 pub enum CotpSubcommands {
+    /// Create a new encrypted vault, including in scripts with --password-stdin/--password-fd
+    Init(InitArgs),
+    /// Generate one uniquely selected account code (HOTP advances unless --preview)
+    Code(code::CodeArgs),
+    /// Remember, forget, or inspect this vault's password in the OS credential store
+    Keychain(crate::keychain::KeychainArgs),
+    /// Manage accounts on a YubiKey through ykman
+    Hardware(crate::hardware::HardwareArgs),
+    /// Merge an authenticated encrypted backup from another device
+    Merge(crate::exchange::MergeArgs),
+    /// Generate shell completion scripts without unlocking a vault
+    Completions(shell::CompletionsArgs),
+    /// Generate manual pages without unlocking a vault
+    Man(shell::ManArgs),
+    /// Lock every running dashboard for this vault without unlocking it
+    Lock(crate::session_lock::LockArgs),
     /// Add new OTP code
     Add(AddArgs),
     /// Edit an existing OTP Code
@@ -69,6 +106,17 @@ pub enum CotpSubcommands {
     Extract(ExtractArgs),
     /// Change database password
     Passwd(PasswdArgs),
+    /// Create, verify, list, or restore encrypted backups
+    Backup(crate::backup::BackupArgs),
+}
+
+#[derive(clap::Args)]
+pub struct InitArgs;
+impl SubcommandExecutor for InitArgs {
+    fn run_command(self, database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
+        eprintln!("Encrypted vault initialized");
+        Ok(database)
+    }
 }
 
 pub fn args_parser(matches: CotpArgs, read_result: OTPDatabase) -> color_eyre::Result<OTPDatabase> {

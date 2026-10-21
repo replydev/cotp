@@ -1,0 +1,2 @@
+otpauth://totp/Example:alice?secret=JBSWY3DP&issuer=Example&algorithm=SHA256&digits=8&period=60
+otpauth://hotp/Example:bob?secret=JBSWY3DP&counter=42

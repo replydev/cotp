@@ -14,17 +14,11 @@ use super::SubcommandExecutor;
 
 #[derive(Args)]
 pub struct DeleteArgs {
-    /// Code Index
-    #[arg(short, long, required_unless_present_any=["issuer", "label"])]
-    pub index: Option<usize>,
-
-    /// Issuer of the first matching code that will be deleted
-    #[arg(short = 's', long, required_unless_present_any=["index", "label"])]
-    pub issuer: Option<String>,
-
-    /// Label of the first matching code that will be deleted
-    #[arg(short, long, required_unless_present_any=["index","issuer"])]
-    pub label: Option<String>,
+    /// Delete the selected account without prompting
+    #[arg(long, short = 'y')]
+    pub yes: bool,
+    #[command(flatten)]
+    pub selector: super::selector::AccountSelector,
 }
 
 impl SubcommandExecutor for DeleteArgs {
@@ -33,21 +27,21 @@ impl SubcommandExecutor for DeleteArgs {
             return Err(eyre!("There are no elements to delete"));
         }
 
-        let index_to_delete = self
-            .index
-            .and_then(|i| i.checked_sub(1))
-            // Match by issues or label if index filter is missing
-            .or_else(|| get_first_matching_element(&otp_database, &self))
-            .ok_or(eyre!("No code has been found using the given arguments"))?;
+        let index_to_delete = self.selector.select(&otp_database)?;
 
         if let Some(element) = otp_database.elements_ref().get(index_to_delete) {
-            print!(
+            if self.yes {
+                otp_database.delete_element(index_to_delete);
+                return Ok(otp_database);
+            }
+            crate::utils::ensure_interactive()?;
+            eprint!(
                 "Are you sure you want to delete the {}th code ({}, {}) [Y,N]: ",
                 index_to_delete + 1,
                 element.issuer,
                 element.label
             );
-            io::stdout().flush()?;
+            io::stderr().flush()?;
 
             let output = read_confirmation_line()?;
 
@@ -90,23 +84,4 @@ fn read_confirmation_line() -> color_eyre::Result<String> {
     Err(eyre!(
         "Unable to read confirmation answer from standard input or terminal"
     ))
-}
-
-fn get_first_matching_element(
-    otp_database: &OTPDatabase,
-    delete_args: &DeleteArgs,
-) -> Option<usize> {
-    otp_database
-        .elements_ref()
-        .iter()
-        .enumerate()
-        .find(|(_, element)| {
-            element
-                .issuer
-                .contains(delete_args.issuer.as_deref().unwrap_or_default())
-                && element
-                    .label
-                    .contains(delete_args.label.as_deref().unwrap_or_default())
-        })
-        .map(|(index, _)| index)
 }

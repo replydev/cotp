@@ -34,4 +34,5 @@ def main():
     output_file.close()
 
 
-main()
+if __name__ == "__main__":
+    main()

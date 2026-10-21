@@ -1,4 +1,4 @@
-#[derive(Eq, PartialEq, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Eq, PartialEq, Debug)]
 pub enum Focus {
     MainPage,
     SearchBar,
@@ -6,14 +6,14 @@ pub enum Focus {
     Form,
 }
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Eq, PartialEq, Debug)]
 pub enum PopupAction {
     DeleteOtp,
     GeneralInfo,
     SaveBeforeQuit,
 }
 
-#[derive(Eq, PartialEq, Debug, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Eq, PartialEq, Debug, Default)]
 pub enum Page {
     #[default]
     Main,
