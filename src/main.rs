@@ -19,6 +19,7 @@ use zeroize::Zeroize;
 
 mod arguments;
 mod clipboard;
+mod config;
 mod crypto;
 mod database_file;
 mod exporters;
@@ -58,7 +59,11 @@ fn init(args: &CotpArgs) -> color_eyre::Result<ReadResult> {
 fn main() -> AppResult<()> {
     color_eyre::install()?;
 
-    let cotp_args: CotpArgs = CotpArgs::parse();
+    let mut cotp_args: CotpArgs = CotpArgs::parse();
+    if arguments::shell::handle(&cotp_args)? {
+        return Ok(());
+    }
+    config::load(&mut cotp_args)?;
     let (database, mut key, salt) = match init(&cotp_args) {
         Ok(v) => v,
         Err(e) => {

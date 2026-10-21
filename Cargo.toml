@@ -26,14 +26,20 @@ panic = "abort"
 debug = false
 strip = "symbols"
 
+[features]
+default = ["desktop-clipboard"]
+desktop-clipboard = ["dep:copypasta-ext"]
+
 [dependencies]
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 dirs = "7.0.0"
 rpassword = "7.5.4"
 data-encoding = "2.11.1"
-copypasta-ext = "0.4.4"
+copypasta-ext = { version = "0.4.4", optional = true }
 zeroize = { version = "1.9.1", features = ["zeroize_derive"] }
+clap_complete = "4"
+clap_mangen = "0.2"
 clap = { version = "4.6.7", features = ["derive"] }
 hmac = "0.13.0"
 sha1 = "0.11.0"
