@@ -36,7 +36,7 @@ pub trait SubcommandExecutor {
   cotp                                      Open the interactive vault
   cotp add --issuer GitHub --label you       Add an account
   cotp import --help                        Migrate from another authenticator
-  cotp list --json                          Output codes for scripts
+  cotp code work --json                     Output one code for scripts
 
 DASHBOARD
   a add · e edit · / search · Enter copy · Space QR code · ? help"

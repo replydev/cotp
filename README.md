@@ -60,6 +60,37 @@ On `edit`, `--issuer` and `--label` still set new values; use `--match-issuer`
 and `--match-label` to select by those fields. Aliases are unique ignoring case;
 `edit --clear-alias` removes an alias. Account IDs survive renaming and TUI edits.
 
+### Codes and scripts
+
+`cotp code QUERY` selects one account by ID, alias, or issuer/label text.
+Use `--json` for an object with `id`, `issuer`, `label`, `code`, `expires_at`
+(Unix seconds), and `remaining` (whole seconds). HOTP expiry fields are `null`.
+`--min-validity 10s` waits for a fresh interval when needed; the requested validity
+must be shorter than the account period. `--watch` emits one code per interval,
+flushing each line for consumers. `--copy --quiet` copies without printing a code.
+
+HOTP `code` and legacy `extract` persist the next counter before releasing a code.
+`code --preview` and `list` show the current counter without advancing it.
+`list --metadata-only --json` lists account identities without generating codes.
+
+For unattended use, pass `--no-input` to reject every interactive prompt.
+`--password-stdin` reads one password line; on Unix, `--password-fd 3` keeps stdin
+available for a secret or import. Passwords are never command-line values.
+`init` creates a vault with a supplied password of at least eight characters and
+refuses to overwrite an existing vault. Imports require `--yes` to apply without
+confirmation; deletion uses `--yes`. Password rotation accepts `passwd --new-password-fd`.
+
+```sh
+cotp --no-input --password-fd 3 init 3<password-file
+cotp --no-input --password-fd 3 import - --yes 3<password-file <accounts.txt
+cotp --no-input --password-fd 3 code work --json --min-validity 10s 3<password-file
+```
+
+Command data goes to stdout; prompts, errors, and status go to stderr. Exit codes
+are `0` for success, `1` for vault startup/configuration/final save errors, `2` for
+invalid CLI arguments, and `3` for command failures (including selection, validation,
+and HOTP transaction failures). Opening a legacy vault may persist its schema upgrade.
+
 ### Add and edit accounts
 
 Press `a` or click **Add** to enter an issuer, account label, and secret. You can also
@@ -99,7 +130,7 @@ cotp edit --index 4 --digits 8
 # List all the codes in JSON format passing password through stdin
 echo "mysecretpassword" | cotp --password-stdin list --json
 
-# Extract the first matching OTP code with "google" issuer and copy it into the clipboard
+# Extract the uniquely matching OTP code with "google" issuer and copy it into the clipboard
 cotp extract --issuer google --copy-clipboard
 
 # Import an encrypted Aegis Database backup

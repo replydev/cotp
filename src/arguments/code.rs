@@ -46,7 +46,7 @@ struct CodeOutput<'a> {
     label: &'a str,
     code: &'a str,
     expires_at: Option<u64>,
-    remaining_seconds: Option<u64>,
+    remaining: Option<u64>,
 }
 
 pub fn parse_duration(value: &str) -> Result<Duration, String> {
@@ -129,7 +129,7 @@ impl SubcommandExecutor for CodeArgs {
                             label: &element.label,
                             code: &code,
                             expires_at: timing_after.map(|value| value.0),
-                            remaining_seconds: timing_after.map(|value| value.1.as_secs()),
+                            remaining: timing_after.map(|value| value.1.as_secs()),
                         },
                     )?;
                     writeln!(stdout)?;

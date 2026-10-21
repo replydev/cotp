@@ -2,7 +2,13 @@ use assert_cmd::cargo::cargo_bin_cmd;
 
 fn database(dir: &tempfile::TempDir) -> std::path::PathBuf {
     let path = dir.path().join("db.cotp");
-    std::fs::copy("test_samples/cli_integration_test/empty_database", &path).unwrap();
+    cargo_bin_cmd!("cotp")
+        .args(["--password-stdin", "--database-path"])
+        .arg(&path)
+        .arg("init")
+        .write_stdin("12345678\n")
+        .assert()
+        .success();
     path
 }
 
@@ -48,7 +54,7 @@ fn stdin_import_is_repeatable_and_plaintext_export_is_explicit() {
         cargo_bin_cmd!("cotp")
             .args(["--password-stdin", "--database-path"])
             .arg(&db)
-            .args(["import", "-"])
+            .args(["import", "-", "--yes"])
             .write_stdin("12345678\notpauth://hotp/Example:alice?secret=JBSWY3DP&counter=42\n")
             .assert()
             .success();

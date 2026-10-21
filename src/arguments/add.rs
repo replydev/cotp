@@ -1,7 +1,5 @@
-use std::io::{self, BufRead};
-
 use clap::{Args, value_parser};
-use color_eyre::eyre::{self, ErrReport, Result};
+use color_eyre::eyre::Result;
 
 use zeroize::Zeroize;
 
@@ -99,11 +97,7 @@ impl SubcommandExecutor for AddArgs {
 
 fn get_from_args(matches: AddArgs) -> color_eyre::Result<OTPElement> {
     let secret = if matches.take_secret_from_stdin {
-        if let Some(password) = io::stdin().lock().lines().next() {
-            password.map_err(ErrReport::from)
-        } else {
-            Err(eyre::eyre!("Error during reading from stdin"))
-        }
+        crate::utils::stdin_line()
     } else {
         crate::utils::prompt_password("Insert the secret: ")
     }?;
