@@ -108,8 +108,9 @@ field, or use `←` / `→` or `Space`, to change it. `Ctrl+S` or **Save account
 form; `Esc` or **Cancel** discards it. Secret keys and PINs are masked; when editing,
 leave either blank to keep its existing value.
 
-Account additions, edits, deletions, and counter changes remain pending until you
-quit and confirm **save**. Choosing **discard** leaves the on-disk vault unchanged.
+Account additions, edits, deletions, and manual counter changes remain pending until
+you press `Ctrl+S` or quit and confirm **save**. Choosing **discard** drops pending
+edits. Consuming an HOTP code persists its next counter immediately.
 CLI subcommands remain available for scripting; run `cotp --help` for examples.
 
 ## TL;DR
@@ -138,8 +139,11 @@ cotp extract --issuer google --copy-clipboard
 # Import an encrypted Aegis Database backup
 cotp import --path my_db.json --aegis-encrypted
 
-# Export the cotp database
-cotp export
+# Create an encrypted backup
+cotp backup create ~/backups/cotp --keep 10
+
+# Export secrets explicitly for migration
+cotp export --plaintext --path migration.json
 ```
 
 ## Compatibility
@@ -220,7 +224,7 @@ Some needs to be converted using simple python script you can find listed in the
 | [Aegis](https://github.com/beemdevelopment/Aegis) (encrypted)                                                | Make an encrypted backup using the app itself.                                                                                                                      | No                                                                        | `--aegis-encrypted`         |
 | [Authy](https://authy.com/)                                                                                  | Obtain `/data/data/com.authy.authy/shared_prefs/com.authy.storage.tokens.authenticator.xml` from your phone.                                                        | [Yes](https://github.com/replydev/cotp/blob/master/converters/authy.py)   | `--authy`                   |
 | [Authy](https://authy.com/) (2nd method)                                                                     | Follow this guide: https://gist.github.com/gboudreau/94bb0c11a6209c82418d01a59d958c93.                                                                              | No                                                                        | `--authy-exported`          |
-| [cotp](https://github.com/replydev/cotp)                                                                     | Export your database using `cotp export`.                                                                                                                           | No                                                                        | `--cotp`                    |
+| [cotp](https://github.com/replydev/cotp)                                                                     | Export your database using `cotp export --plaintext`.                                                                                                                           | No                                                                        | `--cotp`                    |
 | [FreeOTP](https://freeotp.github.io/)                                                                        | Obtain `/data/data/org.fedorahosted.freeotp/shared_prefs/tokens.xml` from your phone.                                                                               | [Yes](https://github.com/replydev/cotp/blob/master/converters/freeotp.py) | `--freeotp`                 |
 | [FreeOTP+](https://github.com/helloworld1/FreeOTPPlus)                                                       | Make a backup using the app itself.                                                                                                                                 | No                                                                        | `--freeotp-plus`            |
 | [Google Authenticator](https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2) | In the app open the menu, choose "Transfer accounts" > "Export accounts", select the accounts and let it generate the QR code(s). Scan each QR code with any scanner and save the resulting `otpauth-migration://...` URI(s), one per line, into a text file. | No                                                                        | `--google-authenticator`    |
@@ -241,7 +245,10 @@ To terminate the import:
 
 # Configuration
 
-By default database is located in `$HOME/.cotp/db.cotp`. If you want to use a different path, you can use `COTP_DB_PATH` environment variable or use the `--database-path` argument.
+Release builds use the platform data directory (`$XDG_DATA_HOME/cotp/db.cotp` on Linux),
+with automatic migration from the legacy `$HOME/.cotp/db.cotp`. An existing `./db.cotp`
+enables portable mode; debug builds always use that local path. Override the location
+with `COTP_DB_PATH`, `--database-path`, or a named vault profile.
 The first can be configured in shell configuration files, the second in package managers where the configuration of environment variables is not allowed, like Scoop.
 
 These are examples of how to do this in bash:
@@ -253,10 +260,15 @@ or
 $ cotp --database-path /home/user/.local/custom-folder/db.cotp
 ```
 
-# Planned features
+# Feature guides
 
-Currently, there is not any planned feature. If you need something new that could improve the software feel free to open
-an issue.
+- [Configuration, named profiles, shell completions, manuals, and headless builds](docs/configuration.md)
+- [QR enrollment, repeatable imports, native migration formats, and encrypted Aegis exports](docs/imports.md)
+- [Encrypted snapshot exchange and explicit conflict resolution](docs/exchange.md)
+- [YubiKey OATH accounts and touch-required codes](docs/hardware.md)
+- [Security model and release provenance](SECURITY.md), [vault format](docs/vault-format.md)
+
+Run `cotp --help` and `cotp COMMAND --help` for the complete command reference.
 
 # Contribution
 

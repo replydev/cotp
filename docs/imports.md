@@ -7,7 +7,7 @@ cotp import screenshot.png --dry-run
 cotp import accounts.json --duplicates skip
 cotp import accounts.json --duplicates replace
 cotp import accounts.json --duplicates keep-both
-cotp import - < otp-uris.txt
+cotp import - --yes < otp-uris.txt
 cotp import --aegis --path aegis.json
 ```
 
