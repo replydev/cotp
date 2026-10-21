@@ -69,6 +69,8 @@ pub struct CotpArgs {
 pub enum CotpSubcommands {
     /// Manage accounts on a YubiKey through ykman
     Hardware(crate::hardware::HardwareArgs),
+    /// Merge an authenticated encrypted backup from another device
+    Merge(crate::exchange::MergeArgs),
     /// Generate shell completion scripts without unlocking a vault
     Completions(shell::CompletionsArgs),
     /// Generate manual pages without unlocking a vault
