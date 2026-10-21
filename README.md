@@ -13,7 +13,7 @@ minimalist, secure, desktop accessible software to manage my two-factor authenti
 
 ## Interface
 
-<p align="center"><img src="/img/cotp-dashboard.svg" alt="cotp dashboard with demonstration accounts"/></p>
+<p align="center"><img src="/img/cotp_demo.gif" alt="cotp demo: navigate and search accounts, edit and add an account, hide codes, and confirm saving changes"/></p>
 
 Run `cotp` to open your vault. The dashboard adapts to your terminal, with searchable
 accounts, a countdown for the selected code, grouped codes, and an account detail panel
@@ -221,3 +221,13 @@ To regenerate the documentation previews from the real widgets and demonstration
 ```bash
 COTP_UI_PREVIEW=img/cotp-dashboard.svg COTP_FORM_PREVIEW=img/cotp-editor.svg cargo test interface::tests
 ```
+
+To rebuild the animated demo with deterministic example accounts, install ImageMagick
+(`magick`) and run:
+
+```bash
+python3 ci/render_ui_demo.py
+```
+
+The recording uses the actual dashboard widgets and keyboard/mouse handlers, with
+synthetic accounts and masked secrets. Tutorial captions appear below the application.

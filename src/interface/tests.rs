@@ -646,3 +646,99 @@ fn countdown_is_shown_once_and_header_does_not_clip_status() {
     let header: String = (0..36).map(|x| buffer[(x, 1)].symbol()).collect();
     assert!(header.contains("3 accounts  ● unsaved"));
 }
+
+/// Scripted recording of the real widgets and handlers with demonstration data only.
+/// Run through ci/render_ui_demo.py; excluded from ordinary verification runs.
+#[test]
+#[ignore = "generates frames for the README animation"]
+fn record_ui_demo() {
+    let directory = std::env::var("COTP_UI_DEMO_DIR").expect("set the frame output directory");
+    let mut db = database();
+    db.elements.extend([
+        account("AWS", "Production · engineering"),
+        account("Figma", "alex@studio.dev"),
+    ]);
+    let mut app = App::new(&mut db);
+    let mut frames = Vec::new();
+    let mut elapsed = 0;
+    let mut record = |app: &mut App, caption: &str, delay: u64| {
+        app.now = 12 + elapsed / 100;
+        for item in &mut app.table.items {
+            item.code = format!(
+                "{:06}",
+                751109 + item.database_index * 7319 + (app.now / 30) as usize * 1023
+            );
+        }
+        let filename = format!("frame-{:03}.svg", frames.len());
+        let buffer = render(app, 120, 34);
+        write_preview_svg(&buffer, &format!("{directory}/{filename}"));
+        frames.push(serde_json::json!({"file": filename, "caption": caption, "delay": delay}));
+        elapsed += delay;
+    };
+
+    record(&mut app, "Your accounts, at a glance", 200);
+    key(&mut app, KeyCode::Down);
+    record(
+        &mut app,
+        "Arrow keys or mouse wheel to select an account",
+        100,
+    );
+    key(&mut app, KeyCode::Char('/'));
+    record(&mut app, "Press / to find an account", 50);
+    for c in "google".chars() {
+        key(&mut app, KeyCode::Char(c));
+        record(&mut app, "Filter accounts as you type", 12);
+    }
+    record(&mut app, "Filter accounts as you type", 100);
+    key(&mut app, KeyCode::Esc);
+    key(&mut app, KeyCode::Char('e'));
+    record(&mut app, "Press e to edit the selected account", 100);
+    key(&mut app, KeyCode::Tab);
+    control(&mut app, 'u');
+    handle_paste("work@example.com", &mut app);
+    record(
+        &mut app,
+        "Tab between fields; existing secrets stay masked",
+        150,
+    );
+    control(&mut app, 's');
+    record(&mut app, "Ctrl+S applies your changes", 150);
+    app.notification = None;
+
+    // Use the same hitboxes as a real mouse click to open the Add form.
+    render(&mut app, 120, 34);
+    click(&mut app, super::enums::Action::Command(KeyCode::Char('a')));
+    record(&mut app, "Click Add, or press a, to create an account", 80);
+    handle_paste("Proton", &mut app);
+    key(&mut app, KeyCode::Tab);
+    record(&mut app, "Enter the service and account name", 60);
+    handle_paste("personal@example.com", &mut app);
+    key(&mut app, KeyCode::Tab);
+    record(&mut app, "Enter the service and account name", 60);
+    handle_paste("GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ", &mut app);
+    record(&mut app, "Paste a secret key or an otpauth:// URI", 100);
+    control(&mut app, 's');
+    record(&mut app, "Your new account is ready", 180);
+    app.notification = None;
+    key(&mut app, KeyCode::Char('h'));
+    record(&mut app, "Press h to hide codes", 100);
+    key(&mut app, KeyCode::Char('h'));
+    record(&mut app, "Press h again to reveal them", 70);
+    key(&mut app, KeyCode::Char('?'));
+    record(&mut app, "Press ? for shortcuts and clickable actions", 140);
+    key(&mut app, KeyCode::Esc);
+    key(&mut app, KeyCode::Char('q'));
+    record(
+        &mut app,
+        "Confirm on exit to save changes to the encrypted vault",
+        200,
+    );
+    key(&mut app, KeyCode::Esc);
+    key(&mut app, KeyCode::Home);
+    record(&mut app, "cotp · built for your terminal", 180);
+    std::fs::write(
+        format!("{directory}/frames.json"),
+        serde_json::to_string_pretty(&frames).unwrap(),
+    )
+    .unwrap();
+}
