@@ -64,6 +64,26 @@ pub(super) fn main_handler(key_event: KeyEvent, app: &mut App) {
         }
         KeyCode::Char('+') => handle_counter_switch(app, true),
         KeyCode::Char('-') => handle_counter_switch(app, false),
+        KeyCode::Char('f') if key_event.modifiers.is_empty() && app.current_page == Page::Main => {
+            if let Some(index) = app.table.selected_index() {
+                let element = app
+                    .database
+                    .mut_element(index)
+                    .expect("selected account exists");
+                element.favorite = !element.favorite;
+                let favorite = element.favorite;
+                app.database.mark_modified();
+                app.filter();
+                app.notify(
+                    if favorite {
+                        "Added to favorites"
+                    } else {
+                        "Removed from favorites"
+                    },
+                    false,
+                );
+            }
+        }
         KeyCode::Char('h') => {
             app.hide_codes = !app.hide_codes;
             app.reset();

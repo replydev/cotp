@@ -134,10 +134,13 @@ impl OTPDatabase {
     }
 
     pub fn sort(&mut self) {
-        self.elements.sort_unstable_by(|c1, c2| {
-            c1.issuer
-                .to_ascii_lowercase()
-                .cmp(&c2.issuer.to_ascii_lowercase())
+        self.elements.sort_by(|left, right| {
+            // Explicit positions precede the alphabetical accounts; favorites keep their position.
+            (left.order.is_none(), left.order)
+                .cmp(&(right.order.is_none(), right.order))
+                .then_with(|| left.issuer.to_lowercase().cmp(&right.issuer.to_lowercase()))
+                .then_with(|| left.label.to_lowercase().cmp(&right.label.to_lowercase()))
+                .then_with(|| left.id.cmp(&right.id))
         });
     }
 }

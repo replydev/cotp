@@ -26,6 +26,16 @@ pub struct AddArgs {
     #[arg(long)]
     pub alias: Option<String>,
 
+    /// Account tag (repeat for multiple tags)
+    #[arg(long = "tag", value_parser = crate::otp::organization::parse_tag)]
+    pub tags: Vec<String>,
+    /// Mark this account as a favorite
+    #[arg(long)]
+    pub favorite: bool,
+    /// Position before accounts without an explicit order (lowest first)
+    #[arg(long, allow_hyphen_values = true)]
+    pub order: Option<i64>,
+
     /// Code issuer
     #[arg(short, long, default_value = "")]
     pub issuer: String,
@@ -76,6 +86,9 @@ impl SubcommandExecutor for AddArgs {
             super::selector::validate_alias(&database, alias, None)?;
         }
         let alias = self.alias.clone();
+        let tags = self.tags.clone();
+        let favorite = self.favorite;
+        let order = self.order;
         let mut otp_element = if self.otp_uri {
             let mut otp_uri = if self.take_secret_from_stdin {
                 crate::utils::stdin_line()?
@@ -90,6 +103,9 @@ impl SubcommandExecutor for AddArgs {
         };
 
         otp_element.alias = alias;
+        crate::otp::organization::add_tags(&mut otp_element.tags, tags);
+        otp_element.favorite = favorite;
+        otp_element.order = order;
         database.add_element(otp_element)?;
         Ok(database)
     }

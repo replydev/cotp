@@ -31,11 +31,7 @@ impl StatefulTable {
         self.items = elements
             .iter()
             .enumerate()
-            .filter(|(_, element)| {
-                format!("{} {}", element.issuer, element.label)
-                    .to_lowercase()
-                    .contains(&query)
-            })
+            .filter(|(_, element)| crate::otp::organization::matches_search(element, &query))
             .map(|(index, element)| Row::new(index, element))
             .collect();
         let position = selected

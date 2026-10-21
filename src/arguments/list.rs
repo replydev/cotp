@@ -8,6 +8,12 @@ use crate::otp::otp_element::OTPDatabase;
 
 #[derive(Args)]
 pub struct ListArgs {
+    /// Require this tag (case-insensitive; repeat to require all tags)
+    #[arg(long = "tag", value_parser = crate::otp::organization::parse_tag)]
+    pub tags: Vec<String>,
+    /// List favorite accounts only
+    #[arg(long)]
+    pub favorite: bool,
     /// List output format
     #[command(flatten)]
     pub format: Option<ListFormat>,
@@ -43,6 +49,9 @@ struct JsonOtpList<'a> {
     alias: Option<&'a str>,
     issuer: &'a str,
     label: &'a str,
+    tags: &'a [String],
+    favorite: bool,
+    order: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     otp_code: Option<String>,
 }
@@ -53,6 +62,9 @@ impl SubcommandExecutor for ListArgs {
             .elements_ref()
             .iter()
             .enumerate()
+            .filter(|(_, element)| {
+                crate::otp::organization::matches_filters(element, &self.tags, self.favorite)
+            })
             .map(|(index, element)| {
                 Ok(JsonOtpList {
                     index: index + 1,
@@ -60,6 +72,9 @@ impl SubcommandExecutor for ListArgs {
                     alias: element.alias.as_deref(),
                     issuer: &element.issuer,
                     label: &element.label,
+                    tags: &element.tags,
+                    favorite: element.favorite,
+                    order: element.order,
                     otp_code: if self.metadata_only {
                         None
                     } else {
@@ -73,7 +88,10 @@ impl SubcommandExecutor for ListArgs {
             serde_json::to_writer_pretty(&mut stdout, &elements)?;
             writeln!(stdout)?;
         } else {
-            write!(stdout, "Index\tID\tAlias\tIssuer\tLabel")?;
+            write!(
+                stdout,
+                "Index\tID\tAlias\tIssuer\tLabel\tTags\tFavorite\tOrder"
+            )?;
             if !self.metadata_only {
                 write!(stdout, "\tOTP")?;
             }
@@ -81,12 +99,18 @@ impl SubcommandExecutor for ListArgs {
             for element in elements {
                 write!(
                     stdout,
-                    "{}\t{}\t{}\t{}\t{}",
+                    "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
                     element.index,
                     element.id.escape_default(),
                     element.alias.unwrap_or("").escape_default(),
                     element.issuer.escape_default(),
-                    element.label.escape_default()
+                    element.label.escape_default(),
+                    element.tags.join(",").escape_default(),
+                    element.favorite,
+                    element
+                        .order
+                        .map(|value| value.to_string())
+                        .unwrap_or_default()
                 )?;
                 if let Some(code) = element.otp_code {
                     write!(stdout, "\t{code}")?;
