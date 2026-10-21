@@ -1,5 +1,6 @@
 use crate::otp::{otp_element::OTPElement, otp_type::OTPType};
 
+#[derive(zeroize::Zeroize, zeroize::ZeroizeOnDrop)]
 pub(crate) struct Row {
     /// Stable database position, independent of the filtered table position.
     pub(crate) database_index: usize,

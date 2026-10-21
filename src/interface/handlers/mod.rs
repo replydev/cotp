@@ -13,8 +13,43 @@ mod popup;
 mod search_bar;
 
 pub fn handle_key_events(key_event: KeyEvent, app: &mut App) {
+    if app.sealed.is_some() {
+        match key_event.code {
+            KeyCode::Enter => app.unlock_session(),
+            KeyCode::Backspace => {
+                let mut replacement = zeroize::Zeroizing::new(app.unlock_password.to_string());
+                replacement.pop();
+                app.unlock_password = replacement;
+            }
+            KeyCode::Char('u') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
+                use zeroize::Zeroize;
+                app.unlock_password.zeroize();
+            }
+            KeyCode::Char(c)
+                if !key_event
+                    .modifiers
+                    .intersects(KeyModifiers::CONTROL | KeyModifiers::ALT) =>
+            {
+                app.unlock_password.push(c)
+            }
+            _ => {}
+        }
+        return;
+    }
+    app.last_activity = std::time::Instant::now();
+    if key_event.code == KeyCode::Char('l') && key_event.modifiers.contains(KeyModifiers::CONTROL) {
+        app.lock_session();
+        return;
+    }
     if app.focus == Focus::Form {
         super::form::handle_form_key(key_event, app);
+        return;
+    }
+    if key_event.code == KeyCode::Char('s') && key_event.modifiers.contains(KeyModifiers::CONTROL) {
+        match crate::persistence::persist(app.database) {
+            Ok(()) => app.notify("Changes saved to encrypted vault", false),
+            Err(error) => app.notify(format!("Could not save: {error}"), true),
+        }
         return;
     }
     if key_event.modifiers.contains(KeyModifiers::CONTROL)
@@ -32,6 +67,10 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) {
 }
 
 pub fn handle_mouse_events(event: MouseEvent, app: &mut App) {
+    if app.sealed.is_some() {
+        return;
+    }
+    app.last_activity = std::time::Instant::now();
     if event.kind == MouseEventKind::Down(MouseButton::Left) {
         let action = app
             .hitboxes
@@ -109,6 +148,10 @@ pub fn handle_mouse_events(event: MouseEvent, app: &mut App) {
 }
 
 pub fn handle_paste(text: &str, app: &mut App) {
+    if app.sealed.is_some() {
+        return;
+    }
+    app.last_activity = std::time::Instant::now();
     if let Some(form) = app.form.as_mut() {
         form.paste(text);
         return;
@@ -150,11 +193,17 @@ pub(crate) fn copy_selected(app: &mut App, uri: bool) {
                 code_for(element)
             }
         })
-        .and_then(|text| copy_string_to_clipboard(&text).map_err(|error| error.to_string()));
+        .and_then(|text| {
+            copy_string_to_clipboard(&zeroize::Zeroizing::new(text))
+                .map_err(|error| error.to_string())
+        });
     let noun = if uri { "OTP URI" } else { "Code" };
     match result {
         Ok(CopyType::Native) => app.notify(format!("✓ {noun} copied to clipboard"), false),
-        Ok(CopyType::OSC52) => app.notify(format!("✓ {noun} sent to terminal clipboard"), false),
+        Ok(CopyType::OSC52) => app.notify(
+            format!("✓ {noun} sent to terminal clipboard · automatic clearing unavailable"),
+            false,
+        ),
         Err(error) => app.notify(format!("Could not copy: {error}"), true),
     }
 }

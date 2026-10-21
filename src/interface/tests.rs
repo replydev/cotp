@@ -747,3 +747,58 @@ fn record_ui_demo() {
     )
     .unwrap();
 }
+
+#[test]
+fn locking_wipes_plaintext_and_key_and_restores_pending_database_and_form() {
+    use crate::{
+        crypto::cryptography::{argon_derive_key, gen_salt},
+        persistence,
+    };
+    use zeroize::Zeroizing;
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("vault");
+    std::fs::write(&path, b"unchanged disk").unwrap();
+    persistence::initialize(&path).unwrap();
+    let salt = gen_salt().unwrap();
+    let key = Zeroizing::new(argon_derive_key(b"password", &salt).unwrap());
+    persistence::unlock(&key, &salt).unwrap();
+    let mut database = database();
+    database.mark_modified();
+    let mut app = App::new(&mut database);
+    app.open_form(false);
+    app.form.as_mut().unwrap().active = 2;
+    handle_paste("MYUNFINISHEDSECRET", &mut app);
+    handle_key_events(
+        KeyEvent::new(KeyCode::Char('l'), KeyModifiers::CONTROL),
+        &mut app,
+    );
+    assert!(app.sealed.is_some());
+    assert!(app.database.elements_ref().is_empty());
+    assert!(!app.database.is_modified());
+    assert!(app.table.items.is_empty());
+    assert!(app.form.is_none());
+    assert!(app.search_query.is_empty());
+    assert!(persistence::seal("cannot encrypt without key").is_err());
+    assert!(!app.sealed.as_ref().unwrap().contains("MYUNFINISHEDSECRET"));
+    let locked = text(&render(&mut app, 100, 20));
+    assert!(locked.contains("Locked"));
+    assert!(!locked.contains("alex@"));
+    app.unlock_password.push_str("wrong password");
+    app.unlock_session();
+    assert!(app.sealed.is_some());
+    assert!(app.unlock_password.is_empty());
+    app.unlock_password.push_str("password");
+    app.unlock_session();
+    assert!(app.sealed.is_none());
+    assert_eq!(app.database.elements_ref().len(), 3);
+    assert!(app.database.is_modified());
+    assert_eq!(app.focus, Focus::Form);
+    let form_state = serde_json::to_string(&app.form.as_ref().unwrap().snapshot()).unwrap();
+    assert!(form_state.contains("MYUNFINISHEDSECRET"));
+    assert_eq!(std::fs::read(&path).unwrap(), b"unchanged disk");
+    app.cancel_form();
+    app.last_activity = std::time::Instant::now() - std::time::Duration::from_secs(301);
+    app.tick(false);
+    assert!(app.sealed.is_some());
+    assert!(persistence::seal("locked again").is_err());
+}

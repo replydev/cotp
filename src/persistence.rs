@@ -116,6 +116,23 @@ pub fn lock() {
     }
 }
 
+/// Seal transient UI state before clearing the only retained vault key.
+pub fn seal(plaintext: &str) -> Result<String> {
+    let session = SESSION
+        .lock()
+        .map_err(|_| eyre!("Vault session unavailable"))?;
+    let session = session
+        .as_ref()
+        .ok_or_else(|| eyre!("Vault session not initialized"))?;
+    let key = session
+        .key
+        .as_ref()
+        .ok_or_else(|| eyre!("Vault is locked"))?;
+    Ok(serde_json::to_string(
+        &crate::crypto::cryptography::encrypt_string_with_key(plaintext, key, &session.salt)?,
+    )?)
+}
+
 pub fn write_database(path: &Path, content: &[u8]) -> Result<()> {
     let mut session = SESSION
         .lock()

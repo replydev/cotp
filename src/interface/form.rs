@@ -85,7 +85,54 @@ pub(crate) struct AccountForm {
     pub(crate) error: Option<String>,
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
+pub(crate) struct FormSnapshot {
+    editing: Option<usize>,
+    original: Option<OTPElement>,
+    inputs: [String; 9],
+    secret: String,
+    pin: String,
+    active: usize,
+    error: Option<String>,
+}
+impl Drop for FormSnapshot {
+    fn drop(&mut self) {
+        self.secret.zeroize();
+        self.pin.zeroize();
+        self.inputs.zeroize();
+    }
+}
+
 impl AccountForm {
+    pub(crate) fn snapshot(&self) -> FormSnapshot {
+        FormSnapshot {
+            editing: self.editing,
+            original: self.original.clone(),
+            inputs: std::array::from_fn(|i| self.inputs[i].value().to_owned()),
+            secret: self.secret.value.to_string(),
+            pin: self.pin.value.to_string(),
+            active: self.active,
+            error: self.error.clone(),
+        }
+    }
+    pub(crate) fn restore(mut state: FormSnapshot) -> Self {
+        Self {
+            editing: state.editing,
+            original: state.original.take(),
+            inputs: std::array::from_fn(|i| Input::new(std::mem::take(&mut state.inputs[i]))),
+            secret: SecretInput {
+                value: Zeroizing::new(std::mem::take(&mut state.secret)),
+                cursor: 0,
+            },
+            pin: SecretInput {
+                value: Zeroizing::new(std::mem::take(&mut state.pin)),
+                cursor: 0,
+            },
+            active: state.active,
+            error: state.error.take(),
+        }
+    }
+
     pub(crate) fn new(editing: Option<usize>, element: Option<&OTPElement>) -> Self {
         let mut form = Self {
             editing,
@@ -460,5 +507,16 @@ pub(crate) fn handle_form_key(key: KeyEvent, app: &mut App) {
         KeyCode::Enter if form.active == CANCEL => app.cancel_form(),
         KeyCode::Enter => form.navigate(false),
         _ => form.input(key),
+    }
+}
+
+impl Drop for AccountForm {
+    fn drop(&mut self) {
+        for input in &mut self.inputs {
+            input.value_and_reset().zeroize();
+        }
+        if let Some(error) = self.error.as_mut() {
+            error.zeroize();
+        }
     }
 }

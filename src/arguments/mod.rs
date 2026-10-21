@@ -86,6 +86,8 @@ pub enum CotpSubcommands {
     Completions(shell::CompletionsArgs),
     /// Generate manual pages without unlocking a vault
     Man(shell::ManArgs),
+    /// Lock every running dashboard for this vault without unlocking it
+    Lock(crate::session_lock::LockArgs),
     /// Add new OTP code
     Add(AddArgs),
     /// Edit an existing OTP Code
