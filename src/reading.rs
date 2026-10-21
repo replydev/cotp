@@ -31,14 +31,9 @@ pub fn read_decrypted_text(password: &str) -> color_eyre::Result<(String, Vec<u8
     let encrypted_contents =
         read_to_string(DATABASE_PATH.get().unwrap()).map_err(ErrReport::from)?;
     if encrypted_contents.is_empty() {
-        return match delete_db() {
-            Ok(()) => Err(eyre!(
-                "Your database file was empty, please restart to create a new one.",
-            )),
-            Err(_) => Err(eyre!(
-                "Your database file is empty, please remove it manually and restart.",
-            )),
-        };
+        return Err(eyre!(
+            "Vault file is empty. Restore a verified backup; the file was not changed."
+        ));
     }
     //rust close files at the end of the function
     crypto::cryptography::decrypt_string(&encrypted_contents, password)
@@ -57,8 +52,4 @@ pub fn read_from_file(password: &str) -> color_eyre::Result<ReadResult> {
         }
         Err(e) => Err(e),
     }
-}
-
-fn delete_db() -> io::Result<()> {
-    std::fs::remove_file(DATABASE_PATH.get().unwrap())
 }

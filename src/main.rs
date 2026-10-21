@@ -18,6 +18,7 @@ use std::{
 use zeroize::Zeroize;
 
 mod arguments;
+mod backup;
 mod clipboard;
 mod crypto;
 mod database_file;
@@ -26,14 +27,26 @@ mod importers;
 mod interface;
 mod otp;
 mod path;
+mod persistence;
 mod reading;
 mod utils;
 
 fn init(args: &CotpArgs) -> color_eyre::Result<ReadResult> {
-    init_path(args);
+    let path = init_path(args);
+    if !path.exists()
+        && !matches!(
+            args.command,
+            None | Some(arguments::CotpSubcommands::Add(_) | arguments::CotpSubcommands::Import(_))
+        )
+    {
+        return Err(eyre!(
+            "Vault does not exist. Create it with cotp add or cotp import."
+        ));
+    }
 
     match utils::init_app() {
         Ok(first_run) => {
+            persistence::initialize(&path)?;
             if first_run {
                 // Let's initialize the database file
                 let mut pw = utils::verified_password("Choose a password: ", 8);
@@ -59,27 +72,40 @@ fn main() -> AppResult<()> {
     color_eyre::install()?;
 
     let cotp_args: CotpArgs = CotpArgs::parse();
-    let (database, mut key, salt) = match init(&cotp_args) {
+    if let Some(arguments::CotpSubcommands::Backup(args)) = &cotp_args.command {
+        let path = init_path(&cotp_args);
+        return backup::run(args, &path, cotp_args.password_from_stdin).map_err(|e| e.into());
+    }
+    let (mut database, key, salt) = match init(&cotp_args) {
         Ok(v) => v,
         Err(e) => {
-            println!("{e}");
+            eprintln!("{e}");
             std::process::exit(-1);
         }
     };
+
+    let mut key = zeroize::Zeroizing::new(key);
+    persistence::unlock(&key, &salt)?;
+    // Complete format upgrades before commands so transactional HOTP starts clean.
+    otp::migrations::migrate(&mut database)?;
+    if database.is_modified() {
+        database.save(&key, &salt)?;
+    }
+    key.zeroize();
 
     let mut reowned_database = match args_parser(cotp_args, database) {
         Ok(d) => d,
         Err(e) => {
             eprintln!("An error occurred: {e}");
-            key.zeroize();
+            persistence::lock();
             std::process::exit(-2)
         }
     };
 
     let error_code = if reowned_database.is_modified() {
-        match reowned_database.save(&key, &salt) {
+        match persistence::persist(&mut reowned_database) {
             Ok(()) => {
-                println!("Modifications have been persisted");
+                eprintln!("Modifications have been persisted");
                 0
             }
             Err(e) => {
@@ -90,7 +116,7 @@ fn main() -> AppResult<()> {
     } else {
         0
     };
-    key.zeroize();
+    persistence::lock();
     std::process::exit(error_code)
 }
 

@@ -252,3 +252,23 @@ python3 ci/render_ui_demo.py
 
 The recording uses the actual dashboard widgets and keyboard/mouse handlers, with
 synthetic accounts and masked secrets. Tutorial captions appear below the application.
+
+### Encrypted backups and concurrent use
+
+`cotp backup create ~/backups/cotp --keep 10` creates a private encrypted vault
+backup and optionally retains the newest ten cotp backup files in that directory.
+`cotp backup list ~/backups/cotp` lists backups without unlocking the vault.
+Use `cotp backup verify FILE` to authenticate and validate a backup with its
+original password. `cotp -d /path/to/vault backup restore FILE` restores a verified
+backup; `--force` is required to replace an existing vault. The original backup
+password remains in effect. Restoring an older backup can roll back HOTP counters;
+resynchronize affected accounts with the service before consuming codes.
+`--password-stdin` also works for backup verification and restoration.
+
+Vault writes take a cross-process lock and reject stale snapshots, so an open
+dashboard cannot silently overwrite another command's changes. If a save reports
+that another process changed the vault, reopen it before retrying your edits.
+Copying an HOTP code commits the incremented counter before releasing the code;
+if the dashboard has unsaved edits, save those first. Displayed HOTP codes are
+previews. A clipboard failure after successful persistence still consumes the
+counter; this prevents a previously released code from being issued again.

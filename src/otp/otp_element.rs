@@ -68,7 +68,7 @@ impl OTPDatabase {
         let json: &str = &serde_json::to_string(&self)?;
         let encrypted = encrypt_string_with_key(json, key, salt)?;
         let content = serde_json::to_vec(&encrypted)?;
-        crate::database_file::write(DATABASE_PATH.get().unwrap(), &content)?;
+        crate::persistence::write_database(DATABASE_PATH.get().unwrap(), &content)?;
         Ok(())
     }
 
@@ -76,6 +76,7 @@ impl OTPDatabase {
         let salt = gen_salt()?;
         let key = argon_derive_key(password.as_bytes(), &salt)?;
         self.save(&key, &salt)?;
+        crate::persistence::unlock(&key, &salt)?;
         Ok((key, salt))
     }
 

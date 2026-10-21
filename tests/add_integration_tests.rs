@@ -57,8 +57,8 @@ AA
         // Assert
         assertion
             .success()
-            .stderr(is_empty())
-            .stdout(eq("Modifications have been persisted\n"));
+            .stdout(is_empty())
+            .stderr(eq("Modifications have been persisted\n"));
     }
 
     #[cfg(unix)]
@@ -101,7 +101,8 @@ AA
             ));
 
         assert_eq!(std::fs::read(&database).unwrap(), original);
-        assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 1);
+        assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 2);
+        assert!(dir.path().join("db.cotp.lock").is_file());
         cargo_bin_cmd!("cotp")
             .arg("--password-stdin")
             .arg("--database-path")
