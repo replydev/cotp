@@ -79,7 +79,11 @@ impl SubcommandExecutor for AddArgs {
         }
         let alias = self.alias.clone();
         let mut otp_element = if self.otp_uri {
-            let mut otp_uri = rpassword::prompt_password("Insert the otp uri: ").unwrap();
+            let mut otp_uri = if self.take_secret_from_stdin {
+                crate::utils::stdin_line()?
+            } else {
+                crate::utils::prompt_password("Insert the otp uri: ")?
+            };
             let result = OTPElement::from_otp_uri(otp_uri.as_str());
             otp_uri.zeroize();
             result?
@@ -101,7 +105,7 @@ fn get_from_args(matches: AddArgs) -> color_eyre::Result<OTPElement> {
             Err(eyre::eyre!("Error during reading from stdin"))
         }
     } else {
-        rpassword::prompt_password("Insert the secret: ").map_err(ErrReport::from)
+        crate::utils::prompt_password("Insert the secret: ")
     }?;
     map_args_to_code(secret, matches)
 }

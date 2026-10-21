@@ -72,7 +72,7 @@ impl SubcommandExecutor for EditArgs {
         }
         let secret = self
             .change_secret
-            .then(|| rpassword::prompt_password("Insert the secret: "))
+            .then(|| crate::utils::prompt_password("Insert the secret: "))
             .transpose()?;
         let element = database
             .mut_element(index)

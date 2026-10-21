@@ -14,6 +14,9 @@ use super::SubcommandExecutor;
 
 #[derive(Args)]
 pub struct DeleteArgs {
+    /// Delete the selected account without prompting
+    #[arg(long, short = 'y')]
+    pub yes: bool,
     #[command(flatten)]
     pub selector: super::selector::AccountSelector,
 }
@@ -27,13 +30,18 @@ impl SubcommandExecutor for DeleteArgs {
         let index_to_delete = self.selector.select(&otp_database)?;
 
         if let Some(element) = otp_database.elements_ref().get(index_to_delete) {
-            print!(
+            if self.yes {
+                otp_database.delete_element(index_to_delete);
+                return Ok(otp_database);
+            }
+            crate::utils::ensure_interactive()?;
+            eprint!(
                 "Are you sure you want to delete the {}th code ({}, {}) [Y,N]: ",
                 index_to_delete + 1,
                 element.issuer,
                 element.label
             );
-            io::stdout().flush()?;
+            io::stderr().flush()?;
 
             let output = read_confirmation_line()?;
 

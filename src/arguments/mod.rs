@@ -11,12 +11,13 @@ use self::{
 };
 
 mod add;
+pub(crate) mod code;
 mod delete;
 mod edit;
 mod export;
 mod extract;
 mod import;
-mod list;
+pub(crate) mod list;
 mod passwd;
 pub(crate) mod selector;
 
@@ -42,8 +43,14 @@ DASHBOARD
 pub struct CotpArgs {
     #[command(subcommand)]
     pub(crate) command: Option<CotpSubcommands>,
+    /// Disable all interactive prompts
+    #[arg(long, global = true)]
+    pub no_input: bool,
+    /// Read the vault password from this descriptor, leaving stdin for account data
+    #[arg(long, global = true, conflicts_with = "password_from_stdin")]
+    pub password_fd: Option<u32>,
     /// Fetch the password from standard input
-    #[arg(long = "password-stdin", default_value_t = false)]
+    #[arg(long = "password-stdin", default_value_t = false, global = true)]
     pub password_from_stdin: bool,
     /// Set the database path
     #[arg(short = 'd', long = "database-path")]
@@ -54,6 +61,10 @@ pub struct CotpArgs {
 #[derive(Subcommand)]
 #[enum_dispatch(SubcommandExecutor)]
 pub enum CotpSubcommands {
+    /// Create a new encrypted vault, including in scripts with --password-stdin/--password-fd
+    Init(InitArgs),
+    /// Generate one uniquely selected account code (HOTP advances unless --preview)
+    Code(code::CodeArgs),
     /// Add new OTP code
     Add(AddArgs),
     /// Edit an existing OTP Code
@@ -72,6 +83,15 @@ pub enum CotpSubcommands {
     Passwd(PasswdArgs),
     /// Create, verify, list, or restore encrypted backups
     Backup(crate::backup::BackupArgs),
+}
+
+#[derive(clap::Args)]
+pub struct InitArgs;
+impl SubcommandExecutor for InitArgs {
+    fn run_command(self, database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
+        eprintln!("Encrypted vault initialized");
+        Ok(database)
+    }
 }
 
 pub fn args_parser(matches: CotpArgs, read_result: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
