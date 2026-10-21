@@ -20,6 +20,27 @@ are siblings of the integration checkout, named `standard-<area>`.
 | `feature/standard-keychain` | Opt-in native OS credential storage, authenticated remember/forget/status, vault-scoped credentials and explicit-password precedence |
 | `feature/standard-review` | Integration review fixes for plaintext/key lifetimes and malformed backup handling |
 | `feature/standard-docs` | Consolidated user guides and headless CI checks |
+| `fix/standard-converter-tests` | Import-safe Python converter entry points |
+
+## Integration validation
+
+The merged implementation passed these checks on Linux aarch64:
+
+```sh
+cargo fmt --all -- --check
+cargo clippy -- -D warnings
+cargo test --locked --quiet
+cargo test --locked --release --quiet
+cargo clippy --locked --no-default-features -- -D warnings
+cargo test --locked --no-default-features --quiet
+uv run --with pytest python -m pytest -q converters
+```
+
+Each Rust configuration passed 120 unit tests and 24 integration tests. The
+cross-process locking helper is marked ignored in the general suite and invoked
+explicitly by its parent test. All four Python converter tests passed. macOS,
+Windows, physical hardware, native credential stores, and release attestation
+were not exercised locally.
 
 ## Deliberate boundaries
 
