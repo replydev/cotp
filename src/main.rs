@@ -30,6 +30,7 @@ mod otp;
 mod path;
 mod persistence;
 mod reading;
+mod session_lock;
 mod utils;
 
 fn init(args: &CotpArgs) -> color_eyre::Result<ReadResult> {
@@ -71,12 +72,20 @@ fn init(args: &CotpArgs) -> color_eyre::Result<ReadResult> {
 
 fn main() -> AppResult<()> {
     color_eyre::install()?;
+    if clipboard::run_expiry_helper()? {
+        return Ok(());
+    }
 
     let mut cotp_args: CotpArgs = CotpArgs::parse();
     if arguments::shell::handle(&cotp_args)? {
         return Ok(());
     }
     config::load(&mut cotp_args)?;
+    if matches!(cotp_args.command, Some(arguments::CotpSubcommands::Lock(_))) {
+        session_lock::request(&init_path(&cotp_args))?;
+        eprintln!("Lock requested for running dashboards");
+        return Ok(());
+    }
     if let Some(arguments::CotpSubcommands::Backup(args)) = &cotp_args.command {
         let path = init_path(&cotp_args);
         return backup::run(args, &path, cotp_args.password_from_stdin).map_err(|e| e.into());
@@ -141,7 +150,11 @@ fn dashboard(mut database: OTPDatabase) -> AppResult<OTPDatabase> {
     let terminal = Terminal::new(backend)?;
     let mut tui = Tui::new(terminal, EventHandler::new(250));
     tui.init()?;
+    let mut lock_requests = session_lock::Watcher::new(path::DATABASE_PATH.get().unwrap())?;
     while app.running {
+        if lock_requests.requested() {
+            app.lock_session();
+        }
         tui.draw(&mut app)?;
         match tui.events.next()? {
             Event::Tick => app.tick(false),

@@ -37,6 +37,8 @@ use `cotp list` or `cotp list --json` when piping output.
 | `d` or `Delete` | Delete an account, with confirmation |
 | `?` or `i` | Open the shortcuts and actions menu |
 | `Esc` | Close the current screen, finish searching, clear a filter, or quit |
+| `Ctrl+L` | Lock immediately; enter the vault password to restore pending edits |
+| `Ctrl+S` | Save pending account changes without quitting |
 | `q`, `Ctrl+C`, `Ctrl+D` | Quit; account changes prompt you to save or discard |
 
 ### Stable account selection
@@ -272,3 +274,19 @@ Copying an HOTP code commits the incremented counter before releasing the code;
 if the dashboard has unsaved edits, save those first. Displayed HOTP codes are
 previews. A clipboard failure after successful persistence still consumes the
 counter; this prevents a previously released code from being issued again.
+
+
+The dashboard locks after 300 seconds without keyboard, mouse, or paste activity.
+`cotp lock` requests a lock in every dashboard using the selected vault, without
+requesting a password. Locking encrypts pending account edits and unfinished forms
+in memory and drops the decrypted database and vault key. Enter the password to
+resume; locking neither saves nor discards pending work.
+
+Native clipboard copies expire after 30 seconds, provided the clipboard still
+contains the copied value. A newer clipboard value is left intact. This comparison
+is best effort: operating-system clipboards do not offer an atomic compare-and-clear.
+SSH/OSC52 copies cannot be read back reliably and are never automatically cleared;
+the dashboard reports this limitation. Set `idle_timeout_seconds` or
+`clipboard_seconds` in the JSON configuration to change these defaults; `0`
+disables the respective timer. Clipboard expiration continues after a CLI command
+exits, using a helper process that receives the copied content through stdin.

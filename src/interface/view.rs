@@ -25,6 +25,15 @@ impl App<'_> {
             ratatui::widgets::Block::default().style(Style::default().bg(BACKGROUND).fg(TEXT)),
             frame.area(),
         );
+        if self.sealed.is_some() {
+            let error = self
+                .notification
+                .as_ref()
+                .map(|(message, _, _)| message.as_str())
+                .unwrap_or("");
+            frame.render_widget(Paragraph::new(format!("cotp · Locked\n\nEnter your vault password and press Enter to unlock.\nPending edits are encrypted in memory.\n\nPassword: {}\n{}", "•".repeat(self.unlock_password.chars().count()), error)).wrap(Wrap { trim: true }), frame.area().inner(Margin::new(1, 1)));
+            return;
+        }
         if frame.area().width < 36 || frame.area().height < 12 {
             frame.render_widget(
                 Paragraph::new("cotp\n\nEnlarge the terminal to 36 × 12.\nq quit")
@@ -88,6 +97,7 @@ impl App<'_> {
                 ("/", "search"),
                 ("Space", "QR"),
                 ("h", "hide"),
+                ("Ctrl+L", "lock"),
                 ("?", "help"),
                 ("q", "quit"),
             ]
@@ -123,6 +133,7 @@ impl App<'_> {
             frame.render_widget(Paragraph::new(line), rect);
             let action = match *key {
                 "Ctrl+U" => Some(Action::ClearSearch),
+                "Ctrl+L" => None,
                 "↑" => Some(Action::Key(KeyCode::Up)),
                 "↓" | "↑↓" => Some(Action::Key(KeyCode::Down)),
                 "Enter" | "↵" => Some(Action::Key(KeyCode::Enter)),
