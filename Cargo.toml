@@ -66,6 +66,7 @@ tui-input = { version = "0.15.5", default-features = false, features = ["crosste
 tempfile = "3.27.0"
 rqrr = { version = "0.10", default-features = false }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
+zip = { version = "4", default-features = false, features = ["deflate"] }
 
 [dev-dependencies]
 proptest = "1"

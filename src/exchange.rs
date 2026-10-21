@@ -172,7 +172,7 @@ impl SubcommandExecutor for MergeArgs {
                     "Use --source-password-stdin for noninteractive merge"
                 ));
             }
-            rpassword::prompt_password("Source backup password: ")?
+            crate::utils::prompt_password("Source backup password: ")?
         });
         let mut bytes = Vec::new();
         std::fs::File::open(&self.file)?

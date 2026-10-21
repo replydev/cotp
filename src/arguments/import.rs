@@ -23,6 +23,9 @@ pub struct ImportArgs {
     /// Backup file path (legacy alias for positional INPUT)
     #[arg(short, long, required_unless_present = "input")]
     pub path: Option<PathBuf>,
+    /// Read the encrypted Aegis import password from a private file
+    #[arg(long)]
+    pub import_password_file: Option<PathBuf>,
     /// Preview changes without modifying the vault
     #[arg(long)]
     pub dry_run: bool,
@@ -40,6 +43,19 @@ pub struct ImportArgs {
 #[derive(Args)]
 #[group(required = false, multiple = false)]
 pub struct BackupType {
+    /// Import an unencrypted 2FAS .2fas backup
+    #[arg(long = "2fas")]
+    pub twofas: bool,
+    /// Import an Ente Auth plaintext URI export
+    #[arg(long)]
+    pub ente: bool,
+    /// Import Bitwarden Authenticator or Password Manager plaintext JSON
+    #[arg(long)]
+    pub bitwarden: bool,
+    /// Import a 1Password .1pux ZIP or extracted export.data JSON
+    #[arg(long)]
+    pub onepassword: bool,
+
     /// Import from cotp backup
     #[arg(short, long)]
     pub cotp: bool,
@@ -89,6 +105,10 @@ pub struct BackupType {
 impl BackupType {
     fn selected(&self) -> Option<&'static str> {
         [
+            (self.twofas, "twofas"),
+            (self.ente, "ente"),
+            (self.bitwarden, "bitwarden"),
+            (self.onepassword, "onepassword"),
             (self.cotp, "cotp"),
             (self.andotp, "andotp"),
             (self.aegis, "aegis"),
@@ -126,13 +146,18 @@ impl SubcommandExecutor for ImportArgs {
         if bytes.len() > 32 * 1024 * 1024 {
             return Err(eyre!("Import input exceeds 32 MiB"));
         }
-        let report = if image::guess_format(&bytes).is_ok() {
+        let report = if bytes.starts_with(b"PK\x03\x04") {
+            crate::importers::modern::onepassword_archive(&bytes)?
+        } else if image::guess_format(&bytes).is_ok() {
             enrollment::decode_qr(&bytes)?
         } else {
             let content = std::str::from_utf8(&bytes)
                 .map_err(|_| eyre!("Input is not UTF-8 text or a supported QR image"))?
                 .trim();
-            if content.starts_with("otpauth") || self.backup_type.google_authenticator {
+            if content.starts_with("otpauth")
+                || self.backup_type.google_authenticator
+                || self.backup_type.ente
+            {
                 enrollment::parse_uris(content)
             } else {
                 let value: serde_json::Value = serde_json::from_str(content).map_err(|_| {
@@ -144,7 +169,24 @@ impl SubcommandExecutor for ImportArgs {
                 };
                 if format == "aegis-encrypted" {
                     let mut report = ImportReport::default();
-                    report.record(1, enrollment::convert::<AegisEncryptedDatabase>(value));
+                    let input: AegisEncryptedDatabase = serde_json::from_value(value)
+                        .map_err(|_| eyre!("Invalid encrypted Aegis backup"))?;
+                    let elements = if let Some(path) = self.import_password_file {
+                        let mut password = zeroize::Zeroizing::new(String::new());
+                        std::fs::File::open(path)?
+                            .take(4097)
+                            .read_to_string(&mut password)?;
+                        if password.len() > 4096 {
+                            return Err(eyre!("Import password file is too large"));
+                        }
+                        input.decrypt_with_password(password.trim_end_matches(['\r', '\n']))
+                    } else {
+                        input.try_into()
+                    };
+                    report.record(
+                        1,
+                        elements.map_err(|_| eyre!("Cannot decrypt Aegis backup")),
+                    );
                     report
                 } else {
                     enrollment::parse_json(value, format)?

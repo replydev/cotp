@@ -103,7 +103,11 @@ fn run(mut cotp_args: CotpArgs) -> Result<(), (u8, color_eyre::eyre::Report)> {
         )
         .map_err(|error| (1, error));
     }
-    let dry_run = matches!(&cotp_args.command, Some(arguments::CotpSubcommands::Import(args)) if args.dry_run);
+    let dry_run = match &cotp_args.command {
+        Some(arguments::CotpSubcommands::Import(args)) => args.dry_run,
+        Some(arguments::CotpSubcommands::Merge(args)) => args.dry_run,
+        _ => false,
+    };
     let save_upgrade_before_command = matches!(
         &cotp_args.command,
         None | Some(

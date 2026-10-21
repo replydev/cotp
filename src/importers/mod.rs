@@ -7,4 +7,5 @@ pub mod freeotp_plus;
 pub mod google_authenticator;
 #[cfg(test)]
 pub mod importer;
+pub mod modern;
 pub mod otp_uri;
