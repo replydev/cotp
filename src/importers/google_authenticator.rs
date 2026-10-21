@@ -12,8 +12,6 @@
 //! the hand-declared message definitions below (Google's schema is stable and
 //! tiny, so no `.proto`/`protoc` build step is needed).
 
-use std::{fs::read_to_string, path::PathBuf};
-
 use base64::{Engine as _, engine::general_purpose};
 use color_eyre::eyre::{Result, eyre};
 use data_encoding::BASE32_NOPAD;
@@ -60,15 +58,9 @@ const ALGORITHM_MD5: i32 = 4;
 const DIGIT_COUNT_EIGHT: i32 = 2;
 const OTP_TYPE_HOTP: i32 = 1;
 
-/// Reads a file containing one or more `otpauth-migration://` URIs and decodes
-/// every OTP parameter contained in them.
-pub fn import_from_google_authenticator(path: PathBuf) -> Result<Vec<OTPElement>> {
-    let content = read_to_string(path)?;
-    import_from_string(&content)
-}
-
 /// Parses every `otpauth-migration://` URI found in `content` (tokens are
 /// split on whitespace, so both single- and multi-line inputs work).
+#[cfg(test)]
 fn import_from_string(content: &str) -> Result<Vec<OTPElement>> {
     let uris: Vec<&str> = content
         .split_whitespace()
@@ -91,7 +83,7 @@ fn import_from_string(content: &str) -> Result<Vec<OTPElement>> {
 }
 
 /// Decodes a single `otpauth-migration://offline?data=...` URI.
-fn parse_migration_uri(uri: &str) -> Result<Vec<OTPElement>> {
+pub(crate) fn parse_migration_uri(uri: &str) -> Result<Vec<OTPElement>> {
     let parsed = Url::parse(uri)?;
 
     if parsed.scheme() != MIGRATION_SCHEME {
@@ -130,20 +122,24 @@ fn into_otp_element(params: OtpParameters) -> Result<OTPElement> {
         ALGORITHM_SHA512 => OTPAlgorithm::Sha512,
         ALGORITHM_MD5 => OTPAlgorithm::Md5,
         // 0 (unspecified) and 1 (SHA1) both map to SHA1.
-        _ => OTPAlgorithm::Sha1,
+        0 | 1 => OTPAlgorithm::Sha1,
+        _ => return Err(eyre!("Unsupported migration algorithm")),
     };
 
-    let digits = if params.digits == DIGIT_COUNT_EIGHT {
-        8
-    } else {
-        6
+    let digits = match params.digits {
+        DIGIT_COUNT_EIGHT => 8,
+        0 | 1 => 6,
+        _ => return Err(eyre!("Unsupported migration digits")),
     };
 
-    let type_ = if params.otp_type == OTP_TYPE_HOTP {
-        OTPType::Hotp
-    } else {
-        OTPType::Totp
+    let type_ = match params.otp_type {
+        OTP_TYPE_HOTP => OTPType::Hotp,
+        0 | 2 => OTPType::Totp,
+        _ => return Err(eyre!("Unsupported migration OTP type")),
     };
+    if params.counter < 0 {
+        return Err(eyre!("Negative HOTP counter"));
+    }
 
     let counter = (type_ == OTPType::Hotp).then_some(params.counter.max(0) as u64);
 

@@ -1,50 +1,77 @@
-use color_eyre::eyre::ErrReport;
+use color_eyre::eyre::{Result, eyre};
 use url::Url;
 
 use super::{otp_algorithm::OTPAlgorithm, otp_element::OTPElement, otp_type::OTPType};
 
 pub trait FromOtpUri: Sized {
-    fn from_otp_uri(otp_uri: &str) -> color_eyre::Result<Self>;
+    fn from_otp_uri(otp_uri: &str) -> Result<Self>;
 }
 
 impl FromOtpUri for OTPElement {
-    fn from_otp_uri(otp_uri: &str) -> color_eyre::Result<Self> {
-        let decoded = urlencoding::decode(otp_uri).map_err(ErrReport::from)?;
-        let parsed_uri = Url::parse(&decoded).map_err(ErrReport::from)?;
-
-        let otp_type = parsed_uri
-            .host_str()
-            .map_or_else(|| "TOTP".to_string(), str::to_uppercase);
-
-        let (issuer, label) = get_issuer_and_label(&parsed_uri)?;
-
-        let secret = parsed_uri
-            .query_pairs()
-            .find(|(k, _v)| k == "secret")
-            .map(|(_k, v)| v.to_uppercase())
-            .ok_or(ErrReport::msg("Secret not found in OTP Uri"))?;
-
-        let algorithm = parsed_uri
-            .query_pairs()
-            .find(|(k, _v)| k == "algorithm")
-            .map_or_else(|| "SHA1".to_string(), |(_k, v)| v.to_uppercase());
-
-        let digits = parsed_uri
-            .query_pairs()
-            .find(|(k, _v)| k == "digits")
-            .map_or(6, |(_k, v)| v.parse::<u64>().unwrap_or(6));
-
-        let period = parsed_uri
-            .query_pairs()
-            .find(|(k, _v)| k == "period")
-            .map_or(30, |(_k, v)| v.parse::<u64>().unwrap_or(30));
-
-        let counter = parsed_uri
-            .query_pairs()
-            .find(|(k, _v)| k == "counter")
-            .and_then(|(_k, v)| v.parse::<u64>().ok());
-
-        Ok(OTPElement {
+    fn from_otp_uri(otp_uri: &str) -> Result<Self> {
+        let uri = Url::parse(otp_uri).map_err(|_| eyre!("Invalid OTP URI"))?;
+        if uri.scheme() != "otpauth" {
+            return Err(eyre!("Expected otpauth:// URI"));
+        }
+        let type_ = match uri.host_str().unwrap_or("").to_ascii_lowercase().as_str() {
+            "totp" => OTPType::Totp,
+            "hotp" => OTPType::Hotp,
+            "steam" => OTPType::Steam,
+            "yandex" => OTPType::Yandex,
+            "motp" => OTPType::Motp,
+            _ => return Err(eyre!("Unsupported OTP type")),
+        };
+        let mut params = std::collections::HashMap::new();
+        for (key, value) in uri.query_pairs() {
+            if params
+                .insert(key.into_owned(), value.into_owned())
+                .is_some()
+            {
+                return Err(eyre!("Duplicate OTP URI parameter"));
+            }
+        }
+        let label = urlencoding::decode(uri.path().trim_start_matches('/'))
+            .map_err(|_| eyre!("Invalid OTP label encoding"))?;
+        let (issuer, label) = label
+            .split_once(':')
+            .map(|(i, l)| (i.to_owned(), l.to_owned()))
+            .unwrap_or_else(|| {
+                (
+                    params.get("issuer").cloned().unwrap_or_default(),
+                    label.into_owned(),
+                )
+            });
+        let secret = params
+            .get("secret")
+            .cloned()
+            .ok_or_else(|| eyre!("Secret not found in OTP URI"))?;
+        let algorithm = match params
+            .get("algorithm")
+            .map(|s| s.to_ascii_uppercase())
+            .as_deref()
+            .unwrap_or("SHA1")
+        {
+            "SHA1" => OTPAlgorithm::Sha1,
+            "SHA256" => OTPAlgorithm::Sha256,
+            "SHA512" => OTPAlgorithm::Sha512,
+            "MD5" => OTPAlgorithm::Md5,
+            _ => return Err(eyre!("Unsupported OTP algorithm")),
+        };
+        let number = |name: &str, default| -> Result<u64> {
+            params
+                .get(name)
+                .map(|s| {
+                    s.parse::<u64>()
+                        .map_err(|_| eyre!("Invalid numeric OTP parameter: {name}"))
+                })
+                .unwrap_or(Ok(default))
+        };
+        let counter = if params.contains_key("counter") {
+            Some(number("counter", 0)?)
+        } else {
+            None
+        };
+        let mut element = OTPElement {
             id: String::new(),
             alias: None,
             tags: Vec::new(),
@@ -53,57 +80,42 @@ impl FromOtpUri for OTPElement {
             secret,
             issuer,
             label,
-            digits,
-            type_: OTPType::from(otp_type.as_str()),
-            algorithm: OTPAlgorithm::from(algorithm.as_str()),
-            period,
+            digits: number("digits", 6)?,
+            type_,
+            algorithm,
+            period: number("period", 30)?,
             counter,
-            pin: None,
-        })
+            pin: params.get("pin").cloned(),
+        };
+        crate::importers::enrollment::validate(&mut element)?;
+        Ok(element)
     }
 }
 
-fn get(parsed_uri: &Url) -> color_eyre::Result<Vec<String>> {
-    let first_segment: Vec<String> = parsed_uri
-        .path_segments()
-        .map(Iterator::collect::<Vec<_>>)
-        .ok_or(ErrReport::msg("Failed to collect path segments"))?
-        .first()
-        .ok_or(ErrReport::msg("No path segments found"))?
-        .split(':')
-        .collect::<Vec<_>>()
-        .into_iter()
-        .map(std::borrow::ToOwned::to_owned)
-        .collect();
-    Ok(first_segment)
-}
-
-fn get_issuer_and_label(parsed_uri: &Url) -> color_eyre::Result<(String, String)> {
-    // Find the first path segments, OTP Uris should not have others
-    let first_segment = get(parsed_uri)?;
-
-    let first = first_segment.first().and_then(|v| {
-        urlencoding::decode(v.as_str())
-            .map(std::borrow::Cow::into_owned)
-            .ok()
-    });
-
-    let second = first_segment.get(1).and_then(|v| {
-        urlencoding::decode(v)
-            .map(std::borrow::Cow::into_owned)
-            .ok()
-    });
-
-    match (first, second) {
-        (Some(i), Some(l)) => Ok((i, l)),
-        (Some(l), None) => {
-            let issuer = parsed_uri
-                .query_pairs()
-                .find(|(k, _v)| k == "issuer")
-                .map(|(_k, v)| v.to_string())
-                .unwrap_or_default();
-            Ok((issuer, l))
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn rejects_invalid_parameters() {
+        for query in [
+            "period=0",
+            "period=no",
+            "digits=11",
+            "algorithm=SHA42",
+            "secret=AA",
+        ] {
+            assert!(
+                OTPElement::from_otp_uri(&format!("otpauth://totp/test?secret=JBSWY3DP&{query}"))
+                    .is_err()
+            );
         }
-        _ => Err(ErrReport::msg("No label found in OTP uri")),
+        assert!(OTPElement::from_otp_uri("otpauth://hotp/test?secret=JBSWY3DP").is_err());
+        assert!(OTPElement::from_otp_uri("otpauth://weird/test?secret=JBSWY3DP").is_err());
+    }
+    #[test]
+    fn percent_encoded_ampersand_stays_in_label() {
+        let account =
+            OTPElement::from_otp_uri("otpauth://totp/Example:user%26name?secret=JBSWY3DP").unwrap();
+        assert_eq!(account.label, "user&name");
     }
 }

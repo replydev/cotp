@@ -58,6 +58,8 @@ globset = "0.4.20"
 prost = "0.14.4"
 tui-input = { version = "0.15.5", default-features = false, features = ["crossterm"] }
 tempfile = "3.27.0"
+rqrr = { version = "0.10", default-features = false }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 
 [dev-dependencies]
 proptest = "1"
