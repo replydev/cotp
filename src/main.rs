@@ -24,6 +24,7 @@ mod config;
 mod crypto;
 mod database_file;
 mod exporters;
+mod hardware;
 mod importers;
 mod interface;
 mod otp;
@@ -77,6 +78,9 @@ fn main() -> AppResult<()> {
         return Ok(());
     }
     config::load(&mut cotp_args)?;
+    if hardware::handle(&cotp_args)? {
+        return Ok(());
+    }
     if let Some(arguments::CotpSubcommands::Backup(args)) = &cotp_args.command {
         let path = init_path(&cotp_args);
         return backup::run(args, &path, cotp_args.password_from_stdin).map_err(|e| e.into());
