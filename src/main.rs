@@ -25,6 +25,7 @@ mod exporters;
 mod hardware;
 mod importers;
 mod interface;
+mod keychain;
 mod otp;
 mod path;
 mod persistence;
@@ -66,11 +67,7 @@ fn init(args: &CotpArgs) -> color_eyre::Result<ReadResult> {
     } else {
         args.password_fd.map(utils::password_from_fd).transpose()?
     };
-    let password = zeroize::Zeroizing::new(match explicit_password {
-        Some(password) => password,
-        None if first_run => utils::verified_password("Choose a password: ", 8)?,
-        None => utils::password("Password: ", 0)?,
-    });
+    let password = keychain::unlock_password(&path, explicit_password, first_run)?;
     if first_run {
         if password.chars().count() < 8 {
             return Err(eyre!(
@@ -91,6 +88,9 @@ fn run(mut cotp_args: CotpArgs) -> Result<(), (u8, color_eyre::eyre::Report)> {
     }
     config::load(&mut cotp_args).map_err(|error| (1, error))?;
     utils::set_no_input(cotp_args.no_input);
+    if keychain::handle(&cotp_args).map_err(|error| (1, error))? {
+        return Ok(());
+    }
     if hardware::handle(&cotp_args).map_err(|error| (3, error))? {
         return Ok(());
     }

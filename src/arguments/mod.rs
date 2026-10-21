@@ -78,6 +78,8 @@ pub enum CotpSubcommands {
     Init(InitArgs),
     /// Generate one uniquely selected account code (HOTP advances unless --preview)
     Code(code::CodeArgs),
+    /// Remember, forget, or inspect this vault's password in the OS credential store
+    Keychain(crate::keychain::KeychainArgs),
     /// Manage accounts on a YubiKey through ykman
     Hardware(crate::hardware::HardwareArgs),
     /// Merge an authenticated encrypted backup from another device
