@@ -1,5 +1,3 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-
 use crate::path::DATABASE_PATH;
 
 pub fn init_app() -> Result<bool, ()> {
@@ -12,17 +10,6 @@ pub fn init_app() -> Result<bool, ()> {
         return Ok(true);
     }
     Ok(!db_path.exists())
-}
-
-pub fn millis_before_next_step() -> u64 {
-    let now = SystemTime::now();
-    let since_the_epoch = now.duration_since(UNIX_EPOCH).unwrap();
-    let in_ms = since_the_epoch.as_secs() * 1000 + since_the_epoch.subsec_nanos() as u64 / 1000000;
-    in_ms % 30000
-}
-
-pub fn percentage() -> u16 {
-    (millis_before_next_step() * 100 / 30000) as u16
 }
 
 pub fn password(message: &str, minimum_length: usize) -> String {

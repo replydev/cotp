@@ -27,7 +27,17 @@ pub trait SubcommandExecutor {
 
 /// Main structure defining the Clap argument for the cotp commandline utility
 #[derive(Parser)]
-#[command(author, version = env!("COTP_VERSION"), about, long_about = None)]
+#[command(author, version = env!("COTP_VERSION"), about, long_about = None,
+    styles = cli_styles(),
+    after_help = "QUICK START
+  cotp                                      Open the interactive vault
+  cotp add --issuer GitHub --label you       Add an account
+  cotp import --help                        Migrate from another authenticator
+  cotp list --json                          Output codes for scripts
+
+DASHBOARD
+  a add · e edit · / search · Enter copy · Space QR code · ? help"
+)]
 pub struct CotpArgs {
     #[command(subcommand)]
     command: Option<CotpSubcommands>,
@@ -73,4 +83,14 @@ pub fn args_parser(matches: CotpArgs, read_result: OTPDatabase) -> color_eyre::R
 fn verify_cli() {
     use clap::CommandFactory;
     CotpArgs::command().debug_assert();
+}
+
+fn cli_styles() -> clap::builder::Styles {
+    use clap::builder::styling::{AnsiColor, Effects};
+    clap::builder::Styles::styled()
+        .header(AnsiColor::Cyan.on_default() | Effects::BOLD)
+        .usage(AnsiColor::Cyan.on_default() | Effects::BOLD)
+        .literal(AnsiColor::Green.on_default() | Effects::BOLD)
+        .placeholder(AnsiColor::Yellow.on_default())
+        .error(AnsiColor::Red.on_default() | Effects::BOLD)
 }
