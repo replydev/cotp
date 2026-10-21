@@ -271,11 +271,11 @@ fn dashboard_preview() {
     let mut app = App::new(&mut db);
     app.now = 12;
     for (i, item) in app.table.items.iter_mut().enumerate() {
-        item.code = format!("{:06}", 482901 + i * 7319);
+        item.code = format!("{:06}", 751109 + i * 7319);
     }
     let buffer = render(&mut app, 120, 30);
     let output = text(&buffer);
-    assert!(output.contains("482 901"));
+    assert!(output.contains("751 109"));
     assert!(output.contains("Selected account"));
     assert!(output.contains("18s"));
     if let Ok(path) = std::env::var("COTP_UI_PREVIEW") {
@@ -542,7 +542,7 @@ fn editor_preview() {
     let mut app = App::new(&mut db);
     app.now = 12;
     for (i, item) in app.table.items.iter_mut().enumerate() {
-        item.code = format!("{:06}", 482901 + i * 7319);
+        item.code = format!("{:06}", 751109 + i * 7319);
     }
     app.open_form(true);
     app.form.as_mut().unwrap().active = 1;
@@ -577,4 +577,72 @@ fn minimum_terminal_size_still_displays_a_selected_code() {
     let output = text(&render(&mut app, 36, 12));
     assert!(output.contains("GitHub"));
     assert!(output.contains("123 456"));
+}
+
+#[test]
+fn keyboard_and_mouse_navigation_stop_at_both_boundaries() {
+    let mut db = database();
+    let mut app = App::new(&mut db);
+    for backwards in [true, false] {
+        key(
+            &mut app,
+            if backwards {
+                KeyCode::Home
+            } else {
+                KeyCode::End
+            },
+        );
+        let expected = if backwards {
+            0
+        } else {
+            app.table.items.len() - 1
+        };
+        for _ in 0..3 {
+            key(
+                &mut app,
+                if backwards {
+                    KeyCode::Up
+                } else {
+                    KeyCode::Down
+                },
+            );
+            handle_mouse_events(
+                MouseEvent {
+                    kind: if backwards {
+                        MouseEventKind::ScrollUp
+                    } else {
+                        MouseEventKind::ScrollDown
+                    },
+                    column: 10,
+                    row: 10,
+                    modifiers: KeyModifiers::NONE,
+                },
+                &mut app,
+            );
+            assert_eq!(app.table.state.selected(), Some(expected));
+        }
+    }
+    app.search_query = "Google".into();
+    app.filter();
+    app.table.next();
+    app.table.previous();
+    assert_eq!(app.table.selected_index(), Some(1));
+}
+
+#[test]
+fn countdown_is_shown_once_and_header_does_not_clip_status() {
+    let mut db = database();
+    let mut app = App::new(&mut db);
+    app.now = 12;
+    for width in [36, 80, 120] {
+        let output = text(&render(&mut app, width, 24));
+        assert_eq!(output.matches("18s").count(), 1);
+        assert!(!output.contains("VALID FOR"));
+        assert!(!output.contains("vault open"));
+        assert!(output.contains("3 accounts"));
+    }
+    app.database.mark_modified();
+    let buffer = render(&mut app, 36, 24);
+    let header: String = (0..36).map(|x| buffer[(x, 1)].symbol()).collect();
+    assert!(header.contains("3 accounts  ● unsaved"));
 }

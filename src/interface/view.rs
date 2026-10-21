@@ -147,8 +147,24 @@ impl App<'_> {
     }
 
     fn render_header(&mut self, frame: &mut Frame<'_>, area: Rect) {
+        let count = self.database.elements_ref().len();
+        let mut summary_text = vec![Span::styled(
+            format!(
+                "{count} {}",
+                if count == 1 { "account" } else { "accounts" }
+            ),
+            Style::default().fg(MUTED),
+        )];
+        if self.database.is_modified() {
+            summary_text.push(Span::styled("  ● unsaved", Style::default().fg(WARNING)));
+        }
+        let summary_text = Line::from(summary_text);
+        let summary_width = summary_text
+            .width()
+            .min(area.width.saturating_sub(9) as usize) as u16;
         let [brand, summary] =
-            Layout::horizontal([Constraint::Fill(1), Constraint::Length(24)]).areas(area);
+            Layout::horizontal([Constraint::Fill(1), Constraint::Length(summary_width)])
+                .areas(area);
         frame.render_widget(
             Paragraph::new(Line::from(vec![
                 Span::styled(" ◈ cotp ", Style::default().fg(ACCENT).bold()),
@@ -164,25 +180,7 @@ impl App<'_> {
             brand,
         );
         frame.render_widget(
-            Paragraph::new(Line::from(vec![
-                Span::styled(
-                    format!("{} accounts", self.database.elements_ref().len()),
-                    Style::default().fg(MUTED),
-                ),
-                Span::styled(
-                    if self.database.is_modified() {
-                        "  ● unsaved "
-                    } else {
-                        "  ● vault open "
-                    },
-                    Style::default().fg(if self.database.is_modified() {
-                        WARNING
-                    } else {
-                        ACCENT
-                    }),
-                ),
-            ]))
-            .alignment(Alignment::Right),
+            Paragraph::new(summary_text).alignment(Alignment::Right),
             summary,
         );
         if area.height > 1 {
@@ -266,7 +264,6 @@ impl App<'_> {
         let row_height = if compact { 1 } else { 2 };
         let row_margin = if compact { 0 } else { 1 };
         let header_height = if compact { 0 } else { 2 };
-        let show_expiry = area.width >= 55;
         let rows = self.table.items.iter().enumerate().map(|(index, item)| {
             let element = &self.database.elements_ref()[item.database_index];
             let issuer = if item.issuer.is_empty() {
@@ -294,32 +291,17 @@ impl App<'_> {
             } else {
                 ACCENT
             };
-            let mut cells = vec![
+            let cells = vec![
                 Cell::from(account),
                 Cell::from(code).style(Style::default().fg(code_color).bold()),
             ];
-            if show_expiry {
-                let expiry =
-                    timing.map_or_else(|| "counter".into(), |(left, _)| format!("{left:>3}s"));
-                cells.push(Cell::from(expiry).style(Style::default().fg(
-                    if code_color == WARNING {
-                        WARNING
-                    } else {
-                        MUTED
-                    },
-                )));
-            }
             Row::new(cells)
                 .height(row_height)
                 .bottom_margin(row_margin)
                 .style(Style::default().bg(if index % 2 == 0 { SURFACE } else { BACKGROUND }))
         });
-        let mut widths = vec![Constraint::Fill(1), Constraint::Length(13)];
-        let mut headers = vec!["ACCOUNT", "CODE"];
-        if show_expiry {
-            widths.push(Constraint::Length(9));
-            headers.push("VALID FOR");
-        }
+        let widths = [Constraint::Fill(1), Constraint::Length(13)];
+        let headers = ["ACCOUNT", "CODE"];
         let mut table = Table::new(rows, widths)
             .block(block)
             .column_spacing(2)
@@ -473,6 +455,17 @@ impl App<'_> {
                 "Unsaved changes · you will be asked to save when you quit".into(),
                 WARNING,
             )
+        } else if area.width < 100
+            && let Some((left, _)) = self
+                .table
+                .selected_index()
+                .and_then(|index| self.database.get_element(index))
+                .and_then(|element| remaining(element, self.now))
+        {
+            (
+                format!("Selected code · {left}s remaining"),
+                if left <= 5 { WARNING } else { MUTED },
+            )
         } else {
             ("Ready · codes refresh automatically".into(), MUTED)
         };
@@ -622,7 +615,7 @@ fn large_code(code: &str, hidden: bool, width: u16) -> Text<'static> {
     }
     const DIGITS: [[&str; 3]; 10] = [
         ["█▀█", "█ █", "▀▀▀"],
-        [" ▄ ", " █ ", "▄█▄"],
+        ["▀█ ", " █ ", "▀▀▀"],
         ["▀▀█", "█▀▀", "▀▀▀"],
         ["▀▀█", " ▀█", "▀▀▀"],
         ["█ █", "▀▀█", "  ▀"],

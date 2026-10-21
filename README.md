@@ -16,12 +16,12 @@ minimalist, secure, desktop accessible software to manage my two-factor authenti
 <p align="center"><img src="/img/cotp-dashboard.svg" alt="cotp dashboard with demonstration accounts"/></p>
 
 Run `cotp` to open your vault. The dashboard adapts to your terminal, with searchable
-accounts, live expiry indicators, grouped codes, and an account detail panel on wide
-screens. On your first run, choose a password to initialize the encrypted database.
+accounts, a countdown for the selected code, grouped codes, and an account detail panel
+on wide screens. On your first run, choose a password to initialize the encrypted database.
 
 Use the keyboard for every action, or click accounts, the search bar, and the visible
-shortcuts. The mouse wheel navigates accounts; the `?` menu also offers clickable
-actions. No special icon font is required. The dashboard needs an interactive terminal;
+shortcuts. Keyboard and mouse-wheel navigation stop at the first and last account.
+The `?` menu also offers clickable actions. No special icon font is required. The dashboard needs an interactive terminal;
 use `cotp list` or `cotp list --json` when piping output.
 
 | Key | Action |

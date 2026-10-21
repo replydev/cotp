@@ -51,23 +51,11 @@ impl StatefulTable {
     }
 
     pub fn next(&mut self) {
-        if !self.items.is_empty() {
-            let next = self
-                .state
-                .selected()
-                .map_or(0, |i| (i + 1) % self.items.len());
-            self.state.select(Some(next));
-        }
+        self.move_by(1);
     }
 
     pub fn previous(&mut self) {
-        if !self.items.is_empty() {
-            let previous = self
-                .state
-                .selected()
-                .map_or(0, |i| if i == 0 { self.items.len() - 1 } else { i - 1 });
-            self.state.select(Some(previous));
-        }
+        self.move_by(-1);
     }
 
     pub(crate) fn move_by(&mut self, delta: isize) {
@@ -75,8 +63,7 @@ impl StatefulTable {
             let index = self
                 .state
                 .selected()
-                .unwrap_or(0)
-                .saturating_add_signed(delta)
+                .map_or(0, |index| index.saturating_add_signed(delta))
                 .min(self.items.len() - 1);
             self.state.select(Some(index));
         }
