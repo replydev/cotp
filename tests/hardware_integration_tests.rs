@@ -40,6 +40,32 @@ esac
             .assert()
             .success()
             .stdout("123456\n");
+        run()
+            .args([
+                "--no-input",
+                "--backend",
+                "yubikey",
+                "code",
+                "GitHub:work",
+                "--json",
+            ])
+            .assert()
+            .success()
+            .stdout(predicate::str::contains("123456"));
+        for flag in ["--watch", "--preview", "--min-validity=10s"] {
+            run()
+                .args(["--backend", "yubikey", "code", "GitHub:work", flag])
+                .assert()
+                .code(3)
+                .stdout(predicate::str::is_empty())
+                .stderr(predicate::str::contains("does not support"));
+        }
+        run()
+            .args(["--no-input", "hardware", "add", "account"])
+            .assert()
+            .code(3)
+            .stdout(predicate::str::is_empty())
+            .stderr(predicate::str::contains("interactive"));
         assert!(!dir.path().join("db.cotp").exists());
     }
 }
