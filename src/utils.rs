@@ -2,7 +2,10 @@ use crate::path::DATABASE_PATH;
 
 pub fn init_app() -> Result<bool, ()> {
     let db_path = DATABASE_PATH.get().unwrap(); // Safe to unwrap because we initialize
-    let db_dir = db_path.parent().unwrap();
+    let db_dir = db_path
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(std::path::Path::new("."));
     if !db_dir.exists() {
         if let Err(_e) = std::fs::create_dir_all(db_dir) {
             return Err(());

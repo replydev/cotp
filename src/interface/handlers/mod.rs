@@ -135,11 +135,17 @@ pub(crate) fn copy_selected(app: &mut App, uri: bool) {
     let result = app
         .table
         .selected_index()
-        .and_then(|index| app.database.get_element(index))
         .ok_or_else(|| "No account selected".to_string())
-        .and_then(|element| {
+        .and_then(|index| {
+            let element = app
+                .database
+                .get_element(index)
+                .ok_or_else(|| "No account selected".to_string())?;
             if uri {
                 Ok(element.get_otpauth_uri())
+            } else if element.type_ == crate::otp::otp_type::OTPType::Hotp {
+                crate::persistence::consume_hotp(app.database, index)
+                    .map_err(|error| error.to_string())
             } else {
                 code_for(element)
             }

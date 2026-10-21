@@ -40,7 +40,7 @@ DASHBOARD
 )]
 pub struct CotpArgs {
     #[command(subcommand)]
-    command: Option<CotpSubcommands>,
+    pub(crate) command: Option<CotpSubcommands>,
     /// Fetch the password from standard input
     #[arg(long = "password-stdin", default_value_t = false)]
     pub password_from_stdin: bool,
@@ -69,6 +69,8 @@ pub enum CotpSubcommands {
     Extract(ExtractArgs),
     /// Change database password
     Passwd(PasswdArgs),
+    /// Create, verify, list, or restore encrypted backups
+    Backup(crate::backup::BackupArgs),
 }
 
 pub fn args_parser(matches: CotpArgs, read_result: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
