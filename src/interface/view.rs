@@ -166,17 +166,10 @@ impl App<'_> {
             Layout::horizontal([Constraint::Fill(1), Constraint::Length(summary_width)])
                 .areas(area);
         frame.render_widget(
-            Paragraph::new(Line::from(vec![
-                Span::styled(" ◈ cotp ", Style::default().fg(ACCENT).bold()),
-                Span::styled(
-                    if area.width >= 65 {
-                        " /  YOUR AUTHENTICATOR"
-                    } else {
-                        ""
-                    },
-                    Style::default().fg(MUTED),
-                ),
-            ])),
+            Paragraph::new(Span::styled(
+                "  cotp  ",
+                Style::default().fg(BACKGROUND).bg(ACCENT).bold(),
+            )),
             brand,
         );
         frame.render_widget(
