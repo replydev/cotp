@@ -1,3 +1,11 @@
+## [1.10.1](https://github.com/replydev/cotp/compare/v1.10.0...v1.10.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* prevent database loss when disk is full ([197c877](https://github.com/replydev/cotp/commit/197c8777cd1f2fba5504c3e3693878f902f29e3d))
+* prevent database loss when disk is full ([#692](https://github.com/replydev/cotp/issues/692)) ([3c4e17e](https://github.com/replydev/cotp/commit/3c4e17eccabaa6c5b6bf6bcb3905f17236e328bb))
+
 # [1.10.0](https://github.com/replydev/cotp/compare/v1.9.10...v1.10.0) (2026-07-22)
 
 

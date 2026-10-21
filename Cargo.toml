@@ -1,6 +1,6 @@
 [package]
 name = "cotp"
-version = "1.10.0"
+version = "1.10.1"
 authors = ["replydev <commoncargo@tutanota.com>"]
 edition = "2024"
 description = "Trustworthy, encrypted, command-line TOTP/HOTP authenticator app with import functionality."
@@ -57,6 +57,7 @@ derive_builder = "0.20.2"
 globset = "0.4.19"
 prost = "0.14.4"
 tui-input = { version = "0.15.5", default-features = false, features = ["crossterm"] }
+tempfile = "3.27.0"
 
 [dev-dependencies]
 assert_cmd = "2.2.2"
