@@ -52,6 +52,11 @@ impl From<FreeOTPElement> for OTPElement {
             None
         };
         OTPElement {
+            id: String::new(),
+            alias: None,
+            tags: Vec::new(),
+            favorite: false,
+            order: None,
             counter,
             secret: encode_secret(&token.secret),
             issuer: token.issuer_ext,
@@ -120,6 +125,11 @@ mod tests {
         assert_eq!(
             vec![
                 OTPElement {
+                    id: String::new(),
+                    alias: None,
+                    tags: Vec::new(),
+                    favorite: false,
+                    order: None,
                     secret: "AAAAAAAAAAAAAAAA".to_string(),
                     issuer: "Example2".to_string(),
                     label: "Label2".to_string(),
@@ -131,6 +141,11 @@ mod tests {
                     pin: None
                 },
                 OTPElement {
+                    id: String::new(),
+                    alias: None,
+                    tags: Vec::new(),
+                    favorite: false,
+                    order: None,
                     secret: "AAAAAAAA".to_string(),
                     issuer: "Example1".to_string(),
                     label: "Label1".to_string(),

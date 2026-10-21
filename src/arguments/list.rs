@@ -38,6 +38,8 @@ impl Default for ListFormat {
 /// Defines JSON structure to output using the --json argument in the list subcommand
 #[derive(Serialize)]
 struct JsonOtpList<'a> {
+    id: &'a str,
+    alias: Option<&'a str>,
     issuer: &'a str,
     label: &'a str,
     otp_code: String,
@@ -49,6 +51,8 @@ impl<'a> TryFrom<&'a OTPElement> for JsonOtpList<'a> {
     fn try_from(value: &'a OTPElement) -> Result<Self, Self::Error> {
         let otp_code = value.get_otp_code()?;
         Ok(JsonOtpList {
+            id: &value.id,
+            alias: value.alias.as_deref(),
             issuer: &value.issuer,
             label: &value.label,
             otp_code,

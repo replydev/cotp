@@ -28,6 +28,11 @@ mod tests {
     fn test_conversion() {
         //Arrange
         let expected_element = OTPElement {
+            id: String::new(),
+            alias: None,
+            tags: Vec::new(),
+            favorite: false,
+            order: None,
             secret: String::from("AA"),
             issuer: String::default(),
             label: String::from("test"),

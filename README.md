@@ -39,6 +39,27 @@ use `cotp list` or `cotp list --json` when piping output.
 | `Esc` | Close the current screen, finish searching, clear a filter, or quit |
 | `q`, `Ctrl+C`, `Ctrl+D` | Quit; account changes prompt you to save or discard |
 
+### Stable account selection
+
+Every account has a persistent random ID, available in `cotp list --json`.
+Existing vaults upgrade automatically while preserving their secrets. All CLI
+indices start at 1 and match the list display. Issuer and label selectors use
+case-insensitive glob matching; multiple filters must all match. Commands fail
+when the selection is ambiguous instead of choosing the first account.
+
+```sh
+cotp add --issuer GitHub --label you --alias work-github
+cotp extract --alias work-github
+cotp extract --issuer 'Git*' --label you
+cotp edit --alias work-github --set-alias github --label new-name
+cotp edit --match-issuer GitHub --match-label you --digits 8
+cotp delete --id <account-id>
+```
+
+On `edit`, `--issuer` and `--label` still set new values; use `--match-issuer`
+and `--match-label` to select by those fields. Aliases are unique ignoring case;
+`edit --clear-alias` removes an alias. Account IDs survive renaming and TUI edits.
+
 ### Add and edit accounts
 
 Press `a` or click **Add** to enter an issuer, account label, and secret. You can also

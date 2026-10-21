@@ -331,6 +331,19 @@ impl AccountForm {
             None
         };
         let element = OTPElement {
+            id: self
+                .original
+                .as_ref()
+                .map(|e| e.id.clone())
+                .unwrap_or_default(),
+            alias: self.original.as_ref().and_then(|e| e.alias.clone()),
+            tags: self
+                .original
+                .as_ref()
+                .map(|e| e.tags.clone())
+                .unwrap_or_default(),
+            favorite: self.original.as_ref().is_some_and(|e| e.favorite),
+            order: self.original.as_ref().and_then(|e| e.order),
             secret: if kind == OTPType::Motp {
                 secret.to_lowercase()
             } else {
@@ -395,7 +408,10 @@ impl App<'_> {
                     *existing = element;
                     self.database.mark_modified();
                 } else {
-                    self.database.add_element(element);
+                    if let Err(error) = self.database.add_element(element) {
+                        form.error = Some(format!("Could not add account: {error}"));
+                        return;
+                    }
                 }
                 self.cancel_form();
                 self.search_query.clear();

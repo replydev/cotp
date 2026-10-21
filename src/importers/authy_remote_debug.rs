@@ -76,6 +76,11 @@ impl From<AuthyExportedJsonElement> for OTPElement {
         let counter: Option<u64> = (type_ == OTPType::Hotp).then_some(0);
         let digits = input.get_digits();
         OTPElement {
+            id: String::new(),
+            alias: None,
+            tags: Vec::new(),
+            favorite: false,
+            order: None,
             secret: input.secret.to_uppercase().replace('=', ""),
             issuer: input.get_issuer(),
             label: input.name,

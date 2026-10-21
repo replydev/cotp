@@ -45,6 +45,11 @@ impl FromOtpUri for OTPElement {
             .and_then(|(_k, v)| v.parse::<u64>().ok());
 
         Ok(OTPElement {
+            id: String::new(),
+            alias: None,
+            tags: Vec::new(),
+            favorite: false,
+            order: None,
             secret,
             issuer,
             label,

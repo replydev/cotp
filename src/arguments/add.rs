@@ -24,6 +24,10 @@ pub struct AddArgs {
     #[arg(short = 't', long = "type", default_value = "totp")]
     pub otp_type: OTPType,
 
+    /// Unique account alias
+    #[arg(long)]
+    pub alias: Option<String>,
+
     /// Code issuer
     #[arg(short, long, default_value = "")]
     pub issuer: String,
@@ -70,7 +74,11 @@ pub struct AddArgs {
 
 impl SubcommandExecutor for AddArgs {
     fn run_command(self, mut database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
-        let otp_element = if self.otp_uri {
+        if let Some(alias) = &self.alias {
+            super::selector::validate_alias(&database, alias, None)?;
+        }
+        let alias = self.alias.clone();
+        let mut otp_element = if self.otp_uri {
             let mut otp_uri = rpassword::prompt_password("Insert the otp uri: ").unwrap();
             let result = OTPElement::from_otp_uri(otp_uri.as_str());
             otp_uri.zeroize();
@@ -79,7 +87,8 @@ impl SubcommandExecutor for AddArgs {
             get_from_args(self)?
         };
 
-        database.add_element(otp_element);
+        otp_element.alias = alias;
+        database.add_element(otp_element)?;
         Ok(database)
     }
 }
