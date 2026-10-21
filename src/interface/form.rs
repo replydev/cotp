@@ -100,6 +100,9 @@ impl Drop for FormSnapshot {
         self.secret.zeroize();
         self.pin.zeroize();
         self.inputs.zeroize();
+        if let Some(error) = self.error.as_mut() {
+            error.zeroize();
+        }
     }
 }
 

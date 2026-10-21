@@ -1,6 +1,6 @@
 //! Backups are authenticated encrypted vault files, never plaintext exports.
 use crate::{
-    crypto::{cryptography::decrypt_string, encrypted_database::EncryptedDatabase},
+    crypto::cryptography::{decrypt_string, validate_envelope},
     otp::{
         migrations::migrate,
         otp_element::{OTPDatabase, OTPElement},
@@ -140,7 +140,7 @@ fn create(vault: &Path, directory: &Path) -> Result<PathBuf> {
         fs::read(vault)?
     };
     // Reject accidentally pointing backup at a plaintext export.
-    let _: EncryptedDatabase = serde_json::from_slice(&bytes)?;
+    validate_envelope(&bytes)?;
     private_directory(directory)?;
     let timestamp = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
     let path = directory.join(format!("cotp-{timestamp:030}.cotp-backup"));
@@ -240,6 +240,28 @@ mod tests {
                 0o600
             );
         }
+    }
+    #[test]
+    fn corrupt_source_does_not_create_backup_or_prune_verified_files() {
+        let dir = tempfile::tempdir().unwrap();
+        let vault = dir.path().join("vault");
+        let backups = dir.path().join("backups");
+        fs::create_dir(&backups).unwrap();
+        let good = backups.join("cotp-0001.cotp-backup");
+        let original = encrypted();
+        fs::write(&good, &original).unwrap();
+        let mut corrupt: serde_json::Value = serde_json::from_slice(&original).unwrap();
+        corrupt["cipher"] = "truncated".into();
+        fs::write(&vault, corrupt.to_string()).unwrap();
+        let args = BackupArgs {
+            action: BackupAction::Create {
+                directory: backups.clone(),
+                keep: Some(1),
+            },
+        };
+        assert!(run(&args, &vault, false, None).is_err());
+        assert_eq!(fs::read(&good).unwrap(), original);
+        assert_eq!(list(&backups).unwrap(), vec![good]);
     }
     #[test]
     fn retention_only_removes_matching_backup_files() {

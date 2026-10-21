@@ -3,7 +3,7 @@ use chacha20poly1305::aead::Aead;
 use chacha20poly1305::{KeyInit, XChaCha20Poly1305, XNonce};
 use color_eyre::eyre::{ErrReport, eyre};
 use data_encoding::BASE64;
-use zeroize::Zeroizing;
+use zeroize::{Zeroize, Zeroizing};
 
 use super::encrypted_database::EncryptedDatabase;
 
@@ -60,7 +60,41 @@ pub fn decrypt_string(
     encrypted_text: &str,
     password: &str,
 ) -> color_eyre::Result<(String, Vec<u8>, Vec<u8>)> {
-    //encrypted text is an encrypted database json serialized object
+    let DecodedEnvelope {
+        nonce,
+        cipher_text,
+        salt,
+    } = decode_envelope(encrypted_text)?;
+
+    let key = Zeroizing::new(argon_derive_key(password.as_bytes(), salt.as_slice())?);
+
+    let aead = XChaCha20Poly1305::new_from_slice(&key)
+        .map_err(|e| eyre!("Invalid encryption key length: {e}"))?;
+    let nonce = XNonce::try_from(nonce.as_slice())
+        .map_err(|_| eyre!("Invalid nonce length in encrypted database"))?;
+    let decrypted = aead
+        .decrypt(&nonce, cipher_text.as_slice())
+        .map_err(|_| eyre!("Wrong password"))?;
+    let from_utf8 = String::from_utf8(decrypted).map_err(|error| {
+        error.into_bytes().zeroize();
+        eyre!("Decrypted vault is not UTF-8")
+    })?;
+    Ok((from_utf8, key.to_vec(), salt))
+}
+
+struct DecodedEnvelope {
+    nonce: Vec<u8>,
+    cipher_text: Vec<u8>,
+    salt: Vec<u8>,
+}
+
+/// Check the encrypted container without a password. Authentication still requires decrypting it.
+pub(crate) fn validate_envelope(bytes: &[u8]) -> color_eyre::Result<()> {
+    decode_envelope(std::str::from_utf8(bytes)?)?;
+    Ok(())
+}
+
+fn decode_envelope(encrypted_text: &str) -> color_eyre::Result<DecodedEnvelope> {
     let encrypted_database: EncryptedDatabase = serde_json::from_str(encrypted_text)
         .map_err(|e| eyre!("Error during encrypted database deserialization: {e}"))?;
     if encrypted_database.version() != 1 {
@@ -79,17 +113,14 @@ pub fn decrypt_string(
         return Err(eyre!("Invalid nonce or salt length"));
     }
 
-    let key = Zeroizing::new(argon_derive_key(password.as_bytes(), salt.as_slice())?);
-
-    let aead = XChaCha20Poly1305::new_from_slice(&key)
-        .map_err(|e| eyre!("Invalid encryption key length: {e}"))?;
-    let nonce = XNonce::try_from(nonce.as_slice())
-        .map_err(|_| eyre!("Invalid nonce length in encrypted database"))?;
-    let decrypted = aead
-        .decrypt(&nonce, cipher_text.as_slice())
-        .map_err(|_| eyre!("Wrong password"))?;
-    let from_utf8 = String::from_utf8(decrypted).map_err(ErrReport::from)?;
-    Ok((from_utf8, key.to_vec(), salt))
+    if cipher_text.len() < 16 {
+        return Err(eyre!("Truncated encrypted vault ciphertext"));
+    }
+    Ok(DecodedEnvelope {
+        nonce,
+        cipher_text,
+        salt,
+    })
 }
 
 #[cfg(test)]
@@ -142,5 +173,48 @@ mod malformed_tests {
         assert!(decrypt_string(&value.to_string(), "correct password").is_err());
         value["version"] = 65535.into();
         assert!(decrypt_string(&value.to_string(), "correct password").is_err());
+    }
+}
+
+#[cfg(test)]
+mod envelope_tests {
+    use super::*;
+
+    #[test]
+    fn structural_validation_rejects_unsupported_and_truncated_containers() {
+        let valid = serde_json::json!({"version":1,"nonce":BASE64.encode(&[0;24]),"salt":BASE64.encode(&[0;16]),"cipher":BASE64.encode(&[0;16])});
+        assert!(validate_envelope(valid.to_string().as_bytes()).is_ok());
+        for (field, value) in [
+            ("version", serde_json::json!(2)),
+            ("nonce", serde_json::json!(BASE64.encode(&[0; 23]))),
+            ("salt", serde_json::json!(BASE64.encode(&[0; 15]))),
+            ("cipher", serde_json::json!(BASE64.encode(&[0; 15]))),
+            ("cipher", serde_json::json!("not base64!")),
+        ] {
+            let mut corrupt = valid.clone();
+            corrupt[field] = value;
+            assert!(
+                validate_envelope(corrupt.to_string().as_bytes()).is_err(),
+                "{field}"
+            );
+        }
+    }
+
+    #[test]
+    fn authenticated_invalid_utf8_returns_a_sanitized_error() {
+        let salt = [1; 16];
+        let key = Zeroizing::new(argon_derive_key(b"password", &salt).unwrap());
+        let nonce = XNonce::from([2; 24]);
+        let aead = XChaCha20Poly1305::new_from_slice(&key).unwrap();
+        let cipher = aead.encrypt(&nonce, &[0xff, 0xfe][..]).unwrap();
+        let envelope = EncryptedDatabase::new(
+            1,
+            BASE64.encode(&nonce),
+            BASE64.encode(&salt),
+            BASE64.encode(&cipher),
+        );
+        let error =
+            decrypt_string(&serde_json::to_string(&envelope).unwrap(), "password").unwrap_err();
+        assert_eq!(error.to_string(), "Decrypted vault is not UTF-8");
     }
 }
