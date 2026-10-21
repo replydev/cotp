@@ -23,10 +23,10 @@ jobs:
       - name: Install NodeJS
         uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 26
       
       - name: Install Semantic Release globally
-        run: npm install -g semantic-release @semantic-release/git @semantic-release/exec @semantic-release/changelog
+        run: npm install -g semantic-release@25.0.9 @semantic-release/git@11.0.1 @semantic-release/exec@7.1.0 @semantic-release/changelog@7.0.0
 
       # Semantic Release configuration executes gh CLI which triggers the deploy workflow
       - name: Release with semantic versioning
