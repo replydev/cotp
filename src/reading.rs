@@ -1,31 +1,11 @@
 use crate::crypto;
 use crate::otp::otp_element::{OTPDatabase, OTPElement};
 use crate::path::DATABASE_PATH;
-use crate::utils;
 use color_eyre::eyre::{ErrReport, eyre};
 use std::fs::read_to_string;
-use std::io::{self, BufRead};
 use zeroize::Zeroize;
 
 pub type ReadResult = (OTPDatabase, Vec<u8>, Vec<u8>);
-
-pub fn get_elements_from_input() -> color_eyre::Result<ReadResult> {
-    let pw = utils::password("Password: ", 8);
-    get_elements_with_password(pw)
-}
-
-pub fn get_elements_from_stdin() -> color_eyre::Result<ReadResult> {
-    if let Some(password) = io::stdin().lock().lines().next() {
-        return get_elements_with_password(password?);
-    }
-    Err(eyre!("Failure during stdin reading"))
-}
-
-fn get_elements_with_password(mut password: String) -> color_eyre::Result<ReadResult> {
-    let (elements, key, salt) = read_from_file(&password)?;
-    password.zeroize();
-    Ok((elements, key, salt))
-}
 
 pub fn read_decrypted_text(password: &str) -> color_eyre::Result<(String, Vec<u8>, Vec<u8>)> {
     let encrypted_contents =

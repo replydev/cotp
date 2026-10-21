@@ -65,7 +65,7 @@ fn command(device: Option<&str>) -> Command {
     }
     command.args(["oath", "accounts"]);
     command.stderr(Stdio::inherit());
-    if !std::io::stdin().is_terminal() {
+    if crate::utils::no_input() || !std::io::stdin().is_terminal() {
         command.stdin(Stdio::null());
     }
     command
@@ -184,7 +184,7 @@ pub fn handle(args: &crate::arguments::CotpArgs) -> Result<bool> {
                 touch,
                 issuer,
             } => {
-                if !std::io::stdin().is_terminal() {
+                if crate::utils::no_input() || !std::io::stdin().is_terminal() {
                     return Err(eyre!(
                         "Hardware enrollment requires an interactive terminal"
                     ));
@@ -203,7 +203,7 @@ pub fn handle(args: &crate::arguments::CotpArgs) -> Result<bool> {
                 }
             }
             HardwareCommand::Delete { query } => {
-                if !std::io::stdin().is_terminal() {
+                if crate::utils::no_input() || !std::io::stdin().is_terminal() {
                     return Err(eyre!("Hardware deletion requires an interactive terminal"));
                 }
                 let names = accounts(device)?;
@@ -220,6 +220,34 @@ pub fn handle(args: &crate::arguments::CotpArgs) -> Result<bool> {
         return Ok(false);
     }
     match &args.command {
+        Some(CotpSubcommands::Code(args)) => {
+            if args.watch || args.preview || !args.min_validity.is_zero() {
+                return Err(eyre!(
+                    "YubiKey does not support --watch, --preview, or --min-validity"
+                ));
+            }
+            let selector = &args.selector;
+            if selector.index.is_some()
+                || selector.issuer.is_some()
+                || selector.label.is_some()
+                || [&selector.query, &selector.id, &selector.alias]
+                    .iter()
+                    .filter(|value| value.is_some())
+                    .count()
+                    != 1
+            {
+                return Err(eyre!(
+                    "Select a YubiKey account with one QUERY, --id, or --alias"
+                ));
+            }
+            let query = selector
+                .query
+                .as_deref()
+                .or(selector.id.as_deref())
+                .or(selector.alias.as_deref())
+                .unwrap();
+            code(device, query, args.copy, args.quiet, args.json)?;
+        }
         Some(CotpSubcommands::List(list_args)) => {
             list(device, list_args.format.as_ref().is_some_and(|f| f.json))?
         }

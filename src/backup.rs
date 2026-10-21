@@ -11,7 +11,6 @@ use clap::{Args, Subcommand};
 use color_eyre::eyre::{Result, eyre};
 use std::{
     fs,
-    io::{self, BufRead},
     path::{Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -51,7 +50,12 @@ impl crate::arguments::SubcommandExecutor for BackupArgs {
     }
 }
 
-pub fn run(args: &BackupArgs, vault: &Path, password_stdin: bool) -> Result<()> {
+pub fn run(
+    args: &BackupArgs,
+    vault: &Path,
+    password_stdin: bool,
+    password_fd: Option<u32>,
+) -> Result<()> {
     match &args.action {
         BackupAction::Create { directory, keep } => {
             let path = create(vault, directory)?;
@@ -66,7 +70,7 @@ pub fn run(args: &BackupArgs, vault: &Path, password_stdin: bool) -> Result<()> 
             }
         }
         BackupAction::Verify { file } => {
-            let password = password(password_stdin)?;
+            let password = password(password_stdin, password_fd)?;
             let bytes = fs::read(file)?;
             let database = validate(&bytes, &password)?;
             println!(
@@ -75,7 +79,7 @@ pub fn run(args: &BackupArgs, vault: &Path, password_stdin: bool) -> Result<()> 
             );
         }
         BackupAction::Restore { file, force } => {
-            let password = password(password_stdin)?;
+            let password = password(password_stdin, password_fd)?;
             restore(file, vault, &password, *force)?;
             eprintln!(
                 "Encrypted backup restored. Use the backup's original password to unlock it."
@@ -85,17 +89,14 @@ pub fn run(args: &BackupArgs, vault: &Path, password_stdin: bool) -> Result<()> 
     Ok(())
 }
 
-fn password(from_stdin: bool) -> Result<Zeroizing<String>> {
-    let password = if from_stdin {
-        io::stdin()
-            .lock()
-            .lines()
-            .next()
-            .ok_or_else(|| eyre!("Missing backup password on stdin"))??
+fn password(from_stdin: bool, fd: Option<u32>) -> Result<Zeroizing<String>> {
+    Ok(Zeroizing::new(if from_stdin {
+        crate::utils::stdin_line()?
+    } else if let Some(fd) = fd {
+        crate::utils::password_from_fd(fd)?
     } else {
-        rpassword::prompt_password("Backup password: ")?
-    };
-    Ok(Zeroizing::new(password))
+        crate::utils::prompt_password("Backup password: ")?
+    }))
 }
 
 pub(crate) fn validate(bytes: &[u8], password: &str) -> Result<OTPDatabase> {

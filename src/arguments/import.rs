@@ -9,7 +9,7 @@ use crate::{
 use clap::Args;
 use color_eyre::eyre::{Result, eyre};
 use std::{
-    io::{self, IsTerminal, Read, Write},
+    io::{self, Read, Write},
     path::PathBuf,
 };
 
@@ -181,7 +181,8 @@ impl SubcommandExecutor for ImportArgs {
         if self.dry_run {
             return Ok(database);
         }
-        if !self.yes && io::stdin().is_terminal() {
+        if !self.yes {
+            crate::utils::ensure_interactive()?;
             eprint!("Apply import? [y/N] ");
             io::stderr().flush()?;
             let mut answer = String::new();

@@ -48,7 +48,7 @@ fn stdin_import_is_repeatable_and_plaintext_export_is_explicit() {
         cargo_bin_cmd!("cotp")
             .args(["--password-stdin", "--database-path"])
             .arg(&db)
-            .args(["import", "-"])
+            .args(["import", "-", "--yes"])
             .write_stdin("12345678\notpauth://hotp/Example:alice?secret=JBSWY3DP&counter=42\n")
             .assert()
             .success();
@@ -74,4 +74,24 @@ fn stdin_import_is_repeatable_and_plaintext_export_is_explicit() {
     let value: serde_json::Value = serde_json::from_slice(&std::fs::read(export).unwrap()).unwrap();
     assert_eq!(value["elements"].as_array().unwrap().len(), 1);
     assert_eq!(value["elements"][0]["counter"], 42);
+}
+
+#[test]
+fn dry_run_does_not_create_a_missing_vault() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = dir.path().join("missing/vault.cotp");
+    let input = dir.path().join("uris.txt");
+    std::fs::write(&input, "otpauth://totp/Example:alice?secret=JBSWY3DP").unwrap();
+    cargo_bin_cmd!("cotp")
+        .args(["--no-input", "--password-stdin", "--database-path"])
+        .arg(&db)
+        .arg("import")
+        .arg(&input)
+        .arg("--dry-run")
+        .write_stdin("12345678\n")
+        .assert()
+        .code(1)
+        .stderr(predicates::str::contains("cotp init"));
+    assert!(!db.exists());
+    assert!(!db.parent().unwrap().exists());
 }
