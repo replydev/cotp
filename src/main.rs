@@ -20,6 +20,7 @@ use zeroize::Zeroize;
 mod arguments;
 mod backup;
 mod clipboard;
+mod config;
 mod crypto;
 mod database_file;
 mod exporters;
@@ -71,7 +72,11 @@ fn init(args: &CotpArgs) -> color_eyre::Result<ReadResult> {
 fn main() -> AppResult<()> {
     color_eyre::install()?;
 
-    let cotp_args: CotpArgs = CotpArgs::parse();
+    let mut cotp_args: CotpArgs = CotpArgs::parse();
+    if arguments::shell::handle(&cotp_args)? {
+        return Ok(());
+    }
+    config::load(&mut cotp_args)?;
     if let Some(arguments::CotpSubcommands::Backup(args)) = &cotp_args.command {
         let path = init_path(&cotp_args);
         return backup::run(args, &path, cotp_args.password_from_stdin).map_err(|e| e.into());

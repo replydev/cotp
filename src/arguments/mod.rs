@@ -19,6 +19,7 @@ mod import;
 mod list;
 mod passwd;
 pub(crate) mod selector;
+pub mod shell;
 
 /// Common trait the all the Subcommands must implement to define the command logic
 #[enum_dispatch]
@@ -42,6 +43,12 @@ DASHBOARD
 pub struct CotpArgs {
     #[command(subcommand)]
     pub(crate) command: Option<CotpSubcommands>,
+    /// Read settings from this JSON file
+    #[arg(long, global = true)]
+    pub config: Option<std::path::PathBuf>,
+    /// Choose a named vault profile
+    #[arg(long, global = true)]
+    pub profile: Option<String>,
     /// Fetch the password from standard input
     #[arg(long = "password-stdin", default_value_t = false)]
     pub password_from_stdin: bool,
@@ -54,6 +61,10 @@ pub struct CotpArgs {
 #[derive(Subcommand)]
 #[enum_dispatch(SubcommandExecutor)]
 pub enum CotpSubcommands {
+    /// Generate shell completion scripts without unlocking a vault
+    Completions(shell::CompletionsArgs),
+    /// Generate manual pages without unlocking a vault
+    Man(shell::ManArgs),
     /// Add new OTP code
     Add(AddArgs),
     /// Edit an existing OTP Code
