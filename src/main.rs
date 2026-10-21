@@ -23,6 +23,7 @@ mod clipboard;
 mod config;
 mod crypto;
 mod database_file;
+mod exchange;
 mod exporters;
 mod importers;
 mod interface;

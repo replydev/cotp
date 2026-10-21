@@ -98,7 +98,7 @@ fn password(from_stdin: bool) -> Result<Zeroizing<String>> {
     Ok(Zeroizing::new(password))
 }
 
-fn validate(bytes: &[u8], password: &str) -> Result<OTPDatabase> {
+pub(crate) fn validate(bytes: &[u8], password: &str) -> Result<OTPDatabase> {
     let text = std::str::from_utf8(bytes)?;
     let (plaintext, key, _salt) = decrypt_string(text, password)?;
     let plaintext = Zeroizing::new(plaintext);
@@ -109,7 +109,9 @@ fn validate(bytes: &[u8], password: &str) -> Result<OTPDatabase> {
         return Err(eyre!("Backup uses a newer unsupported vault format"));
     }
     migrate(&mut database)?;
-    for element in database.elements_ref() {
+    for element in &mut database.elements {
+        crate::importers::enrollment::validate(element)
+            .map_err(|_| eyre!("Backup contains an invalid OTP account"))?;
         element
             .get_otp_code()
             .map_err(|_| eyre!("Backup contains an invalid OTP account"))?;

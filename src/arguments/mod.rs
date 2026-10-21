@@ -61,6 +61,8 @@ pub struct CotpArgs {
 #[derive(Subcommand)]
 #[enum_dispatch(SubcommandExecutor)]
 pub enum CotpSubcommands {
+    /// Merge an authenticated encrypted backup from another device
+    Merge(crate::exchange::MergeArgs),
     /// Generate shell completion scripts without unlocking a vault
     Completions(shell::CompletionsArgs),
     /// Generate manual pages without unlocking a vault
