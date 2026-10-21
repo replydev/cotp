@@ -13,6 +13,10 @@ use super::SubcommandExecutor;
 
 #[derive(Args)]
 pub struct ExportArgs {
+    /// Acknowledge that exported files contain unencrypted authentication secrets
+    #[arg(long, required = true)]
+    pub plaintext: bool,
+
     /// Export file path
     #[arg(short, long, default_value = ".")]
     pub path: PathBuf,
@@ -57,7 +61,7 @@ impl SubcommandExecutor for ExportArgs {
     fn run_command(self, database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
         let export_format = self.format.unwrap_or_default();
         let exported_path = if self.path.is_dir() {
-            self.path.join("exported.cotp")
+            self.path.join("exported.plaintext.json")
         } else {
             self.path
         };
@@ -77,7 +81,7 @@ impl SubcommandExecutor for ExportArgs {
             unreachable!("Unreachable code");
         }
         .map(|path| {
-            println!(
+            eprintln!(
                 "Exported to path: {}",
                 path.to_str().unwrap_or("Failed to encode path")
             );

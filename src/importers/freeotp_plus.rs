@@ -46,7 +46,7 @@ pub struct FreeOTPElement {
 
 impl From<FreeOTPElement> for OTPElement {
     fn from(token: FreeOTPElement) -> Self {
-        let counter: Option<u64> = if token.algo.to_uppercase().as_str() == "HOTP" {
+        let counter: Option<u64> = if token.r#type.to_uppercase().as_str() == "HOTP" {
             Some(token.counter)
         } else {
             None

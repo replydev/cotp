@@ -1,7 +1,6 @@
-use std::{fs::File, io::Write, path::PathBuf};
+use std::{io::Write, path::PathBuf};
 
 use serde::Serialize;
-use zeroize::Zeroize;
 
 pub mod andotp;
 pub mod freeotp_plus;
@@ -11,18 +10,23 @@ pub fn do_export<T>(to_be_saved: &T, exported_path: PathBuf) -> Result<PathBuf, 
 where
     T: ?Sized + Serialize,
 {
-    match serde_json::to_string(to_be_saved) {
-        Ok(mut contents) => {
-            if contents == "[]" {
-                return Err("No contents to export, skipping...".to_owned());
-            }
-            let mut file = File::create(&exported_path).expect("Cannot create file");
-            let contents_bytes = contents.as_bytes();
-            file.write_all(contents_bytes)
-                .expect("Failed to write contents");
-            contents.zeroize();
-            Ok(exported_path)
-        }
-        Err(e) => Err(format!("{e:?}")),
+    let contents =
+        zeroize::Zeroizing::new(serde_json::to_vec(to_be_saved).map_err(|e| e.to_string())?);
+    if contents.as_slice() == b"[]" {
+        return Err("No contents to export, skipping...".to_owned());
     }
+    let parent = exported_path
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or_else(|| std::path::Path::new("."));
+    let mut file = tempfile::NamedTempFile::new_in(parent).map_err(|e| e.to_string())?;
+    file.write_all(&contents).map_err(|e| e.to_string())?;
+    file.as_file().sync_all().map_err(|e| e.to_string())?;
+    file.persist_noclobber(&exported_path).map_err(|e| {
+        format!(
+            "Cannot create export (existing files are never overwritten): {}",
+            e.error
+        )
+    })?;
+    Ok(exported_path)
 }
