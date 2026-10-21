@@ -3,6 +3,7 @@ use chacha20poly1305::aead::Aead;
 use chacha20poly1305::{KeyInit, XChaCha20Poly1305, XNonce};
 use color_eyre::eyre::{ErrReport, eyre};
 use data_encoding::BASE64;
+use zeroize::Zeroizing;
 
 use super::encrypted_database::EncryptedDatabase;
 
@@ -62,15 +63,23 @@ pub fn decrypt_string(
     //encrypted text is an encrypted database json serialized object
     let encrypted_database: EncryptedDatabase = serde_json::from_str(encrypted_text)
         .map_err(|e| eyre!("Error during encrypted database deserialization: {e}"))?;
+    if encrypted_database.version() != 1 {
+        return Err(eyre!("Unsupported encrypted database version"));
+    }
     let nonce = BASE64
         .decode(encrypted_database.nonce().as_bytes())
-        .expect("Cannot decode Base64 nonce");
+        .map_err(|_| eyre!("Invalid Base64 nonce"))?;
     let cipher_text = BASE64
         .decode(encrypted_database.cipher().as_bytes())
-        .expect("Cannot decode Base64 cipher");
-    let salt = BASE64.decode(encrypted_database.salt().as_bytes()).unwrap();
+        .map_err(|_| eyre!("Invalid Base64 ciphertext"))?;
+    let salt = BASE64
+        .decode(encrypted_database.salt().as_bytes())
+        .map_err(|_| eyre!("Invalid Base64 salt"))?;
+    if nonce.len() != XCHACHA20_POLY1305_NONCE_LENGTH || salt.len() != ARGON2ID_SALT_LENGTH {
+        return Err(eyre!("Invalid nonce or salt length"));
+    }
 
-    let key: Vec<u8> = argon_derive_key(password.as_bytes(), salt.as_slice())?;
+    let key = Zeroizing::new(argon_derive_key(password.as_bytes(), salt.as_slice())?);
 
     let aead = XChaCha20Poly1305::new_from_slice(&key)
         .map_err(|e| eyre!("Invalid encryption key length: {e}"))?;
@@ -80,7 +89,7 @@ pub fn decrypt_string(
         .decrypt(&nonce, cipher_text.as_slice())
         .map_err(|_| eyre!("Wrong password"))?;
     let from_utf8 = String::from_utf8(decrypted).map_err(ErrReport::from)?;
-    Ok((from_utf8, key, salt))
+    Ok((from_utf8, key.to_vec(), salt))
 }
 
 #[cfg(test)]
@@ -97,5 +106,41 @@ mod tests {
         let (decrypted, _key, _salt) =
             decrypt_string(&serde_json::to_string(&encrypted).unwrap(), "pa$$w0rd").unwrap();
         assert_eq!(String::from("Secret data@#[]ò"), decrypted);
+    }
+}
+
+#[cfg(test)]
+mod malformed_tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn malformed_json_never_panics(input in ".{0,2048}") {
+            let _ = decrypt_string(&input, "test password");
+        }
+        #[test]
+        fn malformed_envelopes_never_panic(nonce in ".{0,40}", salt in ".{0,30}", cipher in ".{0,100}") {
+            let input = serde_json::json!({"version":1,"nonce":nonce,"salt":salt,"cipher":cipher});
+            let _ = decrypt_string(&input.to_string(), "test password");
+        }
+    }
+
+    #[test]
+    fn tampering_and_wrong_password_fail_authentication() {
+        let salt = gen_salt().unwrap();
+        let key = argon_derive_key(b"correct password", &salt).unwrap();
+        let encrypted = encrypt_string_with_key("private vault", &key, &salt).unwrap();
+        let serialized = serde_json::to_string(&encrypted).unwrap();
+        assert!(decrypt_string(&serialized, "wrong password").is_err());
+        let mut value: serde_json::Value = serde_json::from_str(&serialized).unwrap();
+        let mut cipher = BASE64
+            .decode(value["cipher"].as_str().unwrap().as_bytes())
+            .unwrap();
+        cipher[0] ^= 1;
+        value["cipher"] = BASE64.encode(&cipher).into();
+        assert!(decrypt_string(&value.to_string(), "correct password").is_err());
+        value["version"] = 65535.into();
+        assert!(decrypt_string(&value.to_string(), "correct password").is_err());
     }
 }

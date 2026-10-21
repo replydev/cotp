@@ -73,3 +73,28 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod rfc_vectors {
+    use super::*;
+    use crate::otp::otp_element::format_code;
+
+    #[test]
+    fn all_rfc4226_vectors() {
+        let secret = BASE32_NOPAD.encode(b"12345678901234567890");
+        let expected = [
+            "755224", "287082", "359152", "969429", "338314", "254676", "287922", "162583",
+            "399871", "520489",
+        ];
+        for (counter, expected) in expected.into_iter().enumerate() {
+            assert_eq!(
+                format_code(
+                    6,
+                    hotp(&secret, OTPAlgorithm::Sha1, counter as u64).unwrap()
+                )
+                .unwrap(),
+                expected
+            );
+        }
+    }
+}
