@@ -50,6 +50,13 @@ fn init(args: &CotpArgs) -> color_eyre::Result<ReadResult> {
             "Vault does not exist. Create it with cotp init, add, or import."
         ));
     }
+    if !path.exists()
+        && matches!(&args.command, Some(arguments::CotpSubcommands::Import(import)) if import.dry_run)
+    {
+        return Err(eyre!(
+            "Dry-run requires an existing vault; create it with cotp init first"
+        ));
+    }
     let first_run = utils::init_app().map_err(|()| eyre!("Could not create vault directory"))?;
     persistence::initialize(&path)?;
     let explicit_password = if args.password_from_stdin {
@@ -95,16 +102,25 @@ fn run(mut cotp_args: CotpArgs) -> Result<(), (u8, color_eyre::eyre::Report)> {
         )
         .map_err(|error| (1, error));
     }
+    let dry_run = matches!(&cotp_args.command, Some(arguments::CotpSubcommands::Import(args)) if args.dry_run);
+    let save_upgrade_before_command = matches!(
+        &cotp_args.command,
+        None | Some(
+            arguments::CotpSubcommands::Code(_)
+                | arguments::CotpSubcommands::Extract(_)
+                | arguments::CotpSubcommands::List(_)
+        )
+    );
     let (mut database, key, salt) = init(&cotp_args).map_err(|error| (1, error))?;
     let mut key = zeroize::Zeroizing::new(key);
     persistence::unlock(&key, &salt).map_err(|error| (1, error))?;
     otp::migrations::migrate(&mut database).map_err(|error| (1, error))?;
-    if database.is_modified() {
+    if database.is_modified() && save_upgrade_before_command {
         database.save(&key, &salt).map_err(|error| (1, error))?;
     }
     key.zeroize();
     let mut database = args_parser(cotp_args, database).map_err(|error| (3, error))?;
-    if database.is_modified() {
+    if database.is_modified() && !dry_run {
         persistence::persist(&mut database).map_err(|error| {
             (
                 1,
