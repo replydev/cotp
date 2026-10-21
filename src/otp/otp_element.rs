@@ -1,6 +1,6 @@
 use color_eyre::eyre::{ErrReport, eyre};
 use derive_builder::Builder;
-use std::{fs::File, io::Write, vec};
+use std::vec;
 
 use crate::crypto::cryptography::{argon_derive_key, encrypt_string_with_key, gen_salt};
 use crate::otp::otp_error::OtpError;
@@ -58,26 +58,18 @@ impl OTPDatabase {
     }
 
     pub fn save(&mut self, key: &Vec<u8>, salt: &[u8]) -> color_eyre::Result<()> {
-        self.needs_modification = false;
         migrate(self)?;
-        match self.overwrite_database_key(key, salt) {
-            Ok(()) => Ok(()),
-            Err(e) => Err(ErrReport::from(e)),
-        }
+        self.overwrite_database_key(key, salt)?;
+        self.needs_modification = false;
+        Ok(())
     }
 
-    fn overwrite_database_key(&self, key: &Vec<u8>, salt: &[u8]) -> Result<(), std::io::Error> {
+    fn overwrite_database_key(&self, key: &Vec<u8>, salt: &[u8]) -> color_eyre::Result<()> {
         let json: &str = &serde_json::to_string(&self)?;
-        let encrypted = encrypt_string_with_key(json, key, salt).unwrap();
-        let mut file = File::create(DATABASE_PATH.get().unwrap())?;
-        match serde_json::to_string(&encrypted) {
-            Ok(content) => {
-                file.write_all(content.as_bytes())?;
-                file.sync_all()?;
-                Ok(())
-            }
-            Err(e) => Err(std::io::Error::from(e)),
-        }
+        let encrypted = encrypt_string_with_key(json, key, salt)?;
+        let content = serde_json::to_vec(&encrypted)?;
+        crate::database_file::write(DATABASE_PATH.get().unwrap(), &content)?;
+        Ok(())
     }
 
     pub fn save_with_pw(&mut self, password: &str) -> color_eyre::Result<(Vec<u8>, [u8; 16])> {
