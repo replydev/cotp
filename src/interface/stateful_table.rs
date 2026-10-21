@@ -1,7 +1,6 @@
 use crate::interface::row::Row;
+use crate::otp::otp_element::OTPElement;
 use ratatui::widgets::TableState;
-
-use crate::otp::{otp_element::OTPElement, otp_type::OTPType};
 
 pub struct StatefulTable {
     pub(crate) state: TableState,
@@ -9,76 +8,77 @@ pub struct StatefulTable {
 }
 
 impl StatefulTable {
-    pub fn new(elements: &[OTPElement]) -> StatefulTable {
-        let mut table = StatefulTable {
+    pub fn new(elements: &[OTPElement]) -> Self {
+        let mut table = Self {
             state: TableState::default(),
             items: vec![],
         };
-        fill_table(&mut table, elements);
+        table.refresh(elements, "");
         table
     }
-    pub fn next(&mut self) {
-        let selected = if self.items.is_empty() {
-            None
-        } else {
-            Some(match self.state.selected() {
-                Some(i) => {
-                    if i >= self.items.len() - 1 {
-                        0
-                    } else {
-                        i + 1
-                    }
-                }
-                None => 0,
+
+    pub(crate) fn selected_index(&self) -> Option<usize> {
+        self.state
+            .selected()
+            .and_then(|index| self.items.get(index))
+            .map(|row| row.database_index)
+    }
+
+    pub(crate) fn refresh(&mut self, elements: &[OTPElement], query: &str) {
+        let selected = self.selected_index();
+        let previous_position = self.state.selected().unwrap_or(0);
+        let query = query.to_lowercase();
+        self.items = elements
+            .iter()
+            .enumerate()
+            .filter(|(_, element)| {
+                format!("{} {}", element.issuer, element.label)
+                    .to_lowercase()
+                    .contains(&query)
             })
-        };
-        self.state.select(selected);
+            .map(|(index, element)| Row::new(index, element))
+            .collect();
+        let position = selected
+            .and_then(|index| {
+                self.items
+                    .iter()
+                    .position(|row| row.database_index == index)
+            })
+            .or_else(|| {
+                (!self.items.is_empty()).then(|| previous_position.min(self.items.len() - 1))
+            });
+        self.state.select(position);
+    }
+
+    pub fn next(&mut self) {
+        if !self.items.is_empty() {
+            let next = self
+                .state
+                .selected()
+                .map_or(0, |i| (i + 1) % self.items.len());
+            self.state.select(Some(next));
+        }
     }
 
     pub fn previous(&mut self) {
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i == 0 {
-                    self.items.len().checked_sub(1)
-                } else {
-                    Some(i - 1)
-                }
-            }
-            None => {
-                if self.items.is_empty() {
-                    None
-                } else {
-                    Some(0)
-                }
-            }
-        };
-        self.state.select(i);
+        if !self.items.is_empty() {
+            let previous = self
+                .state
+                .selected()
+                .map_or(0, |i| if i == 0 { self.items.len() - 1 } else { i - 1 });
+            self.state.select(Some(previous));
+        }
     }
-}
 
-pub fn fill_table(table: &mut StatefulTable, elements: &[OTPElement]) {
-    for (i, element) in elements.iter().enumerate() {
-        let label = match element.type_ {
-            OTPType::Hotp => match element.counter {
-                Some(result) => element.label.clone() + (format!(" ({result} counter)").as_str()),
-                None => element.label.clone(),
-            },
-            _ => element.label.clone(),
-        };
-        let result = element.get_otp_code();
-
-        let error = result.is_err();
-        table.items.push(Row::new(
-            vec![
-                (i + 1).to_string(),
-                element.issuer.clone(),
-                label,
-                match result {
-                    Ok(code) => code,
-                    Err(e) => e.to_string(),
-                },
-            ],
-            error,
-        ));
+    pub(crate) fn move_by(&mut self, delta: isize) {
+        if !self.items.is_empty() {
+            let index = self
+                .state
+                .selected()
+                .unwrap_or(0)
+                .saturating_add_signed(delta)
+                .min(self.items.len() - 1);
+            self.state.select(Some(index));
+        }
     }
 }

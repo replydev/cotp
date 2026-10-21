@@ -1,102 +1,34 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-
+use super::copy_selected;
 use crate::interface::{app::App, enums::Focus};
-
-use super::{copy_selected_code_to_clipboard, handle_exit, main_window::main_handler};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 pub(super) fn search_bar_handler(key_event: KeyEvent, app: &mut App) {
     match key_event.code {
-        KeyCode::Char(c) => {
-            if key_event.modifiers == KeyModifiers::CONTROL {
-                match c.to_ascii_lowercase() {
-                    'f' => {
-                        app.search_query.clear();
-                        app.focus = Focus::MainPage;
-                    }
-                    'c' => handle_exit(app),
-                    'w' | 'u' => app.search_query.clear(),
-                    _ => {}
+        KeyCode::Char(c) if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
+            match c.to_ascii_lowercase() {
+                'f' => app.focus = Focus::MainPage,
+                'w' | 'u' => {
+                    app.search_query.clear();
+                    app.filter();
                 }
-            } else {
-                app.search_query.push(c);
-                search_and_select(app);
+                _ => {}
             }
         }
+        KeyCode::Char(c) if !key_event.modifiers.contains(KeyModifiers::ALT) => {
+            app.search_query.push(c);
+            app.filter();
+        }
         KeyCode::Enter => {
-            app.label_text = copy_selected_code_to_clipboard(app);
-            app.print_percentage = false;
+            copy_selected(app, false);
             app.focus = Focus::MainPage;
         }
-        KeyCode::Esc => {
-            app.focus = Focus::MainPage;
-        }
+        KeyCode::Esc | KeyCode::Tab => app.focus = Focus::MainPage,
         KeyCode::Backspace => {
             app.search_query.pop();
+            app.filter();
         }
-        KeyCode::Up | KeyCode::Down => {
-            app.focus = Focus::MainPage;
-            main_handler(key_event, app);
-        }
+        KeyCode::Up => app.table.previous(),
+        KeyCode::Down => app.table.next(),
         _ => {}
     }
-}
-
-fn search_and_select(app: &mut App) {
-    // Check for issuer
-    for iter in app.table.items.iter().enumerate() {
-        let (index, row) = iter;
-        if row
-            .values
-            .get(1)
-            .unwrap()
-            .to_lowercase()
-            .starts_with(&app.search_query.to_lowercase())
-        {
-            app.table.state.select(Some(index));
-            return;
-        }
-    }
-    // Check for label
-    for iter in app.table.items.iter().enumerate() {
-        let (index, row) = iter;
-        if row
-            .values
-            .get(2)
-            .unwrap()
-            .to_lowercase()
-            .starts_with(&app.search_query.to_lowercase())
-        {
-            app.table.state.select(Some(index));
-            return;
-        }
-    }
-    // Check if issuer contains the query
-    for iter in app.table.items.iter().enumerate() {
-        let (index, row) = iter;
-        if row
-            .values
-            .get(1)
-            .unwrap()
-            .to_lowercase()
-            .contains(&app.search_query.to_lowercase())
-        {
-            app.table.state.select(Some(index));
-            return;
-        }
-    }
-    // Check if label contains the query
-    for iter in app.table.items.iter().enumerate() {
-        let (index, row) = iter;
-        if row
-            .values
-            .get(2)
-            .unwrap()
-            .to_lowercase()
-            .contains(&app.search_query.to_lowercase())
-        {
-            app.table.state.select(Some(index));
-            return;
-        }
-    }
-    // TODO Handle if no search results
 }

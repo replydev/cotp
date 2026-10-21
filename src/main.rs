@@ -4,14 +4,17 @@ use clap::Parser;
 use color_eyre::eyre::eyre;
 use interface::app::AppResult;
 use interface::event::{Event, EventHandler};
-use interface::handlers::handle_key_events;
+use interface::handlers::{handle_key_events, handle_mouse_events, handle_paste};
 use interface::ui::Tui;
 use otp::otp_element::{CURRENT_DATABASE_VERSION, OTPDatabase};
 use path::init_path;
 use ratatui::Terminal;
 use ratatui::prelude::CrosstermBackend;
 use reading::{ReadResult, get_elements_from_input, get_elements_from_stdin};
-use std::{io, vec};
+use std::{
+    io::{self, IsTerminal},
+    vec,
+};
 use zeroize::Zeroize;
 
 mod arguments;
@@ -91,38 +94,34 @@ fn main() -> AppResult<()> {
 }
 
 fn dashboard(mut database: OTPDatabase) -> AppResult<OTPDatabase> {
-    if database.elements_ref().is_empty() {
-        println!("No codes, type \"cotp -h\" to get help");
-    } else {
-        // Create an application.
-        let mut app = interface::app::App::new(&mut database);
-
-        // Initialize the terminal user interface.
-        let backend = CrosstermBackend::new(io::stderr());
-        let terminal = Terminal::new(backend)?;
-        let events = EventHandler::new(250);
-        let mut tui = Tui::new(terminal, events);
-        tui.init()?;
-
-        // Start the main loop.
-        while app.running {
-            // Render the user interface.
-            tui.draw(&mut app)?;
-            // Handle events.
-            match tui.events.next()? {
-                Event::Tick => app.tick(false),
-                Event::Key(key_event) => handle_key_events(key_event, &mut app),
-                Event::Mouse(())
-                | Event::Resize((), ())
-                | Event::FocusGained()
-                | Event::FocusLost()
-                | Event::Paste(()) => {}
-            }
+    if !io::stderr().is_terminal() || !io::stdin().is_terminal() {
+        if database.elements_ref().is_empty() {
+            println!("No codes, type \"cotp -h\" to get help");
+            return Ok(database);
         }
-
-        // Exit the user interface.
-        tui.exit()?;
+        return Err(
+            "The dashboard needs an interactive terminal. Use cotp list or cotp list --json."
+                .into(),
+        );
     }
-
+    let mut app = interface::app::App::new(&mut database);
+    let backend = CrosstermBackend::new(io::stderr());
+    let terminal = Terminal::new(backend)?;
+    let mut tui = Tui::new(terminal, EventHandler::new(250));
+    tui.init()?;
+    while app.running {
+        tui.draw(&mut app)?;
+        match tui.events.next()? {
+            Event::Tick => app.tick(false),
+            Event::Key(key) => handle_key_events(key, &mut app),
+            Event::Mouse(mouse) => handle_mouse_events(mouse, &mut app),
+            Event::Paste(mut text) => {
+                handle_paste(&text, &mut app);
+                text.zeroize();
+            }
+            Event::Resize => {}
+        }
+    }
+    tui.exit()?;
     Ok(database)
 }

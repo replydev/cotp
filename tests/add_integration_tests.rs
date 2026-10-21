@@ -1,6 +1,7 @@
 #[cfg(not(target_os = "windows"))] // TODO, Integration tests currently does not work on Windows
 mod add_integration_tests {
     use assert_cmd::cargo::cargo_bin_cmd;
+    use assert_fs::prelude::*;
     use predicates::{ord::eq, str::is_empty};
     use test_case::test_case;
 
@@ -30,12 +31,20 @@ For more information, try '--help'.
     #[test_case("-l" ; "Short subcommand")]
     #[test_case("--label" ; "Long subcommand")]
     fn add_with_label_should_work(label_arg: &str) {
+        // Use an isolated database: this command writes to it, and cases run in parallel.
+        let temp = assert_fs::TempDir::new().unwrap();
+        let database = temp.child("db.cotp");
+        database
+            .write_binary(include_bytes!(
+                "../test_samples/cli_integration_test/empty_database"
+            ))
+            .unwrap();
         // Arrange / Act
         let mut command = cargo_bin_cmd!("cotp");
         let assertion = command
             .arg("--password-stdin")
             .arg("--database-path")
-            .arg("test_samples/cli_integration_test/empty_database")
+            .arg(database.path())
             .arg("add")
             .arg(label_arg)
             .arg("test")

@@ -84,7 +84,11 @@ where
     period_hash[offset] &= 0x7f;
 
     // calculate code
-    let code_bytes: [u8; 8] = match period_hash[offset..offset + 8].try_into() {
+    let code_bytes: [u8; 8] = match period_hash
+        .get(offset..offset + 8)
+        .ok_or(OtpError::InvalidDigest)?
+        .try_into()
+    {
         Ok(x) => x,
         Err(_) => return Err(OtpError::InvalidDigest),
     };
@@ -113,6 +117,20 @@ mod tests {
     use sha2::Sha256;
 
     use super::calculate_yandex_code;
+
+    #[test]
+    fn short_digest_returns_an_error_instead_of_panicking() {
+        // SHA1 may not have eight bytes left at the dynamic offset.
+        for seconds in (0..3000).step_by(30) {
+            let _ = calculate_yandex_code::<sha1::Sha1>(
+                "6SB2IKNM6OBZPAVBVTOHDKS4FAAAAAAADFUTQMBTRY",
+                "5239",
+                30,
+                8,
+                seconds,
+            );
+        }
+    }
 
     #[test]
     fn test_yandex() {

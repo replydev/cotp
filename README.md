@@ -13,16 +13,58 @@ minimalist, secure, desktop accessible software to manage my two-factor authenti
 
 ## Interface
 
-<p align="center"><img src="/img/cotp_demo.gif?raw=true"/></p>
+<p align="center"><img src="/img/cotp-dashboard.svg" alt="cotp dashboard with demonstration accounts"/></p>
 
-Type `i` to get some instruction. Otherwise just enter `cotp --help`.
-In the first run you will be prompted to insert a password to initialize the database.
+Run `cotp` to open your vault. The dashboard adapts to your terminal, with searchable
+accounts, live expiry indicators, grouped codes, and an account detail panel on wide
+screens. On your first run, choose a password to initialize the encrypted database.
+
+Use the keyboard for every action, or click accounts, the search bar, and the visible
+shortcuts. The mouse wheel navigates accounts; the `?` menu also offers clickable
+actions. No special icon font is required. The dashboard needs an interactive terminal;
+use `cotp list` or `cotp list --json` when piping output.
+
+| Key | Action |
+| --- | --- |
+| `↑` / `↓`, `k` / `j` | Select an account |
+| `Home` / `End`, `PgUp` / `PgDn` | First / last account, or move ten accounts |
+| `/` or `Ctrl+F` | Filter by issuer or account label |
+| `Enter` | Copy the selected code; on the QR screen, copy its OTP URI |
+| `a` / `e` | Add / edit an account |
+| `Space` | Show or close the selected account's QR code |
+| `h` | Hide / reveal codes |
+| `+` / `-` | Increase / decrease an HOTP counter |
+| `d` or `Delete` | Delete an account, with confirmation |
+| `?` or `i` | Open the shortcuts and actions menu |
+| `Esc` | Close the current screen, finish searching, clear a filter, or quit |
+| `q`, `Ctrl+C`, `Ctrl+D` | Quit; account changes prompt you to save or discard |
+
+### Add and edit accounts
+
+Press `a` or click **Add** to enter an issuer, account label, and secret. You can also
+paste an `otpauth://` URI into the secret field to populate the form. Choose the OTP
+type and algorithm, then adjust digits, period, counter, or PIN as required. Validation
+focuses the field that needs attention.
+
+<p align="center"><img src="/img/cotp-editor.svg" alt="cotp account editor with masked secret entry"/></p>
+
+Use `Tab` / `Shift+Tab` or `↑` / `↓` to move through fields and buttons. Text fields
+support cursor movement, `Home`, `End`, and `Ctrl+U` to clear. Click a type or algorithm
+field, or use `←` / `→` or `Space`, to change it. `Ctrl+S` or **Save account** applies the
+form; `Esc` or **Cancel** discards it. Secret keys and PINs are masked; when editing,
+leave either blank to keep its existing value.
+
+Account additions, edits, deletions, and counter changes remain pending until you
+quit and confirm **save**. Choosing **discard** leaves the on-disk vault unchanged.
+CLI subcommands remain available for scripting; run `cotp --help` for examples.
 
 ## TL;DR
 
 ```bash
 # Display all the OTP codes in the interactive dashboard
 cotp # select any code with arrow keys, press enter to copy into the clipboard, even in an SSH remote shell
+
+# In the dashboard, press a to add or e to edit an account
 
 # Add a new TOTP code from a BASE32 secret key
 cotp add --label myaccount@gmail.com --issuer Google
@@ -166,3 +208,16 @@ an issue.
 
 I created this project for my own needs, but I would be happy if this little program is useful to someone else, and I
 gratefully accept any pull requests.
+
+## UI development
+
+The repository pins Rust and Cargo in `rust-toolchain.toml`; rustup installs the selected
+toolchain automatically. The interface uses Ratatui, Crossterm, and tui-input. Rendering
+and interaction tests cover responsive layouts, keyboard and mouse actions, forms,
+search, code timing, and masked fields.
+
+To regenerate the documentation previews from the real widgets and demonstration data:
+
+```bash
+COTP_UI_PREVIEW=img/cotp-dashboard.svg COTP_FORM_PREVIEW=img/cotp-editor.svg cargo test interface::tests
+```

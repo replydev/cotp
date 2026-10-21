@@ -1,6 +1,8 @@
 use std::io;
 
-use crossterm::event::{DisableMouseCapture, EnableMouseCapture};
+use crossterm::event::{
+    DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture,
+};
 use crossterm::terminal::{self, EnterAlternateScreen, LeaveAlternateScreen};
 use ratatui::Terminal;
 use ratatui::prelude::Backend;
@@ -18,12 +20,17 @@ pub struct Tui<B: Backend> {
     terminal: Terminal<B>,
     /// Terminal event handler.
     pub events: EventHandler,
+    active: bool,
 }
 
 impl<B: Backend> Tui<B> {
     /// Constructs a new instance of [`Tui`].
     pub fn new(terminal: Terminal<B>, events: EventHandler) -> Self {
-        Self { terminal, events }
+        Self {
+            terminal,
+            events,
+            active: false,
+        }
     }
 
     /// Initializes the terminal interface.
@@ -34,7 +41,18 @@ impl<B: Backend> Tui<B> {
         <B as Backend>::Error: 'static,
     {
         terminal::enable_raw_mode()?;
-        crossterm::execute!(io::stderr(), EnterAlternateScreen, EnableMouseCapture)?;
+        self.active = true;
+        let previous_hook = std::panic::take_hook();
+        std::panic::set_hook(Box::new(move |info| {
+            restore_terminal();
+            previous_hook(info);
+        }));
+        crossterm::execute!(
+            io::stderr(),
+            EnterAlternateScreen,
+            EnableMouseCapture,
+            EnableBracketedPaste
+        )?;
         self.terminal.hide_cursor()?;
         self.terminal.clear()?;
         Ok(())
@@ -60,8 +78,33 @@ impl<B: Backend> Tui<B> {
         <B as Backend>::Error: 'static,
     {
         terminal::disable_raw_mode()?;
-        crossterm::execute!(io::stderr(), LeaveAlternateScreen, DisableMouseCapture)?;
+        crossterm::execute!(
+            io::stderr(),
+            LeaveAlternateScreen,
+            DisableMouseCapture,
+            DisableBracketedPaste
+        )?;
         self.terminal.show_cursor()?;
+        self.active = false;
         Ok(())
+    }
+}
+
+fn restore_terminal() {
+    let _ = terminal::disable_raw_mode();
+    let _ = crossterm::execute!(
+        io::stderr(),
+        LeaveAlternateScreen,
+        DisableMouseCapture,
+        DisableBracketedPaste,
+        crossterm::cursor::Show
+    );
+}
+
+impl<B: Backend> Drop for Tui<B> {
+    fn drop(&mut self) {
+        if self.active {
+            restore_terminal();
+        }
     }
 }
