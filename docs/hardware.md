@@ -7,7 +7,7 @@ with the global `--device SERIAL` option.
 
 ```sh
 cotp --backend yubikey list --json
-cotp hardware code 'GitHub:me@example.com'
+cotp --backend yubikey code 'GitHub:me@example.com'
 cotp hardware code 'GitHub:me@example.com' --copy --quiet
 cotp --device 12345678 hardware add 'me@example.com' --issuer GitHub --touch
 cotp hardware delete 'GitHub:me@example.com'
@@ -30,3 +30,7 @@ closed so a password prompt fails instead of hanging.
 The backend is tested with a deterministic subprocess fixture; physical-device and
 touch behavior requires a real key and is not exercised by the regular test suite.
 Reference: https://docs.yubico.com/software/yubikey/tools/ykman/OATH_Commands.html
+
+The shared `code` command accepts the YubiKey backend. Hardware `--watch`,
+`--preview`, and nonzero `--min-validity` are rejected because the adapter cannot
+guarantee their semantics across all device credentials.

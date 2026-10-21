@@ -98,3 +98,19 @@ jobs:
             target/debug/cotp*
             target/aarch64-unknown-linux-gnu/debug/cotp*
           if-no-files-found: error
+
+  headless:
+    name: Headless build without desktop clipboard dependencies
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: headless
+      - run: cargo clippy --locked --no-default-features -- -D warnings
+      - run: cargo test --locked --no-default-features
