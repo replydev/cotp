@@ -35,6 +35,11 @@ struct AegisElement {
 impl From<AegisElement> for OTPElement {
     fn from(value: AegisElement) -> Self {
         OTPElement {
+            id: String::new(),
+            alias: None,
+            tags: Vec::new(),
+            favorite: false,
+            order: None,
             secret: value.info.secret,
             issuer: value.issuer,
             label: value.name,

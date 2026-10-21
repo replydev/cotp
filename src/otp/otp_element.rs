@@ -1,6 +1,6 @@
 use color_eyre::eyre::{ErrReport, eyre};
 use derive_builder::Builder;
-use std::vec;
+use std::{collections::HashSet, vec};
 
 use crate::crypto::cryptography::{argon_derive_key, encrypt_string_with_key, gen_salt};
 use crate::otp::otp_error::OtpError;
@@ -21,7 +21,7 @@ use super::{
     otp_type::OTPType,
 };
 
-pub const CURRENT_DATABASE_VERSION: u16 = 2;
+pub const CURRENT_DATABASE_VERSION: u16 = 3;
 
 #[derive(Serialize, Deserialize, PartialEq, Hash)]
 pub struct OTPDatabase {
@@ -79,14 +79,35 @@ impl OTPDatabase {
         Ok((key, salt))
     }
 
-    pub fn add_all(&mut self, mut elements: Vec<OTPElement>) {
-        self.mark_modified();
+    pub fn add_all(&mut self, mut elements: Vec<OTPElement>) -> color_eyre::Result<()> {
+        let mut used: HashSet<String> = self
+            .elements
+            .iter()
+            .map(|element| element.id.clone())
+            .collect();
+        for element in &mut elements {
+            assign_account_id(element, &mut used)?;
+        }
         self.elements.append(&mut elements);
+        self.mark_modified();
+        Ok(())
     }
 
-    pub fn add_element(&mut self, element: OTPElement) {
-        self.mark_modified();
-        self.elements.push(element);
+    pub fn add_element(&mut self, element: OTPElement) -> color_eyre::Result<()> {
+        self.add_all(vec![element])
+    }
+
+    /// Give every account a unique identifier, preserving IDs already assigned.
+    pub fn ensure_account_ids(&mut self) -> color_eyre::Result<()> {
+        let mut used = HashSet::new();
+        let mut changed = false;
+        for element in &mut self.elements {
+            changed |= assign_account_id(element, &mut used)?;
+        }
+        if changed {
+            self.mark_modified();
+        }
+        Ok(())
     }
 
     pub fn mark_modified(&mut self) {
@@ -127,6 +148,22 @@ impl OTPDatabase {
     build_fn(validate = "Self::validate", error = "ErrReport")
 )]
 pub struct OTPElement {
+    /// Stable vault-local identifier, assigned when the database is migrated or saved.
+    #[serde(default)]
+    #[builder(default)]
+    pub id: String,
+    #[serde(default)]
+    #[builder(default)]
+    pub alias: Option<String>,
+    #[serde(default)]
+    #[builder(default)]
+    pub tags: Vec<String>,
+    #[serde(default)]
+    #[builder(default)]
+    pub favorite: bool,
+    #[serde(default)]
+    #[builder(default)]
+    pub order: Option<i64>,
     #[builder(setter(custom))]
     pub secret: String,
     pub issuer: String,
@@ -144,6 +181,25 @@ pub struct OTPElement {
     pub counter: Option<u64>,
     #[builder(setter(into), default)]
     pub pin: Option<String>,
+}
+
+fn assign_account_id(
+    element: &mut OTPElement,
+    used: &mut HashSet<String>,
+) -> color_eyre::Result<bool> {
+    if !element.id.is_empty() && used.insert(element.id.clone()) {
+        return Ok(false);
+    }
+    loop {
+        let mut bytes = [0u8; 16];
+        getrandom::fill(&mut bytes)
+            .map_err(|error| eyre!("Cannot generate account identifier: {error}"))?;
+        let id = hex::encode(bytes);
+        if used.insert(id.clone()) {
+            element.id = id;
+            return Ok(true);
+        }
+    }
 }
 
 static ALLOWED_DIGITS_RANGE: std::ops::RangeInclusive<u64> = 1..=10;
@@ -296,6 +352,11 @@ mod test {
     #[test]
     fn test_serialization_otp_uri_full_element() {
         let otp_element = OTPElement {
+            id: String::new(),
+            alias: None,
+            tags: Vec::new(),
+            favorite: false,
+            order: None,
             secret: String::from("xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g"),
             issuer: String::from("IssuerText"),
             label: String::from("LabelText"),
@@ -315,6 +376,11 @@ mod test {
     #[test]
     fn test_serialization_otp_uri_no_issuer() {
         let otp_element = OTPElement {
+            id: String::new(),
+            alias: None,
+            tags: Vec::new(),
+            favorite: false,
+            order: None,
             secret: String::from("xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g"),
             issuer: String::new(),
             label: String::from("LabelText"),
@@ -334,6 +400,11 @@ mod test {
     #[test]
     fn test_deserialization_otp_uri() {
         let expected = OTPElement {
+            id: String::new(),
+            alias: None,
+            tags: Vec::new(),
+            favorite: false,
+            order: None,
             secret: "xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g".to_uppercase(),
             issuer: String::from("IssuerText"),
             label: String::from("LabelText"),
@@ -361,6 +432,11 @@ mod test {
         let invalid_digits_value = 11;
 
         let element = OTPElement {
+            id: String::new(),
+            alias: None,
+            tags: Vec::new(),
+            favorite: false,
+            order: None,
             secret: "xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g".to_uppercase(),
             issuer: String::from("IssuerText"),
             label: String::from("LabelText"),
@@ -385,6 +461,11 @@ mod test {
         let invalid_digits_value = 10;
 
         let element = OTPElement {
+            id: String::new(),
+            alias: None,
+            tags: Vec::new(),
+            favorite: false,
+            order: None,
             secret: "xr5gh44x7bprcqgrdtulafeevt5rxqlbh5wvked22re43dh2d4mapv5g".to_uppercase(),
             issuer: String::from("IssuerText"),
             label: String::from("LabelText"),

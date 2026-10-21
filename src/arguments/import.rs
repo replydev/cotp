@@ -105,7 +105,7 @@ impl SubcommandExecutor for ImportArgs {
 
         let elements = result.map_err(|e| eyre!("{e}"))?;
 
-        database.add_all(elements);
+        database.add_all(elements)?;
         Ok(database)
     }
 }

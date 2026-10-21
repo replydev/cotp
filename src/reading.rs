@@ -51,6 +51,7 @@ pub fn read_from_file(password: &str) -> color_eyre::Result<ReadResult> {
                 .or_else(|_| serde_json::from_str::<Vec<OTPElement>>(&contents).map(Into::into))
                 .map_err(ErrReport::from)?;
             contents.zeroize();
+            crate::otp::migrations::migrate(&mut database)?;
             database.sort();
             Ok((database, key, salt))
         }

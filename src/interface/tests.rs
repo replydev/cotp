@@ -14,6 +14,11 @@ use ratatui::{Terminal, backend::TestBackend, buffer::Buffer};
 
 fn account(issuer: &str, label: &str) -> OTPElement {
     OTPElement {
+        id: String::new(),
+        alias: None,
+        tags: Vec::new(),
+        favorite: false,
+        order: None,
         secret: "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ".into(),
         issuer: issuer.into(),
         label: label.into(),

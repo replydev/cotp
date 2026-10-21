@@ -18,6 +18,7 @@ mod extract;
 mod import;
 mod list;
 mod passwd;
+pub(crate) mod selector;
 
 /// Common trait the all the Subcommands must implement to define the command logic
 #[enum_dispatch]

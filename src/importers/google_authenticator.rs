@@ -148,6 +148,11 @@ fn into_otp_element(params: OtpParameters) -> Result<OTPElement> {
     let counter = (type_ == OTPType::Hotp).then_some(params.counter.max(0) as u64);
 
     Ok(OTPElement {
+        id: String::new(),
+        alias: None,
+        tags: Vec::new(),
+        favorite: false,
+        order: None,
         secret: BASE32_NOPAD.encode(&params.secret),
         issuer: params.issuer,
         label: params.name,
@@ -214,6 +219,11 @@ mod tests {
 
         assert_eq!(
             vec![OTPElement {
+                id: String::new(),
+                alias: None,
+                tags: Vec::new(),
+                favorite: false,
+                order: None,
                 secret: "JBSWY3DP".to_string(),
                 issuer: "Example".to_string(),
                 label: "alice@google.com".to_string(),
@@ -237,6 +247,11 @@ mod tests {
 
         assert_eq!(
             vec![OTPElement {
+                id: String::new(),
+                alias: None,
+                tags: Vec::new(),
+                favorite: false,
+                order: None,
                 secret: "JBSWY3DP".to_string(),
                 issuer: "Acme".to_string(),
                 label: "bob".to_string(),
