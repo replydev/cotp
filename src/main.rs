@@ -21,6 +21,7 @@ mod config;
 mod crypto;
 mod database_file;
 mod exporters;
+mod hardware;
 mod importers;
 mod interface;
 mod otp;
@@ -81,6 +82,9 @@ fn run(mut cotp_args: CotpArgs) -> Result<(), (u8, color_eyre::eyre::Report)> {
     }
     config::load(&mut cotp_args).map_err(|error| (1, error))?;
     utils::set_no_input(cotp_args.no_input);
+    if hardware::handle(&cotp_args).map_err(|error| (3, error))? {
+        return Ok(());
+    }
     if let Some(arguments::CotpSubcommands::Backup(args)) = &cotp_args.command {
         let path = init_path(&cotp_args);
         return backup::run(

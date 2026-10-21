@@ -42,6 +42,12 @@ DASHBOARD
   a add · e edit · / search · Enter copy · Space QR code · ? help"
 )]
 pub struct CotpArgs {
+    /// Use the local encrypted vault or a connected YubiKey
+    #[arg(long, global = true, value_enum, default_value = "vault")]
+    pub backend: crate::hardware::Backend,
+    /// Select a YubiKey by its serial number
+    #[arg(long, global = true)]
+    pub device: Option<String>,
     #[command(subcommand)]
     pub(crate) command: Option<CotpSubcommands>,
     /// Disable all interactive prompts
@@ -72,6 +78,8 @@ pub enum CotpSubcommands {
     Init(InitArgs),
     /// Generate one uniquely selected account code (HOTP advances unless --preview)
     Code(code::CodeArgs),
+    /// Manage accounts on a YubiKey through ykman
+    Hardware(crate::hardware::HardwareArgs),
     /// Generate shell completion scripts without unlocking a vault
     Completions(shell::CompletionsArgs),
     /// Generate manual pages without unlocking a vault

@@ -10,8 +10,12 @@ pub fn set_no_input(value: bool) {
     NO_INPUT.store(value, Ordering::Relaxed);
 }
 
+pub fn no_input() -> bool {
+    NO_INPUT.load(Ordering::Relaxed)
+}
+
 pub fn ensure_interactive() -> color_eyre::Result<()> {
-    if NO_INPUT.load(Ordering::Relaxed) || !io::stdin().is_terminal() {
+    if no_input() || !io::stdin().is_terminal() {
         return Err(eyre!(
             "Interactive input is disabled; provide explicit input options (see --help)"
         ));
