@@ -20,6 +20,14 @@ struct AegisHeader {
 pub(crate) struct AegisDb {
     //version: u64,
     entries: Vec<AegisElement>,
+    #[serde(default)]
+    groups: Vec<AegisGroup>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct AegisGroup {
+    uuid: String,
+    name: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -30,6 +38,10 @@ struct AegisElement {
     issuer: String,
     //icon: Option<String>,
     info: AegisInfo,
+    #[serde(default)]
+    favorite: bool,
+    #[serde(default)]
+    groups: Vec<String>,
 }
 
 impl From<AegisElement> for OTPElement {
@@ -38,7 +50,7 @@ impl From<AegisElement> for OTPElement {
             id: String::new(),
             alias: None,
             tags: Vec::new(),
-            favorite: false,
+            favorite: value.favorite,
             order: None,
             secret: value.info.secret,
             issuer: value.issuer,
@@ -57,7 +69,26 @@ impl TryFrom<AegisDb> for Vec<OTPElement> {
     type Error = String;
 
     fn try_from(aegis_db: AegisDb) -> Result<Self, Self::Error> {
-        Ok(aegis_db.entries.into_iter().map(Into::into).collect())
+        Ok(aegis_db
+            .entries
+            .into_iter()
+            .map(|entry| {
+                let tags = entry
+                    .groups
+                    .iter()
+                    .filter_map(|id| {
+                        aegis_db
+                            .groups
+                            .iter()
+                            .find(|g| &g.uuid == id)
+                            .map(|g| g.name.clone())
+                    })
+                    .collect();
+                let mut element: OTPElement = entry.into();
+                element.tags = tags;
+                element
+            })
+            .collect())
     }
 }
 

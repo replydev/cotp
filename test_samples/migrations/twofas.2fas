@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 4,
+  "services": [
+    {
+      "name": "Example",
+      "secret": "JBSWY3DP",
+      "updatedAt": 0,
+      "otp": {
+        "issuer": "Example",
+        "account": "alice",
+        "tokenType": "HOTP",
+        "counter": 42,
+        "algorithm": "SHA256",
+        "digits": 8,
+        "period": 30
+      },
+      "order": {
+        "position": 2
+      },
+      "groupId": "group-work"
+    }
+  ],
+  "groups": [
+    {
+      "id": "group-work",
+      "name": "work",
+      "isExpanded": true,
+      "updatedAt": 0
+    }
+  ],
+  "servicesEncrypted": null
+}

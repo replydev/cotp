@@ -3,7 +3,6 @@ use aes_gcm::{Aes256Gcm, KeyInit}; // Or `Aes128Gcm`
 use data_encoding::BASE64;
 use hex::FromHex;
 use serde::Deserialize;
-use zeroize::Zeroize;
 
 use crate::otp::otp_element::OTPElement;
 use crate::utils;
@@ -45,110 +44,105 @@ struct AegisEncryptedSlot {
 
 impl TryFrom<AegisEncryptedDatabase> for Vec<OTPElement> {
     type Error = String;
-
-    fn try_from(aegis_encrypted: AegisEncryptedDatabase) -> Result<Self, Self::Error> {
-        let mut password = utils::password("Insert your Aegis password: ", 0);
-        let master_key: Option<Vec<u8>> = get_master_key(&aegis_encrypted, &password);
-        password.zeroize();
-
-        match master_key {
-            Some(mut master_key) => {
-                let content = BASE64
-                    .decode(aegis_encrypted.db.as_bytes())
-                    .map_err(|e| format!("Error during base64 decoding: {e:?}"))?;
-
-                let cipher = Aes256Gcm::new_from_slice(master_key.as_slice())
-                    .map_err(|e| format!("Invalid master key length: {e:?}"))?;
-                master_key.zeroize();
-
-                let nonce_bytes = Vec::from_hex(&aegis_encrypted.header.params.nonce)
-                    .expect("Failed to parse hex nonce");
-                let nonce = Nonce::<Aes256Gcm>::try_from(nonce_bytes.as_slice())
-                    .map_err(|e| format!("Invalid nonce length: {e:?}"))?;
-
-                let payload = [
-                    content,
-                    Vec::from_hex(&aegis_encrypted.header.params.tag)
-                        .expect("Failed to parse hex tag"),
-                ]
-                .concat();
-
-                let decrypted_db = cipher
-                    .decrypt(&nonce, payload.as_slice())
-                    .map_err(|e| format!("Failed to derive master key: {e:?}"))?;
-
-                map_results(decrypted_db)
-            }
-            None => Err("Failed to derive master key".to_string()),
-        }
+    fn try_from(database: AegisEncryptedDatabase) -> Result<Self, Self::Error> {
+        let password = zeroize::Zeroizing::new(utils::password("Insert your Aegis password: ", 0));
+        database.decrypt_with_password(&password)
     }
 }
 
-fn get_master_key(aegis_encrypted: &AegisEncryptedDatabase, password: &str) -> Option<Vec<u8>> {
-    let mut master_key: Option<Vec<u8>> = None;
-    for slot in aegis_encrypted
-        .header
-        .slots
-        .iter()
-        .filter(|item| item.r#type == 1)
-    {
-        match calc_master_key(slot, password) {
-            Ok(value) => {
-                master_key = Some(value);
+impl AegisEncryptedDatabase {
+    pub fn decrypt_with_password(self, password: &str) -> Result<Vec<OTPElement>, String> {
+        if self.header.slots.len() > 16 {
+            return Err("Too many Aegis key slots".into());
+        }
+        let mut master_key = None;
+        for slot in self.header.slots.iter().filter(|slot| slot.r#type == 1) {
+            if let Ok(key) = calc_master_key(slot, password) {
+                master_key = Some(zeroize::Zeroizing::new(key));
                 break;
             }
-            Err(e) => println!("{e}"),
         }
+        let master_key =
+            master_key.ok_or("Cannot decrypt Aegis backup: wrong password or invalid key slot")?;
+        let content = BASE64
+            .decode(self.db.as_bytes())
+            .map_err(|_| "Invalid Aegis base64 data")?;
+        let plaintext =
+            zeroize::Zeroizing::new(decrypt(&master_key, &content, &self.header.params)?);
+        let db: AegisDb = serde_json::from_slice(&plaintext)
+            .map_err(|_| "Invalid decrypted Aegis account data")?;
+        db.try_into()
     }
-    master_key
 }
 
-fn map_results(decrypted_db: Vec<u8>) -> Result<Vec<OTPElement>, String> {
-    let json = String::from_utf8(decrypted_db)
-        .map_err(|e| format!("Failed to decode from utf-8 bytes: {e:?}"))?;
-
-    serde_json::from_str::<AegisDb>(json.as_str())
-        .map_err(|e| e.to_string())
-        .and_then(TryInto::try_into)
-}
-
-fn get_params(slot: &AegisEncryptedSlot) -> Result<Params, String> {
-    let n = slot.n.unwrap();
-    let p = slot.p.unwrap();
-    let r = slot.r.unwrap();
-
-    Params::new((n as f32).log2() as u8, r, p)
-        .map_err(|e| format!("Error during scrypt params creation: {e:?}"))
+fn decrypt(key: &[u8], content: &[u8], params: &AegisEncryptedParams) -> Result<Vec<u8>, String> {
+    let cipher = Aes256Gcm::new_from_slice(key).map_err(|_| "Invalid AES key length")?;
+    let nonce_bytes = Vec::from_hex(&params.nonce).map_err(|_| "Invalid Aegis nonce encoding")?;
+    let nonce = Nonce::<Aes256Gcm>::try_from(nonce_bytes.as_slice())
+        .map_err(|_| "Invalid Aegis nonce length")?;
+    let tag = Vec::from_hex(&params.tag).map_err(|_| "Invalid Aegis authentication tag")?;
+    if tag.len() != 16 {
+        return Err("Invalid Aegis authentication tag length".into());
+    }
+    let mut payload = content.to_vec();
+    payload.extend_from_slice(&tag);
+    cipher
+        .decrypt(&nonce, payload.as_slice())
+        .map_err(|_| "Aegis authentication failed".into())
 }
 
 fn calc_master_key(slot: &AegisEncryptedSlot, password: &str) -> Result<Vec<u8>, String> {
-    let salt = Vec::from_hex(slot.salt.as_ref().unwrap()).expect("Failed to parse hex salt");
-    let mut output: [u8; 32] = [0; 32];
-    let params = get_params(slot)?;
-
-    if let Err(e) = scrypt(
-        password.as_bytes(),
-        salt.as_slice(),
-        &params,
-        output.as_mut_slice(),
-    ) {
-        return Err(format!("Error during scrypt key derivation: {e:?}"));
+    let n = slot.n.ok_or("Missing scrypt N")?;
+    let r = slot.r.ok_or("Missing scrypt r")?;
+    let p = slot.p.ok_or("Missing scrypt p")?;
+    if !n.is_power_of_two()
+        || !(2..=262144).contains(&n)
+        || r == 0
+        || p == 0
+        || u64::from(n) * u64::from(r) > 4_194_304
+        || u64::from(n) * u64::from(r) * u64::from(p) > 8_388_608
+    {
+        return Err("Unsupported or excessive Aegis scrypt parameters".into());
     }
-    let cipher = Aes256Gcm::new_from_slice(output.as_slice())
-        .map_err(|e| format!("Invalid derived key length: {e:?}"))?;
-    output.zeroize();
+    let salt = Vec::from_hex(slot.salt.as_ref().ok_or("Missing scrypt salt")?)
+        .map_err(|_| "Invalid scrypt salt")?;
+    if !(16..=64).contains(&salt.len()) {
+        return Err("Invalid scrypt salt length".into());
+    }
+    let params = Params::new(n.ilog2() as u8, r, p).map_err(|_| "Invalid scrypt parameters")?;
+    let mut key = zeroize::Zeroizing::new([0u8; 32]);
+    scrypt(password.as_bytes(), &salt, &params, key.as_mut())
+        .map_err(|_| "Scrypt derivation failed")?;
+    let encrypted = Vec::from_hex(&slot.key).map_err(|_| "Invalid encrypted Aegis key")?;
+    decrypt(key.as_slice(), &encrypted, &slot.key_params)
+}
 
-    let cipher_text = [
-        Vec::from_hex(&slot.key).expect("Failed to parse hex key"),
-        Vec::from_hex(&slot.key_params.tag).expect("Failed to parse hex tag"),
-    ]
-    .concat();
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    let nonce_bytes = Vec::from_hex(&slot.key_params.nonce).expect("Failed to parse hex nonce");
-    let nonce = Nonce::<Aes256Gcm>::try_from(nonce_bytes.as_slice())
-        .map_err(|e| format!("Invalid nonce length: {e:?}"))?;
-
-    cipher
-        .decrypt(&nonce, cipher_text.as_slice())
-        .map_err(|e| format!("Failed to derive master key: {e:?}"))
+    #[test]
+    fn malformed_slots_and_authentication_parameters_are_errors() {
+        let input: AegisEncryptedDatabase = serde_json::from_value(serde_json::json!({
+            "header":{"slots":[{"type":1,"key":"bad","key_params":{"nonce":"bad","tag":"bad"},"n":3,"r":8,"p":1,"salt":"bad"}],"params":{"nonce":"bad","tag":"bad"}},"db":"bad"
+        })).unwrap();
+        assert!(input.decrypt_with_password("password").is_err());
+        for (nonce, tag) in [
+            ("bad", "00"),
+            ("00", "00"),
+            ("000000000000000000000000", "00"),
+        ] {
+            assert!(
+                decrypt(
+                    &[0; 32],
+                    b"",
+                    &AegisEncryptedParams {
+                        nonce: nonce.into(),
+                        tag: tag.into()
+                    }
+                )
+                .is_err()
+            );
+        }
+    }
 }

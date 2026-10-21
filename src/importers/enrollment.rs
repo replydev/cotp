@@ -128,6 +128,9 @@ pub fn decode_qr(bytes: &[u8]) -> Result<ImportReport> {
 
 /// Decode container entries independently, preserving source entry numbers on errors.
 pub fn parse_json(value: Value, format: &str) -> Result<ImportReport> {
+    if matches!(format, "twofas" | "bitwarden" | "onepassword") {
+        return super::modern::parse(&value, format);
+    }
     let mut report = ImportReport::default();
     let (pointer, wrapper): (&str, fn(Value) -> Value) = match format {
         "cotp" => (
@@ -147,8 +150,16 @@ pub fn parse_json(value: Value, format: &str) -> Result<ImportReport> {
         .pointer(pointer)
         .and_then(Value::as_array)
         .ok_or_else(|| eyre!("Import file does not contain the expected account list"))?;
+    let aegis_groups = value
+        .pointer("/db/groups")
+        .cloned()
+        .unwrap_or_else(|| serde_json::json!([]));
     for (index, value) in entries.iter().enumerate() {
-        let value = wrapper(value.clone());
+        let value = if format == "aegis" {
+            serde_json::json!({"db":{"entries":[value],"groups":aegis_groups}})
+        } else {
+            wrapper(value.clone())
+        };
         let result = match format {
             "cotp" => convert::<OTPDatabase>(value),
             "andotp" => convert::<Vec<OTPElement>>(value),
@@ -175,7 +186,13 @@ where
 }
 
 pub fn detect_format(value: &Value) -> Result<&'static str> {
-    if value.get("elements").is_some() {
+    if value.get("services").is_some() || value.get("servicesEncrypted").is_some() {
+        Ok("twofas")
+    } else if value.get("accounts").is_some() {
+        Ok("onepassword")
+    } else if value.get("encrypted").is_some() {
+        Ok("bitwarden")
+    } else if value.get("elements").is_some() {
         Ok("cotp")
     } else if value.pointer("/db/entries").is_some() {
         Ok("aegis")

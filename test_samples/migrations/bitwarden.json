@@ -1,0 +1,30 @@
+{
+  "encrypted": false,
+  "items": [
+    {
+      "name": "Example",
+      "type": 1,
+      "favorite": true,
+      "login": {
+        "username": "alice",
+        "totp": "otpauth://totp/Example:alice?secret=JBSWY3DP&algorithm=SHA256&digits=8&period=60"
+      }
+    },
+    {
+      "name": "No OTP",
+      "type": 1,
+      "login": {
+        "username": "bob",
+        "totp": null
+      }
+    },
+    {
+      "name": "Bare seed",
+      "type": 1,
+      "login": {
+        "username": "bob",
+        "totp": "JBSWY3DP"
+      }
+    }
+  ]
+}
