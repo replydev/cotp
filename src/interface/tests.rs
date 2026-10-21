@@ -747,3 +747,38 @@ fn record_ui_demo() {
     )
     .unwrap();
 }
+
+#[test]
+fn organization_search_matches_tags_favorites_aliases_and_ids_and_toggle_tracks_identity() {
+    let mut db = database();
+    let first = db.mut_element(0).unwrap();
+    first.id = "stable-account-id".into();
+    first.alias = Some("work-alias".into());
+    first.tags = vec!["Work".into(), "Email".into()];
+    first.favorite = true;
+    let mut app = App::new(&mut db);
+    let rendered = text(&render(&mut app, 120, 30));
+    assert!(rendered.contains("★ GitHub"));
+    assert!(rendered.contains("@work-alias"));
+    assert!(rendered.contains("#Work #Email"));
+    for query in [
+        "tag:work is:favorite",
+        "WORK-ALIAS",
+        "stable-account-id",
+        "tag:work tag:email",
+    ] {
+        app.search_query = query.into();
+        app.filter();
+        assert_eq!(app.table.items.len(), 1);
+        assert_eq!(app.table.selected_index(), Some(0));
+    }
+    app.search_query = "tag:missing".into();
+    app.filter();
+    assert!(app.table.items.is_empty());
+    app.search_query = "is:favorite".into();
+    app.filter();
+    key(&mut app, KeyCode::Char('f'));
+    assert!(!app.database.elements_ref()[0].favorite);
+    assert!(app.database.is_modified());
+    assert!(app.table.items.is_empty());
+}

@@ -10,7 +10,7 @@ use super::{
 #[derive(Args)]
 pub struct EditArgs {
     /// One-based account index shown by list
-    #[arg(short, long, required_unless_present_any = ["id", "alias", "match_issuer", "match_label"])]
+    #[arg(short, long, required_unless_present_any = ["id", "alias", "match_issuer", "match_label", "tags", "favorite"])]
     pub index: Option<usize>,
     /// Persistent account identifier
     #[arg(long)]
@@ -24,12 +24,36 @@ pub struct EditArgs {
     /// Select by label (case-insensitive glob)
     #[arg(long)]
     pub match_label: Option<String>,
+    /// Require this tag when selecting (repeat to require all tags)
+    #[arg(long = "tag", value_parser = crate::otp::organization::parse_tag)]
+    pub tags: Vec<String>,
+    /// Select favorite accounts only
+    #[arg(long)]
+    pub favorite: bool,
     /// Set a unique account alias
     #[arg(long, conflicts_with = "clear_alias")]
     pub set_alias: Option<String>,
     /// Remove the account alias
     #[arg(long)]
     pub clear_alias: bool,
+    /// Add an account tag (repeat for multiple tags)
+    #[arg(long = "add-tag", value_parser = crate::otp::organization::parse_tag)]
+    pub add_tags: Vec<String>,
+    /// Remove an account tag (case-insensitive; repeat as needed)
+    #[arg(long = "remove-tag", value_parser = crate::otp::organization::parse_tag)]
+    pub remove_tags: Vec<String>,
+    /// Remove all account tags before adding new tags
+    #[arg(long)]
+    pub clear_tags: bool,
+    /// Set favorite status explicitly: true or false
+    #[arg(long, action = clap::ArgAction::Set)]
+    pub set_favorite: Option<bool>,
+    /// Set a custom position (lowest first)
+    #[arg(long, allow_hyphen_values = true, conflicts_with = "clear_order")]
+    pub order: Option<i64>,
+    /// Restore alphabetical position
+    #[arg(long)]
+    pub clear_order: bool,
     /// New code issuer
     #[arg(short = 's', long)]
     pub issuer: Option<String>,
@@ -65,6 +89,8 @@ impl SubcommandExecutor for EditArgs {
             issuer: self.match_issuer,
             label: self.match_label,
             query: None,
+            tags: self.tags,
+            favorite: self.favorite,
         }
         .select(&database)?;
         if let Some(alias) = &self.set_alias {
@@ -106,6 +132,24 @@ impl SubcommandExecutor for EditArgs {
         }
         if self.clear_alias {
             element.alias = None;
+        }
+        if self.clear_tags {
+            element.tags.clear();
+        }
+        element.tags.retain(|tag| {
+            !self
+                .remove_tags
+                .iter()
+                .any(|value| value.eq_ignore_ascii_case(tag))
+        });
+        crate::otp::organization::add_tags(&mut element.tags, self.add_tags);
+        if let Some(favorite) = self.set_favorite {
+            element.favorite = favorite;
+        }
+        if self.clear_order {
+            element.order = None;
+        } else if self.order.is_some() {
+            element.order = self.order;
         }
         database.mark_modified();
         Ok(database)

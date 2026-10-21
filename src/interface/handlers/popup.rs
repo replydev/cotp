@@ -28,7 +28,7 @@ pub(super) fn popup_handler(key_event: KeyEvent, app: &mut App) {
         },
         PopupAction::GeneralInfo => match key_event.code {
             KeyCode::Down | KeyCode::Char('j') => {
-                app.popup_scroll = app.popup_scroll.saturating_add(1).min(14)
+                app.popup_scroll = app.popup_scroll.saturating_add(1).min(15)
             }
             KeyCode::Up | KeyCode::Char('k') => {
                 app.popup_scroll = app.popup_scroll.saturating_sub(1)

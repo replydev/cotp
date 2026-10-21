@@ -264,12 +264,21 @@ impl App<'_> {
             } else {
                 &item.issuer
             };
+            let issuer = if element.favorite {
+                format!("★ {issuer}")
+            } else {
+                issuer.to_owned()
+            };
+            let mut details = item.label.clone();
+            if let Some(alias) = &element.alias {
+                details.push_str(&format!(" · @{alias}"));
+            }
+            if !element.tags.is_empty() {
+                details.push_str(&format!(" · #{}", element.tags.join(" #")));
+            }
             let account = Text::from(vec![
                 Line::from(Span::styled(issuer, Style::default().fg(TEXT).bold())),
-                Line::from(Span::styled(
-                    item.label.as_str(),
-                    Style::default().fg(MUTED),
-                )),
+                Line::from(Span::styled(details, Style::default().fg(MUTED))),
             ]);
             let code = if item.has_error {
                 "Unavailable".into()
@@ -506,6 +515,7 @@ impl App<'_> {
             ("Enter", "Copy code / URI", KeyCode::Enter),
             ("/ or Ctrl+F", "Filter accounts", KeyCode::Char('/')),
             ("h", "Hide / reveal codes", KeyCode::Char('h')),
+            ("f", "Toggle favorite", KeyCode::Char('f')),
             ("Space", "Show / close QR", KeyCode::Char(' ')),
             ("+", "Increase HOTP counter", KeyCode::Char('+')),
             ("−", "Decrease HOTP counter", KeyCode::Char('-')),

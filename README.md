@@ -33,6 +33,7 @@ use `cotp list` or `cotp list --json` when piping output.
 | `a` / `e` | Add / edit an account |
 | `Space` | Show or close the selected account's QR code |
 | `h` | Hide / reveal codes |
+| `f` | Toggle the selected favorite |
 | `+` / `-` | Increase / decrease an HOTP counter |
 | `d` or `Delete` | Delete an account, with confirmation |
 | `?` or `i` | Open the shortcuts and actions menu |
@@ -59,6 +60,28 @@ cotp delete --id <account-id>
 On `edit`, `--issuer` and `--label` still set new values; use `--match-issuer`
 and `--match-label` to select by those fields. Aliases are unique ignoring case;
 `edit --clear-alias` removes an alias. Account IDs survive renaming and TUI edits.
+
+### Tags, favorites, and ordering
+
+Add metadata with `add --tag work --tag mail --favorite --order 1`.
+Tags match without case sensitivity; repeat `--tag` on `list`, `code`, `extract`,
+`delete`, or `edit` to require all tags. `--favorite` restricts the selection to favorites.
+Filtered list indices retain their positions in the full list.
+
+```sh
+cotp edit --alias github --add-tag work --remove-tag personal --set-favorite true
+cotp edit --alias github --order -1
+cotp list --tag work --favorite --metadata-only --json
+cotp code --tag work --favorite
+cotp edit --alias github --clear-tags --clear-order
+```
+
+`edit --set-favorite false` removes a favorite. Explicit order values sort first,
+lowest to highest; other accounts sort by issuer, label, then persistent ID.
+Favorites keep their existing positions. The dashboard displays favorites, aliases,
+and tags; press `f` to toggle the selected favorite, then save or discard when quitting.
+Dashboard and CLI queries support `tag:work`, `is:favorite`, and combinations such
+as `tag:work is:favorite github`. Ordinary query text also matches aliases and IDs.
 
 ### Codes and scripts
 

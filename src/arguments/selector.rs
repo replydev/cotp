@@ -23,6 +23,12 @@ pub struct AccountSelector {
     /// Account label, optionally a case-insensitive glob
     #[arg(short, long)]
     pub label: Option<String>,
+    /// Require this tag (case-insensitive; repeat to require all tags)
+    #[arg(long = "tag", value_parser = crate::otp::organization::parse_tag)]
+    pub tags: Vec<String>,
+    /// Match favorite accounts only
+    #[arg(long)]
+    pub favorite: bool,
     /// Account ID, alias, or text in its issuer/label
     #[arg(value_name = "QUERY")]
     pub query: Option<String>,
@@ -39,6 +45,8 @@ impl AccountSelector {
             && self.issuer.is_none()
             && self.label.is_none()
             && self.query.is_none()
+            && self.tags.is_empty()
+            && !self.favorite
         {
             return Err(eyre!(
                 "Specify an account ID, alias, index, issuer, label, or query"
@@ -64,7 +72,8 @@ impl AccountSelector {
             .iter()
             .enumerate()
             .filter(|(index, element)| {
-                self.index.is_none_or(|value| value == index + 1)
+                crate::otp::organization::matches_filters(element, &self.tags, self.favorite)
+                    && self.index.is_none_or(|value| value == index + 1)
                     && self.id.as_ref().is_none_or(|value| *value == element.id)
                     && self.alias.as_ref().is_none_or(|value| {
                         element
@@ -103,13 +112,7 @@ fn matcher(pattern: &str) -> color_eyre::Result<GlobMatcher> {
 }
 
 fn matches_query(element: &OTPElement, query: &str) -> bool {
-    element.id.eq_ignore_ascii_case(query)
-        || element
-            .alias
-            .as_ref()
-            .is_some_and(|alias| alias.eq_ignore_ascii_case(query))
-        || element.issuer.to_lowercase().contains(query)
-        || element.label.to_lowercase().contains(query)
+    crate::otp::organization::matches_search(element, query)
 }
 
 pub fn validate_alias(

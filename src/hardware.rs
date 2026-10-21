@@ -227,7 +227,9 @@ pub fn handle(args: &crate::arguments::CotpArgs) -> Result<bool> {
                 ));
             }
             let selector = &args.selector;
-            if selector.index.is_some()
+            if !selector.tags.is_empty()
+                || selector.favorite
+                || selector.index.is_some()
                 || selector.issuer.is_some()
                 || selector.label.is_some()
                 || [&selector.query, &selector.id, &selector.alias]
@@ -249,6 +251,11 @@ pub fn handle(args: &crate::arguments::CotpArgs) -> Result<bool> {
             code(device, query, args.copy, args.quiet, args.json)?;
         }
         Some(CotpSubcommands::List(list_args)) => {
+            if !list_args.tags.is_empty() || list_args.favorite {
+                return Err(eyre!(
+                    "YubiKey accounts do not support tag or favorite filters"
+                ));
+            }
             list(device, list_args.format.as_ref().is_some_and(|f| f.json))?
         }
         _ => {
