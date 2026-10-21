@@ -1,3 +1,16 @@
+# [1.11.0](https://github.com/replydev/cotp/compare/v1.10.1...v1.11.0) (2026-10-21)
+
+
+### Bug Fixes
+
+* **ui:** align digits and simplify account navigation and status ([f254986](https://github.com/replydev/cotp/commit/f254986fd431ef0cf72ed18e4a30184195c467b6))
+
+
+### Features
+
+* **ui:** revamp dashboard with account forms and mouse support ([465c82d](https://github.com/replydev/cotp/commit/465c82dc15563cc569e3b821b2666da3a758d1fc))
+* **ui:** revamp terminal dashboard with account forms and mouse support ([#693](https://github.com/replydev/cotp/issues/693)) ([8e8db73](https://github.com/replydev/cotp/commit/8e8db730d25f1859062b2e3b6d90601bde662798))
+
 ## [1.10.1](https://github.com/replydev/cotp/compare/v1.10.0...v1.10.1) (2026-10-21)
 
 
