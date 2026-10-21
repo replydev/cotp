@@ -17,6 +17,7 @@ use zeroize::Zeroize;
 mod arguments;
 mod clipboard;
 mod crypto;
+mod database_file;
 mod exporters;
 mod importers;
 mod interface;
@@ -78,8 +79,8 @@ fn main() -> AppResult<()> {
                 println!("Modifications have been persisted");
                 0
             }
-            _ => {
-                eprintln!("An error occurred during database overwriting");
+            Err(e) => {
+                eprintln!("An error occurred during database overwriting: {e}");
                 -1
             }
         }
