@@ -17,6 +17,7 @@ use zeroize::Zeroize;
 mod arguments;
 mod backup;
 mod clipboard;
+mod config;
 mod crypto;
 mod database_file;
 mod exporters;
@@ -74,7 +75,11 @@ fn init(args: &CotpArgs) -> color_eyre::Result<ReadResult> {
     }
 }
 
-fn run(cotp_args: CotpArgs) -> Result<(), (u8, color_eyre::eyre::Report)> {
+fn run(mut cotp_args: CotpArgs) -> Result<(), (u8, color_eyre::eyre::Report)> {
+    if arguments::shell::handle(&cotp_args).map_err(|error| (1, error))? {
+        return Ok(());
+    }
+    config::load(&mut cotp_args).map_err(|error| (1, error))?;
     utils::set_no_input(cotp_args.no_input);
     if let Some(arguments::CotpSubcommands::Backup(args)) = &cotp_args.command {
         let path = init_path(&cotp_args);
@@ -89,6 +94,7 @@ fn run(cotp_args: CotpArgs) -> Result<(), (u8, color_eyre::eyre::Report)> {
     let (mut database, key, salt) = init(&cotp_args).map_err(|error| (1, error))?;
     let mut key = zeroize::Zeroizing::new(key);
     persistence::unlock(&key, &salt).map_err(|error| (1, error))?;
+    otp::migrations::migrate(&mut database).map_err(|error| (1, error))?;
     if database.is_modified() {
         database.save(&key, &salt).map_err(|error| (1, error))?;
     }

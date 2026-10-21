@@ -47,7 +47,7 @@ impl<'a> App<'a> {
             },
             popup_scroll: 0,
             notification: None,
-            hide_codes: false,
+            hide_codes: crate::config::settings().hide_codes,
             now: unix_seconds(),
             form: None,
             hitboxes: Vec::new(),

@@ -1,9 +1,12 @@
 use base64::{Engine as _, engine::general_purpose};
 use color_eyre::eyre::eyre;
+#[cfg(feature = "desktop-clipboard")]
 use copypasta_ext::prelude::*;
-#[cfg(target_os = "linux")]
+#[cfg(all(feature = "desktop-clipboard", target_os = "linux"))]
 use copypasta_ext::wayland_bin::WaylandBinClipboardContext;
+#[cfg(feature = "desktop-clipboard")]
 use copypasta_ext::x11_bin::ClipboardContext as BinClipboardContext;
+#[cfg(feature = "desktop-clipboard")]
 use copypasta_ext::x11_fork::ClipboardContext as ForkClipboardContext;
 use crossterm::style::Print;
 use std::{env, io};
@@ -36,7 +39,7 @@ fn ssh_clipboard(content: &str) -> bool {
         )
         .is_ok()
 }
-#[cfg(target_os = "linux")]
+#[cfg(all(feature = "desktop-clipboard", target_os = "linux"))]
 fn wayland_clipboard(content: &str) -> bool {
     env_var_set("WAYLAND_DISPLAY")
         && WaylandBinClipboardContext::new()
@@ -44,11 +47,12 @@ fn wayland_clipboard(content: &str) -> bool {
             .is_ok()
 }
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(all(feature = "desktop-clipboard", target_os = "linux")))]
 fn wayland_clipboard(_content: &str) -> bool {
     false
 }
 
+#[cfg(feature = "desktop-clipboard")]
 fn other_platform_clipboard(content: &str) -> bool {
     BinClipboardContext::new()
         .and_then(|mut ctx| ctx.set_contents(content.to_owned()))
@@ -62,4 +66,9 @@ fn env_var_set(env_var: &str) -> bool {
     env::var(env_var)
         .map(|v| !v.trim().is_empty())
         .unwrap_or(false)
+}
+
+#[cfg(not(feature = "desktop-clipboard"))]
+fn other_platform_clipboard(_content: &str) -> bool {
+    false
 }
