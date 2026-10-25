@@ -13,16 +13,21 @@ use crate::otp::otp_element::OTPDatabase;
 use super::SubcommandExecutor;
 
 #[derive(Args)]
+#[command(after_help = "EXAMPLES
+  cotp delete --index 1
+  cotp delete --issuer GitHub --label you@example.com
+
+Selects the first matching account and asks for confirmation before deleting it.")]
 pub struct DeleteArgs {
-    /// Code Index
+    /// Account index from cotp list (starts at 1)
     #[arg(short, long, required_unless_present_any=["issuer", "label"])]
     pub index: Option<usize>,
 
-    /// Issuer of the first matching code that will be deleted
+    /// Match the first account whose service name contains this text
     #[arg(short = 's', long, required_unless_present_any=["index", "label"])]
     pub issuer: Option<String>,
 
-    /// Label of the first matching code that will be deleted
+    /// Match the first account whose label contains this text
     #[arg(short, long, required_unless_present_any=["index","issuer"])]
     pub label: Option<String>,
 }
@@ -30,7 +35,7 @@ pub struct DeleteArgs {
 impl SubcommandExecutor for DeleteArgs {
     fn run_command(self, mut otp_database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
         if otp_database.elements_ref().is_empty() {
-            return Err(eyre!("There are no elements to delete"));
+            return Err(eyre!("The vault has no accounts to delete"));
         }
 
         let index_to_delete = self
@@ -38,11 +43,13 @@ impl SubcommandExecutor for DeleteArgs {
             .and_then(|i| i.checked_sub(1))
             // Match by issues or label if index filter is missing
             .or_else(|| get_first_matching_element(&otp_database, &self))
-            .ok_or(eyre!("No code has been found using the given arguments"))?;
+            .ok_or(eyre!(
+                "No account matches the supplied index, issuer, or label"
+            ))?;
 
         if let Some(element) = otp_database.elements_ref().get(index_to_delete) {
             print!(
-                "Are you sure you want to delete the {}th code ({}, {}) [Y,N]: ",
+                "Delete account #{} ({}, {})? [y/N]: ",
                 index_to_delete + 1,
                 element.issuer,
                 element.label
@@ -55,10 +62,10 @@ impl SubcommandExecutor for DeleteArgs {
                 otp_database.delete_element(index_to_delete);
                 Ok(otp_database)
             } else {
-                Err(eyre!("Operation interrupt by the user"))
+                Err(eyre!("Deletion canceled"))
             }
         } else {
-            Err(eyre!("Missing {}th code to delete", index_to_delete + 1))
+            Err(eyre!("No account found at index {}", index_to_delete + 1))
         }
     }
 }
@@ -88,7 +95,7 @@ fn read_confirmation_line() -> color_eyre::Result<String> {
 
     #[allow(unreachable_code)]
     Err(eyre!(
-        "Unable to read confirmation answer from standard input or terminal"
+        "Could not read confirmation from standard input or the terminal"
     ))
 }
 

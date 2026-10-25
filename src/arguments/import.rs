@@ -17,11 +17,17 @@ use crate::{
 use super::SubcommandExecutor;
 
 #[derive(Args)]
+#[command(after_help = "EXAMPLES
+  cotp import --aegis --path backup.json
+  cotp import --google-authenticator --path migration-uris.txt
+
+Choose the format matching your backup. Imported accounts are added to the current vault.
+Authy, FreeOTP, and Microsoft Authenticator data must first be converted using the corresponding script in converters/.")]
 pub struct ImportArgs {
     #[command(flatten)]
     pub backup_type: BackupType,
 
-    /// Backup file path
+    /// Path to the backup file to import
     #[arg(short, long)]
     pub path: PathBuf,
 }
@@ -29,27 +35,27 @@ pub struct ImportArgs {
 #[derive(Args)]
 #[group(required = true, multiple = false)]
 pub struct BackupType {
-    /// Import from cotp backup
+    /// Import an unencrypted cotp backup
     #[arg(short, long)]
     pub cotp: bool,
 
-    /// Import from andOTP backup
+    /// Import an andOTP backup
     #[arg(short = 'e', long)]
     pub andotp: bool,
 
-    /// Import from Aegis backup
+    /// Import an unencrypted Aegis backup
     #[arg(short, long)]
     pub aegis: bool,
 
-    /// Import from Aegis Encrypted backup
+    /// Import an encrypted Aegis backup (prompts for its password)
     #[arg(short = 'k', long = "aegis-encrypted")]
     pub aegis_encrypted: bool,
 
-    /// Import from `FreeOTP`+ backup
+    /// Import a FreeOTP+ backup
     #[arg(short, long = "freeotp-plus")]
     pub freeotp_plus: bool,
 
-    /// Import from `FreeOTP` backup
+    /// Import FreeOTP data converted with converters/freeotp.py
     #[arg(short = 'r', long)]
     pub freeotp: bool,
 
@@ -58,19 +64,21 @@ pub struct BackupType {
     #[arg(short, long = "google-authenticator")]
     pub google_authenticator: bool,
 
-    /// Import from Authy backup
+    /// Import Authy data converted with converters/authy.py
     #[arg(short = 't', long)]
     pub authy: bool,
 
-    /// Import from Authy Database exported following this guide <https://gist.github.com/gboudreau/94bb0c11a6209c82418d01a59d958c93>
+    /// Import an Authy desktop export
+    ///
+    /// See https://gist.github.com/gboudreau/94bb0c11a6209c82418d01a59d958c93
     #[arg(short = 'u', long = "authy-exported")]
     pub authy_exported: bool,
 
-    /// Import from Microsoft Authenticator
+    /// Import Microsoft Authenticator data converted with converters/mauth.py
     #[arg(short = 'm', long = "microsoft-authenticator")]
     pub microsoft_authenticator: bool,
 
-    /// Import from OTP Uri batch
+    /// Import a JSON object with an items array of otpauth:// URIs
     #[arg(short, long = "otp-uri")]
     pub otp_uri: bool,
 }
@@ -100,7 +108,9 @@ impl SubcommandExecutor for ImportArgs {
         } else if backup_type.otp_uri {
             import_from_path::<OtpUriList>(path)
         } else {
-            return Err(eyre!("Invalid arguments provided"));
+            return Err(eyre!(
+                "Select a backup format. Run cotp import --help for available formats"
+            ));
         };
 
         let elements = result.map_err(|e| eyre!("{e}"))?;

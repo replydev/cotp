@@ -16,7 +16,7 @@ pub fn password(message: &str, minimum_length: usize) -> String {
     loop {
         let password = rpassword::prompt_password(message).unwrap();
         if password.chars().count() < minimum_length {
-            println!("Please insert a password with at least {minimum_length} digits.");
+            println!("Use a password with at least {minimum_length} characters.");
             continue;
         }
         return password;
@@ -26,9 +26,9 @@ pub fn password(message: &str, minimum_length: usize) -> String {
 pub fn verified_password(message: &str, minimum_length: usize) -> String {
     loop {
         let password = password(message, minimum_length);
-        let verify_password = rpassword::prompt_password("Retype the same password: ").unwrap();
+        let verify_password = rpassword::prompt_password("Confirm password: ").unwrap();
         if password != verify_password {
-            println!("Passwords do not match");
+            println!("Passwords do not match. Try again.");
             continue;
         }
         return password;

@@ -58,7 +58,7 @@ AA
         assertion
             .success()
             .stderr(is_empty())
-            .stdout(eq("Modifications have been persisted\n"));
+            .stdout(eq("Changes saved to vault\n"));
     }
 
     #[cfg(unix)]
@@ -97,7 +97,7 @@ AA
             .assert()
             .failure()
             .stderr(predicates::str::contains(
-                "An error occurred during database overwriting:",
+                "Could not save changes to the vault:",
             ));
 
         assert_eq!(std::fs::read(&database).unwrap(), original);

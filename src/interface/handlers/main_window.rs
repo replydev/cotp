@@ -29,7 +29,7 @@ pub(super) fn main_handler(key_event: KeyEvent, app: &mut App) {
                 show_popup(
                     Popup {
                         text: format!(
-                            "Remove {} / {} from your vault?\n\nThis removes the saved secret for this account. Changes are saved when you quit.",
+                            "Remove {} / {} from your vault?\n\nThe account and its secret will be deleted when you save on exit.",
                             element.issuer, element.label
                         ),
                         action: PopupAction::DeleteOtp,

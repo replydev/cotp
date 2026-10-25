@@ -15,28 +15,33 @@ use crate::otp::{
 use super::SubcommandExecutor;
 
 #[derive(Args)]
+#[command(after_help = "EXAMPLES
+  cotp add --issuer GitHub --label you@example.com
+  cotp add --otpuri
+
+You will be prompted for the secret key or OTP URI. Input is hidden.")]
 pub struct AddArgs {
-    /// Add OTP code via an OTP URI
+    /// Prompt for an otpauth:// URI instead of individual account fields
     #[arg(short = 'u', long = "otpuri", required_unless_present = "label")]
     pub otp_uri: bool,
 
-    /// Specify the OTP code type
+    /// Account type
     #[arg(short = 't', long = "type", default_value = "totp")]
     pub otp_type: OTPType,
 
-    /// Code issuer
+    /// Service name, such as GitHub
     #[arg(short, long, default_value = "")]
     pub issuer: String,
 
-    /// Code label
+    /// Account name, such as an email address or username
     #[arg(short, long, required_unless_present = "otp_uri")]
     pub label: Option<String>,
 
-    /// OTP Algorithm
+    /// Hash algorithm used to generate codes
     #[arg(short, long, value_enum, default_value_t = OTPAlgorithm::Sha1)]
     pub algorithm: OTPAlgorithm,
 
-    /// Code digits
+    /// Number of characters in each code (1-10)
     #[arg(
         short,
         long,
@@ -46,15 +51,15 @@ pub struct AddArgs {
     )]
     pub digits: u64,
 
-    /// Code period
+    /// Code refresh period in seconds
     #[arg(short = 'e', long, default_value_t = 30)]
     pub period: u64,
 
-    /// HOTP counter
+    /// Initial counter for HOTP accounts
     #[arg(short, long, required_if_eq("otp_type", "HOTP"))]
     pub counter: Option<u64>,
 
-    /// Yandex / MOTP pin
+    /// PIN for Yandex or MOTP accounts
     #[arg(
         short,
         long,
@@ -63,7 +68,7 @@ pub struct AddArgs {
     )]
     pub pin: Option<String>,
 
-    /// Pass the secret through the standard input
+    /// Read the secret from standard input (after the password with --password-stdin)
     #[arg(long = "secret-stdin", default_value_t = false)]
     take_secret_from_stdin: bool,
 }
@@ -71,7 +76,7 @@ pub struct AddArgs {
 impl SubcommandExecutor for AddArgs {
     fn run_command(self, mut database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
         let otp_element = if self.otp_uri {
-            let mut otp_uri = rpassword::prompt_password("Insert the otp uri: ").unwrap();
+            let mut otp_uri = rpassword::prompt_password("OTP URI (otpauth://): ").unwrap();
             let result = OTPElement::from_otp_uri(otp_uri.as_str());
             otp_uri.zeroize();
             result?
@@ -89,10 +94,10 @@ fn get_from_args(matches: AddArgs) -> color_eyre::Result<OTPElement> {
         if let Some(password) = io::stdin().lock().lines().next() {
             password.map_err(ErrReport::from)
         } else {
-            Err(eyre::eyre!("Error during reading from stdin"))
+            Err(eyre::eyre!("No secret key received on standard input"))
         }
     } else {
-        rpassword::prompt_password("Insert the secret: ").map_err(ErrReport::from)
+        rpassword::prompt_password("Secret key: ").map_err(ErrReport::from)
     }?;
     map_args_to_code(secret, matches)
 }

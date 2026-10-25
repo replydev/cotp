@@ -47,7 +47,7 @@ impl TryFrom<AegisEncryptedDatabase> for Vec<OTPElement> {
     type Error = String;
 
     fn try_from(aegis_encrypted: AegisEncryptedDatabase) -> Result<Self, Self::Error> {
-        let mut password = utils::password("Insert your Aegis password: ", 0);
+        let mut password = utils::password("Aegis backup password: ", 0);
         let master_key: Option<Vec<u8>> = get_master_key(&aegis_encrypted, &password);
         password.zeroize();
 
