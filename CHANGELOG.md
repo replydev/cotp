@@ -1,3 +1,11 @@
+## [1.11.1](https://github.com/replydev/cotp/compare/v1.11.0...v1.11.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **ui:** allow piped passwords and clarify user messages ([01e3ef6](https://github.com/replydev/cotp/commit/01e3ef6e23850f7cf349cf855b7c9706c769f595))
+* **ui:** support piped passwords and improve help text ([#696](https://github.com/replydev/cotp/issues/696)) ([9450b5f](https://github.com/replydev/cotp/commit/9450b5f3f443134440b0b3c106ca645ba578d721)), closes [#695](https://github.com/replydev/cotp/issues/695)
+
 # [1.11.0](https://github.com/replydev/cotp/compare/v1.10.1...v1.11.0) (2026-10-21)
 
 
