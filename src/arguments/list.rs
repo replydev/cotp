@@ -7,6 +7,11 @@ use crate::otp::otp_element::{OTPDatabase, OTPElement};
 use super::SubcommandExecutor;
 
 #[derive(Args)]
+#[command(after_help = "EXAMPLES
+  cotp list
+  cotp list --json
+
+Shows current codes once and exits. Run cotp without a command for the live dashboard.")]
 pub struct ListArgs {
     /// List output format
     #[command(flatten)]
@@ -17,11 +22,11 @@ pub struct ListArgs {
 #[derive(Args)]
 #[group(required = false, multiple = false)]
 pub struct ListFormat {
-    /// List OTP codes in plain format
+    /// Show codes in a table (default)
     #[arg(short, long)]
     pub plain: bool,
 
-    /// List OTP codes in JSON format
+    /// Output codes as JSON for scripts
     #[arg(short = 'e', long)]
     pub json: bool,
 }
@@ -68,11 +73,11 @@ impl SubcommandExecutor for ListArgs {
                 .collect::<Result<Vec<JsonOtpList>>>()?;
 
             let stringified = serde_json::to_string_pretty(&json_elements)
-                .map_err(|e| eyre!("Error during JSON serialization: {:?}", e))?;
+                .map_err(|e| eyre!("Could not format codes as JSON: {}", e))?;
             print!("{stringified}");
         } else {
             if otp_database.elements.is_empty() {
-                println!("No elements to list");
+                println!("The vault has no accounts. Use cotp add --help to add one");
                 return Ok(otp_database);
             }
             let issuer_width = calculate_width(&otp_database, |element| {

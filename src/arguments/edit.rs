@@ -6,40 +6,44 @@ use crate::otp::{otp_algorithm::OTPAlgorithm, otp_element::OTPDatabase};
 use super::SubcommandExecutor;
 
 #[derive(Args)]
+#[command(after_help = "EXAMPLE
+  cotp edit --index 1 --label you@example.com
+
+Use cotp list to find the account index. Omitted fields keep their current values.")]
 pub struct EditArgs {
-    /// Code Index
+    /// Account index from cotp list (starts at 1)
     #[arg(short, long)]
     pub index: usize,
 
-    /// Code issuer
+    /// New service name
     #[arg(short = 's', long)]
     pub issuer: Option<String>,
 
-    /// Code label
+    /// New account name
     #[arg(short, long)]
     pub label: Option<String>,
 
-    /// OTP algorithm
+    /// New hash algorithm
     #[arg(short, long, value_enum)]
     pub algorithm: Option<OTPAlgorithm>,
 
-    /// Code digits
+    /// New code length (1-10 characters)
     #[arg(short, long, value_parser=value_parser!(u64).range(1..=10))]
     pub digits: Option<u64>,
 
-    /// Code period
+    /// New code refresh period in seconds
     #[arg(short = 'e', long)]
     pub period: Option<u64>,
 
-    /// HOTP counter
+    /// New HOTP counter
     #[arg(short, long)]
     pub counter: Option<u64>,
 
-    /// Yandex / MOTP pin
+    /// New PIN for a Yandex or MOTP account
     #[arg(short, long)]
     pub pin: Option<String>,
 
-    /// Change code secret
+    /// Prompt for a new secret key
     #[arg(short = 'k', long = "change-secret")]
     pub change_secret: bool,
 }
@@ -48,14 +52,16 @@ impl SubcommandExecutor for EditArgs {
     fn run_command(self, mut database: OTPDatabase) -> color_eyre::Result<OTPDatabase> {
         let secret = self
             .change_secret
-            .then(|| rpassword::prompt_password("Insert the secret: ").unwrap());
+            .then(|| rpassword::prompt_password("New secret key: ").unwrap());
 
         // User provides row number from dashboard which is equal to the array index plus one
         let index = self.index;
 
         if let Some(real_index) = index.checked_sub(1) {
             if real_index >= database.elements_ref().len() {
-                return Err(eyre!("{index} is an invalid index"));
+                return Err(eyre!(
+                    "Invalid account index {index}. Use cotp list to see account indexes"
+                ));
             }
 
             match database.mut_element(real_index) {
@@ -86,11 +92,13 @@ impl SubcommandExecutor for EditArgs {
                     }
                     database.mark_modified();
                 }
-                None => return Err(eyre!("No element found at index {index}")),
+                None => return Err(eyre!("No account found at index {index}")),
             }
             Ok(database)
         } else {
-            Err(eyre!("{index} is an invalid index"))
+            Err(eyre!(
+                "Invalid account index {index}. Use cotp list to see account indexes"
+            ))
         }
     }
 }

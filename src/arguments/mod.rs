@@ -27,24 +27,28 @@ pub trait SubcommandExecutor {
 
 /// Main structure defining the Clap argument for the cotp commandline utility
 #[derive(Parser)]
-#[command(author, version = env!("COTP_VERSION"), about, long_about = None,
+#[command(author, version = env!("COTP_VERSION"), about = "Manage one-time passwords in an encrypted vault", long_about = None,
     styles = cli_styles(),
     after_help = "QUICK START
-  cotp                                      Open the interactive vault
+  cotp                                     Open the dashboard
   cotp add --issuer GitHub --label you       Add an account
-  cotp import --help                        Migrate from another authenticator
-  cotp list --json                          Output codes for scripts
+  cotp list                                Show current codes
+  cotp list --json                          Output codes as JSON
+  cotp import --help                        Import accounts from another app
 
 DASHBOARD
-  a add · e edit · / search · Enter copy · Space QR code · ? help"
+  a add · e edit · / search · Enter copy · Space QR code · ? help
+  q quit · changes are saved only if you confirm
+
+Use cotp <COMMAND> --help for command options and examples."
 )]
 pub struct CotpArgs {
     #[command(subcommand)]
     command: Option<CotpSubcommands>,
-    /// Fetch the password from standard input
+    /// Read the vault password from the first line of standard input
     #[arg(long = "password-stdin", default_value_t = false)]
     pub password_from_stdin: bool,
-    /// Set the database path
+    /// Path to the encrypted vault file (overrides COTP_DB_PATH)
     #[arg(short = 'd', long = "database-path")]
     pub database_path: Option<String>,
 }
@@ -53,21 +57,21 @@ pub struct CotpArgs {
 #[derive(Subcommand)]
 #[enum_dispatch(SubcommandExecutor)]
 pub enum CotpSubcommands {
-    /// Add new OTP code
+    /// Add an account
     Add(AddArgs),
-    /// Edit an existing OTP Code
+    /// Update an account
     Edit(EditArgs),
-    /// List codes
+    /// Show current one-time passwords
     List(ListArgs),
-    /// Delete codes
+    /// Delete an account after confirmation
     Delete(DeleteArgs),
-    /// Import codes from other apps
+    /// Import accounts from a backup
     Import(ImportArgs),
-    /// Export cotp database
+    /// Export accounts to an unencrypted backup
     Export(ExportArgs),
-    /// Copies the selected code into the clipboard, supports glob matching
+    /// Print the first matching code, optionally copying it to the clipboard
     Extract(ExtractArgs),
-    /// Change database password
+    /// Change the vault password
     Passwd(PasswdArgs),
 }
 
@@ -75,7 +79,7 @@ pub fn args_parser(matches: CotpArgs, read_result: OTPDatabase) -> color_eyre::R
     if let Some(command) = matches.command {
         command.run_command(read_result)
     } else {
-        dashboard(read_result).map_err(|e| eyre!("An error occurred: {e}"))
+        dashboard(read_result).map_err(|e| eyre!("{e}"))
     }
 }
 

@@ -7,16 +7,22 @@ use globset::{GlobBuilder, GlobMatcher};
 use super::SubcommandExecutor;
 
 #[derive(Args, Default)]
+#[command(after_help = "EXAMPLES
+  cotp extract --issuer GitHub --copy-clipboard
+  cotp extract --label '*@example.com'
+
+When multiple filters are supplied, all must match. Quote glob patterns to prevent shell expansion.
+The --index option starts at 0; cotp list displays indexes starting at 1.")]
 pub struct ExtractArgs {
-    /// Code Index
+    /// Zero-based account index (0 selects the first account)
     #[arg(short, long, required_unless_present_any = ["issuer", "label"])]
     pub index: Option<usize>,
 
-    /// Code issuer, may be a glob pattern
+    /// Match a service name (case-insensitive; supports glob patterns)
     #[arg(short = 's', long, required_unless_present_any = ["index", "label"])]
     pub issuer: Option<String>,
 
-    /// Code label, may be a glob pattern
+    /// Match an account label (case-insensitive; supports glob patterns)
     #[arg(short, long, required_unless_present_any = ["index", "issuer"])]
     pub label: Option<String>,
 
@@ -77,11 +83,11 @@ impl SubcommandExecutor for ExtractArgs {
             println!("{code}");
             if copy_to_clipboard {
                 let _ = clipboard::copy_string_to_clipboard(code.as_str())?;
-                println!("Copied to clipboard");
+                println!("Code copied to clipboard");
             }
             Ok(otp_database)
         } else {
-            Err(eyre!("No such code found with these fields"))
+            Err(eyre!("No account matches the supplied filters"))
         }
     }
 }

@@ -36,7 +36,7 @@ fn init(args: &CotpArgs) -> color_eyre::Result<ReadResult> {
         Ok(first_run) => {
             if first_run {
                 // Let's initialize the database file
-                let mut pw = utils::verified_password("Choose a password: ", 8);
+                let mut pw = utils::verified_password("Choose a vault password: ", 8);
                 let mut database = OTPDatabase {
                     version: CURRENT_DATABASE_VERSION,
                     elements: vec![],
@@ -51,7 +51,9 @@ fn init(args: &CotpArgs) -> color_eyre::Result<ReadResult> {
                 get_elements_from_input()
             }
         }
-        Err(()) => Err(eyre!("An error occurred during database creation")),
+        Err(()) => Err(eyre!(
+            "Could not create the vault directory. Check the database path and directory permissions"
+        )),
     }
 }
 
@@ -79,11 +81,11 @@ fn main() -> AppResult<()> {
     let error_code = if reowned_database.is_modified() {
         match reowned_database.save(&key, &salt) {
             Ok(()) => {
-                println!("Modifications have been persisted");
+                println!("Changes saved to vault");
                 0
             }
             Err(e) => {
-                eprintln!("An error occurred during database overwriting: {e}");
+                eprintln!("Could not save changes to the vault: {e}");
                 -1
             }
         }
@@ -94,14 +96,34 @@ fn main() -> AppResult<()> {
     std::process::exit(error_code)
 }
 
+fn dashboard_input_is_terminal() -> bool {
+    if io::stdin().is_terminal() {
+        return true;
+    }
+
+    // Match Crossterm's Unix input fallback when stdin carries a piped password.
+    #[cfg(unix)]
+    {
+        std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open("/dev/tty")
+            .is_ok_and(|tty| tty.is_terminal())
+    }
+    #[cfg(not(unix))]
+    {
+        false
+    }
+}
+
 fn dashboard(mut database: OTPDatabase) -> AppResult<OTPDatabase> {
-    if !io::stderr().is_terminal() || !io::stdin().is_terminal() {
+    if !io::stderr().is_terminal() || !dashboard_input_is_terminal() {
         if database.elements_ref().is_empty() {
-            println!("No codes, type \"cotp -h\" to get help");
+            println!("The vault has no accounts. Use cotp add --help to add one");
             return Ok(database);
         }
         return Err(
-            "The dashboard needs an interactive terminal. Use cotp list or cotp list --json."
+            "The dashboard requires terminal input and stderr connected to a terminal. Use cotp list or cotp list --json to show codes without the dashboard."
                 .into(),
         );
     }

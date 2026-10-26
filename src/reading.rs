@@ -18,7 +18,7 @@ pub fn get_elements_from_stdin() -> color_eyre::Result<ReadResult> {
     if let Some(password) = io::stdin().lock().lines().next() {
         return get_elements_with_password(password?);
     }
-    Err(eyre!("Failure during stdin reading"))
+    Err(eyre!("No vault password received on standard input"))
 }
 
 fn get_elements_with_password(mut password: String) -> color_eyre::Result<ReadResult> {
@@ -33,10 +33,10 @@ pub fn read_decrypted_text(password: &str) -> color_eyre::Result<(String, Vec<u8
     if encrypted_contents.is_empty() {
         return match delete_db() {
             Ok(()) => Err(eyre!(
-                "Your database file was empty, please restart to create a new one.",
+                "The vault file was empty and has been removed. Run cotp again to create a new vault.",
             )),
             Err(_) => Err(eyre!(
-                "Your database file is empty, please remove it manually and restart.",
+                "The vault file is empty. Remove the empty file and run cotp again to create a new vault.",
             )),
         };
     }

@@ -45,7 +45,7 @@ impl App<'_> {
         ])
         .areas(inner);
         frame.render_widget(
-            Paragraph::new("Account details\nChanges are written to your vault when you quit.")
+            Paragraph::new("Account details\nSave changes to your vault when you quit.")
                 .style(Style::default().fg(MUTED)),
             intro,
         );

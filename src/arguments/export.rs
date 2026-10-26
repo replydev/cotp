@@ -12,8 +12,14 @@ use crate::{
 use super::SubcommandExecutor;
 
 #[derive(Args)]
+#[command(after_help = "EXAMPLES
+  cotp export --path backup.json
+  cotp export --otp-uri --path accounts.json
+
+Exports contain account secrets and are not encrypted. Store them securely.
+If --path is a directory, the output file is named exported.cotp regardless of format.")]
 pub struct ExportArgs {
-    /// Export file path
+    /// Output file or directory (directories use the filename exported.cotp)
     #[arg(short, long, default_value = ".")]
     pub path: PathBuf,
 
@@ -25,19 +31,19 @@ pub struct ExportArgs {
 #[derive(Args)]
 #[group(required = false, multiple = false)]
 pub struct ExportFormat {
-    /// Export into cotp backup
+    /// Export an unencrypted cotp backup (default)
     #[arg(short, long)]
     pub cotp: bool,
 
-    /// Export into andOTP backup
+    /// Export an andOTP backup
     #[arg(short = 'e', long)]
     pub andotp: bool,
 
-    /// Export into an OTP URI
+    /// Export a JSON object with an items array of otpauth:// URIs
     #[arg(short, long = "otp-uri")]
     pub otp_uri: bool,
 
-    /// Export into the `FreeOTP`+ database format
+    /// Export a FreeOTP+ backup
     #[arg(short, long = "freeotp-plus")]
     pub freeotp_plus: bool,
 }
@@ -77,12 +83,9 @@ impl SubcommandExecutor for ExportArgs {
             unreachable!("Unreachable code");
         }
         .map(|path| {
-            println!(
-                "Exported to path: {}",
-                path.to_str().unwrap_or("Failed to encode path")
-            );
+            println!("Accounts exported to {}", path.display());
             database
         })
-        .map_err(|e| eyre!("An error occurred while exporting database: {e}"))
+        .map_err(|e| eyre!("Could not export accounts: {e}"))
     }
 }

@@ -413,7 +413,7 @@ impl App<'_> {
             );
         } else {
             frame.render_widget(
-                Paragraph::new("Counter based · + / − to change").style(Style::default().fg(MUTED)),
+                Paragraph::new("HOTP counter · + / − to change").style(Style::default().fg(MUTED)),
                 gauge_area,
             );
         }
@@ -503,10 +503,10 @@ impl App<'_> {
             ("PgUp / PgDn", "Move ten accounts", KeyCode::PageDown),
             ("a", "Add account", KeyCode::Char('a')),
             ("e", "Edit account", KeyCode::Char('e')),
-            ("Enter", "Copy code / URI", KeyCode::Enter),
+            ("Enter", "Copy code (URI in QR view)", KeyCode::Enter),
             ("/ or Ctrl+F", "Filter accounts", KeyCode::Char('/')),
             ("h", "Hide / reveal codes", KeyCode::Char('h')),
-            ("Space", "Show / close QR", KeyCode::Char(' ')),
+            ("Space", "Show / close QR code", KeyCode::Char(' ')),
             ("+", "Increase HOTP counter", KeyCode::Char('+')),
             ("−", "Decrease HOTP counter", KeyCode::Char('-')),
             ("d / Delete", "Delete account", KeyCode::Char('d')),
@@ -549,7 +549,11 @@ impl App<'_> {
                 "Save your changes?",
                 WARNING,
                 10,
-                vec![("y", "save & quit"), ("n", "discard"), ("Esc", "cancel")],
+                vec![
+                    ("y", "save & quit"),
+                    ("n", "discard & quit"),
+                    ("Esc", "cancel"),
+                ],
             ),
         };
         // Dim the dashboard while retaining its spatial context.
